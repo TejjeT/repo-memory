@@ -1,0 +1,14 @@
+{
+  "id": "EA-invalid-missing-scope",
+  "type": "constraint",
+  "content": "This example is intentionally invalid because scope is required.",
+  "status": "approved",
+  "importance": "high",
+  "provenance": [
+    {
+      "type": "document",
+      "uri": "test://invalid"
+    }
+  ],
+  "created_at": "2026-10-03T00:00:00Z"
+}
