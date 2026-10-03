@@ -48,8 +48,13 @@ class OpenVikingClient(Protocol):
 AclResolver = Callable[[EngineeringAssertion], dict[str, Any] | None]
 AuthorizationHook = Callable[[EngineeringAssertion], bool]
 
-# Exception class names that signal an authorization denial from an OpenViking
-# server. Matched by name so this adapter does not need to import the SDK.
+# Compatibility shim: the live OpenViking server raises authorization denials
+# (e.g. PermissionDeniedError) on ls/read of restricted paths instead of
+# returning entries marked {"access": "denied"}. Matching by class name keeps
+# this adapter decoupled from the OpenViking SDK, which is deliberate for the
+# experiment — but it is brittle if the SDK ever renames its error types. A
+# future SDK wrapper or injectable error classifier would be safer.
+# See docs/openviking-adapter.md ("Known v0 limitations").
 _ACCESS_DENIED_ERROR_NAMES = frozenset(
     {"PermissionDeniedError", "AccessDeniedError", "ForbiddenError"}
 )

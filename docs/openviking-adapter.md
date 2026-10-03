@@ -170,3 +170,17 @@ That test should verify:
 - ACL-denied entry behavior
 - read/write semantics
 - semantic/vector refresh behavior
+
+## Known v0 limitations
+
+- **Denial detection is a compatibility shim.** `_is_access_denied()` matches
+  authorization-denial exception class names (`PermissionDeniedError` and
+  equivalents) so the adapter stays decoupled from the OpenViking SDK. This is
+  deliberate for the experiment, but brittle if the SDK renames its error
+  types. A future SDK wrapper or injectable error classifier would be safer.
+- **Full-subtree candidate walk.** `list_for_organization()` walks the entire
+  readable organization subtree before deterministic policy filtering. This is
+  correct for v0/POC scale. The next benchmark should test metadata-based
+  candidate narrowing at enterprise scale — without letting semantic search
+  define the authoritative applicability set (authorization and scope
+  applicability stay deterministic per the retrieval contract).
