@@ -29,6 +29,12 @@ Instead, the adapter accepts any client implementing the minimal methods:
 
 The official OpenViking Python `SyncHTTPClient` exposes compatible operations.
 
+Install the optional SDK dependency with:
+
+```bash
+pip install -e ".[openviking]"
+```
+
 ## Storage layout
 
 Assertions are stored as canonical JSON below:
@@ -119,6 +125,14 @@ Tests use an in-memory compatible client so CI does not require an OpenViking se
 ## What is not yet proven
 
 A live-server smoke test is still required before calling the integration production-ready.
+
+Run it against a reachable server with:
+
+```bash
+OPENVIKING_URL=http://localhost:1933 \\
+OPENVIKING_API_KEY=... \\
+python scripts/openviking_smoke.py
+```
 
 That test should verify:
 
