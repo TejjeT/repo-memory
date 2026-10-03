@@ -6,9 +6,9 @@ portable and does not depend on a web framework, ORM, or agent SDK.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Iterable
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,7 +33,7 @@ class Scope:
 
         return len(self.as_path())
 
-    def applies_to(self, target: "Scope") -> bool:
+    def applies_to(self, target: Scope) -> bool:
         """Return whether this scope is an ancestor/equal of the target."""
 
         for own, other in zip(_scope_values(self), _scope_values(target), strict=True):
@@ -41,7 +41,7 @@ class Scope:
                 return False
         return True
 
-    def same_organization(self, target: "Scope") -> bool:
+    def same_organization(self, target: Scope) -> bool:
         """Return whether explicit targeting stays inside the same organization."""
 
         if self.organization is None or target.organization is None:
@@ -99,9 +99,7 @@ class EngineeringAssertion:
             return False
         if self.effective_from is not None and when < self.effective_from:
             return False
-        if self.expires_at is not None and when >= self.expires_at:
-            return False
-        return True
+        return self.expires_at is None or when < self.expires_at
 
     def explicitly_targets_repository(self, repository: str | None) -> bool:
         """Return whether applies_to explicitly contains the repository."""
