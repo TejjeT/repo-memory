@@ -9,28 +9,29 @@ The policy engine must not ask an LLM to invent precedence.
 Given a target scope and time:
 
 1. **Authorize**
-   - Assertions that the caller is not allowed to discover/read do not enter the candidate set.
+   - inaccessible assertions never enter the candidate set
 
 2. **Lifecycle filter**
    - status must be `approved`
-   - `effective_from` must be in the past/present
-   - `expires_at` must be in the future, if present
+   - `effective_from` must be active
+   - `expires_at` must not have passed
 
 3. **Applicability**
-   - a parent scope applies to its descendants
-   - an explicit `applies_to` repository target may make an assertion applicable to that repo
+   - parent scopes apply to descendants
+   - explicit repository targets may extend applicability across systems
+   - explicit targeting may not cross the organization boundary in v0
 
 4. **Supersession**
-   - if an active assertion supersedes another candidate assertion, the older assertion is excluded from normal retrieval
-   - superseded assertions remain inspectable historically
+   - an active successor removes a superseded assertion from normal retrieval
+   - history remains inspectable
 
-5. **Approved exception precedence**
-   - a narrower `approved-exception` may shadow a broader `policy`
-   - it does not automatically suppress unrelated constraints
+5. **Explicit overrides**
+   - an `approved-exception` overrides only assertion IDs named in its `overrides` list
+   - narrower scope alone is never sufficient to suppress unrelated policy
 
 6. **Conflicts**
-   - declared conflicts between remaining assertions are surfaced
-   - v0 does not silently pick a winner
+   - declared conflicts are surfaced
+   - v0 does not silently choose a winner
 
 7. **Ordering**
    - narrower scope first
@@ -41,11 +42,9 @@ Given a target scope and time:
 
 Authorization must constrain the candidate set before semantic ranking or context assembly.
 
-A caller should not be able to infer the existence of inaccessible engineering memory merely because it was semantically similar.
+A caller should not be able to infer inaccessible engineering memory merely because it is semantically relevant.
 
-## Scope inheritance
-
-The hierarchy is:
+## Scope hierarchy
 
 ```text
 organization
@@ -57,33 +56,23 @@ organization
             → pull request
 ```
 
-A populated level must match the target at the same level.
-
-Example:
-
-```yaml
-scope:
-  organization: Acme
-  domain: Payments
-```
-
-applies to descendants inside `Acme / Payments`.
-
-It does not apply to `Acme / Identity`.
+A populated level must match the target at the same level for normal inheritance.
 
 ## Explicit applicability
 
-An assertion may name repositories outside the most-specific scope fields through `applies_to`.
+`applies_to` exists for legitimate cross-system cases.
 
-This is intended for rules discovered in one system but explicitly applicable to several repositories.
+Example: an incident-derived rule from Settlement Platform may explicitly apply to `payment-worker` even when that repository is cataloged under another system.
 
-Explicit applicability must be auditable and should not become a substitute for sloppy scoping.
+v0 guardrail:
+
+> explicit repository targeting must stay inside the same organization.
+
+This avoids turning a convenient repository ID match into a cross-tenant data leak.
 
 ## Exceptions
 
-Example:
-
-Enterprise policy:
+Example enterprise policy:
 
 > New Java services target Java 25.
 
@@ -91,9 +80,14 @@ Repository exception:
 
 > legacy-settlement remains on Java 17 until retirement milestone M-2027-01.
 
-For `legacy-settlement`, the approved exception shadows the broader runtime policy.
+The exception must say:
 
-The broader policy remains active everywhere else.
+```yaml
+overrides:
+  - EA-001
+```
+
+It does **not** suppress unrelated enterprise policies.
 
 ## Supersession
 
@@ -109,15 +103,9 @@ EA-006
   supersedes: [EA-005]
 ```
 
-Normal retrieval returns EA-006.
-
-Historical/audit retrieval may return both.
+Normal retrieval returns EA-006. Audit retrieval may return both.
 
 ## Conflicts
-
-Two assertions may both remain active but be explicitly incompatible.
-
-Example:
 
 ```text
 EA-100 conflicts_with EA-101
@@ -125,19 +113,19 @@ EA-100 conflicts_with EA-101
 
 v0 behavior:
 
-- return both
+- return both active assertions
 - emit a conflict marker
-- require policy/human reconciliation
+- require policy or human reconciliation
 
-The engine does not use an LLM to guess which organizational rule is authoritative.
+The engine does not ask an LLM to decide which organizational rule is authoritative.
 
 ## Future work
 
 Potential future semantics:
 
-- exception-specific `overrides` relationships
-- applicability expressions beyond repository IDs
-- policy categories to prevent exceptions shadowing unrelated policies
+- richer target expressions
+- explicit tenant federation
+- policy categories
 - source-confidence weighting
 - effective-date intervals
 - conflict resolution workflows
