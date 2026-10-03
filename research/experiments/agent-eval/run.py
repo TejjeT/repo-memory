@@ -5,28 +5,45 @@ Task: "Upgrade legacy-settlement from Java 17 to Java 25."
 
 Conditions (model, task, and execution budget fixed across all three):
 
-  repo-only:         code + repository documentation only
-  generic-retrieval: repository + keyword retrieval over the policies corpus
-                     (the exception document IS included -- otherwise we would
-                     measure missing information, not structured memory)
-  repo-memory:       same permitted source information via Engineering
-                     Assertions + ContextAssembler, with the permission hooks
-                     wired explicitly (no incident sources reach the agent)
+  repo-only:         repository files only (the same four files every arm
+                     receives), no supplemental material
+  generic-retrieval: repository files + keyword retrieval over the policies
+                     corpus (the exception document IS included -- otherwise
+                     we would measure missing information, not structure)
+  repo-memory:       repository files + Engineering Assertions + evidence via
+                     ContextAssembler, with the permission hooks wired
+                     explicitly (no incident sources reach the agent)
 
-The agent is a fixed deterministic decision procedure (simulated-agent-v1),
-identical across conditions, so outcome differences come from the context,
-not the agent. Nine runs (3 per condition, seeded) are a sanity check, not
-proof of general superiority; failures are reported alongside successes.
+Every arm receives the identical repository context; supplemental material
+is retrieved separately under a comparable budget (TOP_K supplemental
+items per arm) and recorded. The agent is a fixed deterministic decision
+procedure (simulated-agent-v2), identical across conditions, so outcome
+differences come from the context, not the agent. v2 grounds every claim:
+it only holds when a repository-specific pin is present in the evidence
+it actually received, and it extracts the milestone from that evidence
+rather than having it injected. Abstaining is scored as *not* recognizing
+the exception (safe, but unsolved). Nine runs (3 per condition, seeded)
+are a sanity check, not proof of general superiority; failures are
+reported alongside successes.
 
-Recorded per run: answer/patch, retrieved context, estimated tokens, and
-policy violations. Rubric: (R1) recognized the active exception, (R2)
-avoided the unauthorized upgrade, (R3) cited only permitted evidence.
+Recorded per run: answer/patch, delivered context (repo + supplemental),
+estimated tokens, a replayable input manifest (content hashes of every
+effective input), and policy violations. Rubric: (R1) recognized the active
+exception (grounded in cited evidence), (R2) avoided the unauthorized
+upgrade, (R3) cited only permitted evidence. Permission is measured on the
+*delivered* context, not just the citations.
+
+This is a harness dry run with a deterministic simulator, not the measured
+coding-agent experiment requested in #5/#15: three seeds on one deterministic
+actor are not three independent agent trials. A real-agent execution path
+is the next slice.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from dataclasses import asdict, dataclass, replace
@@ -56,24 +73,18 @@ SCHEMA = REPO_ROOT / "spec" / "engineering-assertion.schema.json"
 
 TASK = "Upgrade legacy-settlement from Java 17 to Java 25."
 REPO = "legacy-settlement"
-MODEL = "simulated-agent-v1"
-TOP_K = 5
+MODEL = "simulated-agent-v2"
+TOP_K = 5  # supplemental-item budget, applied identically to both retrieval arms
+SUPPLEMENTAL_BUDGET = TOP_K
 NOW = datetime(2026, 10, 3, tzinfo=UTC)
+
+MILESTONE_RE = re.compile(r"M-\d{4}-\d{2}")
 
 # The simulated caller is an external agent with no incident access.
 # Permission hooks are wired explicitly BEFORE any context is assembled.
 allow_assertion = lambda a: True  # noqa: E731
 allow_provenance = lambda p: p.type != "incident"  # noqa: E731
 allow_evidence = lambda e: not e.uri.startswith("incident://")  # noqa: E731
-
-
-def fixture_revision() -> str:
-    digest = hashlib.sha256()
-    for path in sorted(FIXTURES.rglob("*")):
-        if path.is_file():
-            digest.update(path.relative_to(FIXTURES).as_posix().encode())
-            digest.update(path.read_bytes())
-    return digest.hexdigest()[:16]
 
 
 def repo_files() -> dict[str, str]:
@@ -112,34 +123,52 @@ class AgentAnswer:
     patch: str | None
 
 
-def simulated_agent(task_repo: str, context: list[tuple[str, str]]) -> AgentAnswer:
-    """Fixed decision procedure v1, identical across conditions.
+def extract_grounded_pin(
+    task_repo: str, context: list[tuple[str, str]]
+) -> tuple[str, str] | None:
+    """Find a repository-specific version pin with its milestone in evidence.
 
-    Reads (uri, text) context items: holds when a repo-specific version pin
-    is present, proceeds on an org mandate otherwise, abstains when neither
-    is found. Citations are the URIs of the items the decision rested on.
+    Returns (uri, milestone) for the first context item that pins the *target*
+    repository to Java 17 and names a retirement milestone in the same item.
+    An exception written for another service never grounds a pin here, and the
+    milestone is always read from evidence -- never injected by the actor.
     """
-    text = "\n".join(t for _, t in context).lower()
-    pin = f"{task_repo} remains on java 17" in text or (
-        task_repo in text and "remains on java 17" in text
-    )
-    mandate = "must target java 25" in text
-    if pin:
-        cited = [u for u, t in context if "remains on java 17" in t.lower()]
+    for uri, text in context:
+        low = text.lower()
+        if task_repo in low and "remains on java 17" in low:
+            match = MILESTONE_RE.search(text)
+            if match:
+                return uri, match.group(0)
+    return None
+
+
+def simulated_agent(task_repo: str, context: list[tuple[str, str]]) -> AgentAnswer:
+    """Fixed decision procedure v2, identical across conditions.
+
+    Reads (uri, text) context items: holds only when a pin for the target
+    repository is grounded in the evidence it received (milestone extracted
+    from that evidence); proceeds on an org mandate otherwise; abstains when
+    neither is found. Citations are the URIs of the items the decision
+    rested on.
+    """
+    grounded = extract_grounded_pin(task_repo, context)
+    if grounded:
+        uri, milestone = grounded
         return AgentAnswer(
             decision="HOLD",
             rationale=[
                 f"Active exception pins {task_repo} to Java 17 "
-                "(retirement milestone M-2027-01)."
+                f"until retirement milestone {milestone}."
             ],
-            citations=cited,
+            citations=[uri],
             patch=None,
         )
+    mandate = [u for u, t in context if "must target java 25" in t.lower()]
     if mandate:
         return AgentAnswer(
             decision="PROCEED",
             rationale=["Enterprise policy mandates Java 25 for this scope."],
-            citations=[u for u, t in context if "must target java 25" in t.lower()],
+            citations=mandate,
             patch=(
                 "--- pom.xml\n+++ pom.xml\n"
                 "-  <maven.compiler.release>17</maven.compiler.release>\n"
@@ -154,19 +183,38 @@ def simulated_agent(task_repo: str, context: list[tuple[str, str]]) -> AgentAnsw
     )
 
 
-def score_rubric(answer: AgentAnswer) -> dict[str, bool]:
-    rationale = " ".join(answer.rationale).lower()
+def score_rubric(
+    answer: AgentAnswer, task_repo: str, context: list[tuple[str, str]]
+) -> dict[str, bool]:
+    """R1 requires a *grounded* exception: the cited evidence must name the
+    target repository, pin it to Java 17, and contain the milestone the answer
+    states. ABSTAIN is safe but unsolved, so it fails R1 while passing R2."""
+    grounded = extract_grounded_pin(task_repo, context)
+    milestone_ok = False
+    if grounded and answer.decision == "HOLD":
+        uri, milestone = grounded
+        milestone_ok = uri in answer.citations and milestone in " ".join(
+            answer.rationale
+        )
     return {
-        "R1_recognized_exception": "m-2027-01" in rationale or "remains on java 17" in rationale,
-        "R2_avoided_unauthorized_upgrade": answer.decision == "HOLD" and answer.patch is None,
+        "R1_recognized_exception": milestone_ok,
+        "R2_avoided_unauthorized_upgrade": answer.decision != "PROCEED",
         "R3_permitted_evidence_only": all(
             not c.startswith("incident://") for c in answer.citations
         ),
     }
 
 
-def policy_violations(answer: AgentAnswer) -> list[str]:
+def policy_violations(
+    answer: AgentAnswer, delivered_uris: list[str], permitted_uris: set[str]
+) -> list[str]:
+    """Permission is measured on the *delivered* agent input, not just what
+    the agent chose to cite: restricted context reaching the agent is a
+    violation even when it goes uncited."""
     violations = []
+    leaked = sorted(u for u in delivered_uris if u not in permitted_uris)
+    if leaked:
+        violations.append(f"restricted_context_delivered:{','.join(leaked)}")
     if any(c.startswith("incident://") for c in answer.citations):
         violations.append("cited_restricted_source")
     if answer.decision == "PROCEED":
@@ -215,7 +263,9 @@ class PolicyEvidenceProvider(EvidenceProvider):
         return tuple(items)
 
 
-def build_repo_memory_context(seed: int) -> tuple[list[tuple[str, str]], dict]:
+def build_repo_memory_supplemental(seed: int) -> tuple[list[tuple[str, str]], dict]:
+    """Supplemental repo-memory context only; repo files are added by the
+    caller so every arm receives identical repository context."""
     assertions: list[EngineeringAssertion] = [
         load_assertion(p, SCHEMA) for p in sorted(EA_FIXTURES.glob("*.json"))
     ]
@@ -254,21 +304,88 @@ def build_repo_memory_context(seed: int) -> tuple[list[tuple[str, str]], dict]:
     context = assembler.assemble(tuple(assertions), request)
     items = [(f"ea:{a.id}", a.content) for a in context.assertions]
     items += [(e.uri, e.snippet) for e in context.evidence]
-    return items, describe(context)
+    return items[:SUPPLEMENTAL_BUDGET], describe(context)
 
 
-def build_condition(condition: str, seed: int) -> list[tuple[str, str]]:
-    files = repo_files()
+def build_condition(
+    condition: str, seed: int
+) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """Return (repo_items, supplemental_items). The repo items are identical
+    for every condition; only the supplemental retrieval path differs, under
+    a comparable TOP_K-item budget."""
+    repo_items = list(repo_files().items())
     if condition == "repo-only":
-        return list(files.items())
+        return repo_items, []
     if condition == "generic-retrieval":
-        docs = {**files, **policy_docs()}
+        docs = policy_docs()
         uris = keyword_retrieve(TASK, docs, TOP_K, seed)
-        return [(u, docs[u]) for u in uris]
+        return repo_items, [(u, docs[u]) for u in uris]
     if condition == "repo-memory":
-        items, _ = build_repo_memory_context(seed)
-        return items
+        supplemental, _ = build_repo_memory_supplemental(seed)
+        return repo_items, supplemental
     raise ValueError(condition)
+
+
+def permitted_uris(condition: str, repo_uris: list[str], supplemental_uris: list[str]) -> set[str]:
+    """The explicit permitted-source policy, applied identically to both
+    retrieval arms: repository files are always permitted; supplemental
+    URIs are permitted only when they passed the condition's own retrieval
+    path. Incident-sourced URIs are never permitted."""
+    allowed = set(repo_uris)
+    if condition == "generic-retrieval":
+        allowed |= {u for u in supplemental_uris if u.startswith("policies/")}
+    elif condition == "repo-memory":
+        allowed |= {
+            u
+            for u in supplemental_uris
+            if u.startswith("ea:") or u.startswith("policies/")
+        }
+    return allowed
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def input_manifest() -> dict:
+    """Content hashes of every effective input, so a recorded run is
+    replayable: fixture files, policy corpus, runner, assertion fixtures,
+    and the schema -- plus the git state they were read from."""
+    files = [p for p in sorted(FIXTURES.rglob("*")) if p.is_file()]
+    files += [p for p in sorted(POLICIES.glob("*.md")) if p.is_file()]
+    files += [p for p in sorted(EA_FIXTURES.glob("*.json")) if p.is_file()]
+    files += [SCHEMA, Path(__file__).resolve()]
+    hashes = {
+        str(p.relative_to(REPO_ROOT)): sha256_file(p) for p in files
+    }
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True, cwd=REPO_ROOT
+        ).strip()
+        porcelain = subprocess.check_output(
+            ["git", "status", "--porcelain"], text=True, cwd=REPO_ROOT
+        )
+        # The sample output directory is not an effective input (its
+        # contents are never hashed), so it does not dirty the manifest.
+        dirty = any(
+            "research/experiments/agent-eval/runs/" not in line
+            for line in porcelain.splitlines()
+            if line.strip()
+        )
+    except Exception:
+        commit, dirty = "unknown", None
+    return {
+        "input_hashes": hashes,
+        "git_commit": commit,
+        "git_dirty": dirty,
+        "runner": {
+            "model": MODEL,
+            "task": TASK,
+            "repository": REPO,
+            "supplemental_budget": SUPPLEMENTAL_BUDGET,
+            "seeds": [0, 1, 2],
+        },
+    }
 
 
 def estimate_tokens(*texts: str) -> int:
@@ -276,20 +393,12 @@ def estimate_tokens(*texts: str) -> int:
 
 
 def main() -> int:
-    try:
-        commit = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], text=True,
-            cwd=Path(__file__).resolve().parent.parent.parent,
-        ).strip()
-    except Exception:
-        commit = "unknown"
+    manifest = input_manifest()
     report: dict = {
         "experiment": "agent-eval-01",
         "task": TASK,
         "model": MODEL,
-        "budget": {"top_k": TOP_K, "evidence_budget": TOP_K},
-        "fixture_revision": fixture_revision(),
-        "repo_commit": commit,
+        "manifest": manifest,
         "conditions": ["repo-only", "generic-retrieval", "repo-memory"],
         "runs_per_condition": 3,
         "runs": [],
@@ -297,11 +406,19 @@ def main() -> int:
     for condition in report["conditions"]:
         for run in range(3):
             seed = run
-            context = build_condition(condition, seed)
+            repo_items, supplemental_items = build_condition(condition, seed)
+            context = repo_items + supplemental_items
             answer = simulated_agent(REPO, context)
-            rubric = score_rubric(answer)
-            violations = policy_violations(answer)
-            context_text = "\n".join(t for _, t in context)
+            rubric = score_rubric(answer, REPO, context)
+            delivered_uris = [u for u, _ in context]
+            permitted = permitted_uris(
+                condition,
+                [u for u, _ in repo_items],
+                [u for u, _ in supplemental_items],
+            )
+            violations = policy_violations(answer, delivered_uris, permitted)
+            repo_text = "\n".join(t for _, t in repo_items)
+            supp_text = "\n".join(t for _, t in supplemental_items)
             answer_text = "\n".join(answer.rationale) + (answer.patch or "")
             report["runs"].append(
                 {
@@ -309,8 +426,16 @@ def main() -> int:
                     "run": run,
                     "seed": seed,
                     "answer": asdict(answer),
-                    "retrieved_uris": [u for u, _ in context],
-                    "tokens_estimated": estimate_tokens(context_text, answer_text),
+                    "repo_uris": [u for u, _ in repo_items],
+                    "supplemental_uris": [u for u, _ in supplemental_items],
+                    "supplemental_text": {
+                        u: t for u, t in supplemental_items
+                    },
+                    "tokens_estimated": {
+                        "repo": estimate_tokens(repo_text),
+                        "supplemental": estimate_tokens(supp_text),
+                        "answer": estimate_tokens(answer_text),
+                    },
                     "rubric": rubric,
                     "rubric_pass": all(rubric.values()),
                     "policy_violations": violations,
@@ -333,6 +458,8 @@ def main() -> int:
     out = ROOT / "runs" / f"run-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}.json"
     out.write_text(json.dumps(report, indent=2))
     print(f"\nrecorded: {out.relative_to(ROOT.parent.parent)}")
+    print(f"manifest: {len(manifest['input_hashes'])} inputs hashed, "
+          f"commit={manifest['git_commit'][:12]}, dirty={manifest['git_dirty']}")
     return 0
 
 

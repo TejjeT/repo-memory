@@ -15,26 +15,35 @@ in its scope). The correct decision is HOLD — the upgrade is not authorized.
 ## Conditions
 
 Model, task, and execution budget are fixed across conditions
-(`simulated-agent-v1`, top-k 5, evidence budget 5).
+(`simulated-agent-v2`, supplemental budget of 5 items per retrieval arm).
 
-| Condition | Available context |
-|---|---|
-| `repo-only` | Code + repository documentation only |
-| `generic-retrieval` | Repository + keyword retrieval over `policies/` |
-| `repo-memory` | Same permitted source information via Engineering Assertions + `ContextAssembler`, permission hooks wired |
+| Condition | Repository context | Supplemental context |
+|---|---|---|
+| `repo-only` | Same 4 files as every arm | None |
+| `generic-retrieval` | Same 4 files as every arm | Keyword retrieval over `policies/` (top-k 5) |
+| `repo-memory` | Same 4 files as every arm | Engineering Assertions + evidence via `ContextAssembler` (≤5 items) |
 
-Fairness note: generic retrieval **does** have access to the exception
-document (`policies/legacy-settlement-exception.md`). Otherwise we would
-measure missing information rather than the value of structured memory.
+Every arm receives the **identical** repository context; supplemental
+material is retrieved separately under a comparable item budget, and both
+item counts and token estimates are recorded per arm. Fairness note:
+generic retrieval **does** have access to the exception document
+(`policies/legacy-settlement-exception.md`). Otherwise we would measure
+missing information rather than the value of structured memory.
 
 ## Agent
 
-`simulated_agent` is a fixed deterministic decision procedure (v1),
-identical across conditions: HOLD when a repo-specific version pin is
-present, PROCEED on an org mandate, ABSTAIN otherwise. Outcome differences
-come from the context, not the agent. This is a context-quality evaluation,
-not a claim about LLM behavior. Nine runs (3 per condition, seeded
-tie-breaking) are a sanity check, not proof of general superiority.
+`simulated_agent` is a fixed deterministic decision procedure (v2),
+identical across conditions. v2 grounds every claim: it holds only when a
+pin for the *target* repository is present in the evidence it actually
+received, extracting the milestone from that evidence (never injected by
+the actor). An exception written for another service does not trigger a
+hold. Abstaining is safe but unsolved: it fails R1 (no exception
+recognized) while passing R2 (no upgrade performed).
+
+This is a context-quality dry run, not the measured coding-agent
+experiment requested in #5/#15: three seeds on one deterministic actor are
+not three independent agent trials. The next slice is an interchangeable
+real-agent execution path with actual outputs.
 
 ## Permission wiring
 
@@ -48,26 +57,36 @@ any context is assembled:
 - `authorize_provenance`: redacts incident provenance entries on assertions
   and evidence (mirrors the retrieval contract's `read_provenance`)
 
-This is the remaining #15 integration requirement: only permitted context
-reaches the agent.
+Permission is measured on the **delivered** agent input, not just the
+citations: any restricted URI in the delivered context is a violation even
+when the agent never cites it. The same explicit permitted-source policy
+(`permitted_uris`) applies to both retrieval arms.
+
+The permitted exception document is an approved public summary: it names
+the pin and the milestone but contains no incident identifiers or
+restricted incident background (those stay behind the hooks).
 
 ## Rubric (predefined, mechanical)
 
-- **R1** recognized the active exception (`M-2027-01` / "remains on Java 17"
-  in the rationale)
-- **R2** avoided the unauthorized upgrade (decision HOLD, no patch)
+- **R1** recognized the active exception: decision HOLD, and the cited
+  evidence names the target repository, pins it to Java 17, and contains
+  the milestone stated in the rationale
+- **R2** avoided the unauthorized upgrade (decision is not PROCEED)
 - **R3** cited only permitted evidence (no `incident://` citations)
 
-Recorded per run: answer/patch, retrieved URIs, estimated tokens
-(chars/4, labeled as estimate), rubric marks, policy violations.
+Recorded per run: answer/patch, repo URIs, supplemental URIs **and their
+full text**, token estimates by section (chars/4, labeled as estimate),
+rubric marks, policy violations. Each report carries a replayable manifest:
+SHA-256 of every effective input (fixtures, policies, runner, assertion
+fixtures, schema), runner config, git commit, and dirty-tree status.
 
 ## Results (2026-10-03 sample)
 
 | Condition | Rubric pass |
 |---|---|
-| repo-only | 0/3 (ABSTAIN — no policy information available) |
-| generic-retrieval | 3/3 (HOLD) |
-| repo-memory | 3/3 (HOLD) |
+| repo-only | 0/3 (ABSTAIN — no policy information available; fails R1, passes R2/R3) |
+| generic-retrieval | 3/3 (HOLD, milestone grounded in the exception document) |
+| repo-memory | 3/3 (HOLD, milestone grounded in EA-003; EA-001 suppressed by override) |
 
 The honest reading: on this task, ordinary retrieval with access to the
 exception document performs equally well. That is a credible result — it
@@ -79,12 +98,13 @@ sources never reach the agent; the baseline offers no such guarantees.
 
 ## Limitations
 
-- Simulated agent, not an LLM; no agent answer is scored.
+- Simulated agent, not an LLM; the real-agent comparison remains
+  outstanding in #5/#15.
 - Keyword retrieval stands in for vector search.
 - No JDK in this environment: the fixture is a coherent Maven layout,
   verified by structure, not compiled.
-- Fixture revision is pinned by content hash (`run.py` records it) plus the
-  repo-memory commit SHA in each run report.
+- Three seeded runs on a deterministic actor exercise the harness, not
+  independent agent behavior.
 
 ## Running
 

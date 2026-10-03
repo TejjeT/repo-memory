@@ -5,6 +5,7 @@ milestone M-2027-01. Do not upgrade this repository's `maven.compiler.release`
 before that milestone. This exception takes precedence over the enterprise
 Java 25 runtime policy within the legacy-settlement scope.
 
-Background: per incident INC-2024-118 (restricted), the settlement ledger
-client exhibits undefined behavior on newer runtimes; the vendor fix is
-scheduled alongside the M-2027-01 retirement.
+Background (approved public summary): the settlement ledger client is not yet
+certified on newer runtimes; certification is scheduled alongside the
+M-2027-01 retirement. Detailed root-cause records are restricted to the
+incident review group and are not part of this document.
