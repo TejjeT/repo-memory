@@ -1,0 +1,30 @@
+{
+  "id": "EA-005",
+  "type": "constraint",
+  "content": "Gateway retries may be configured up to three attempts.",
+  "scope": {
+    "organization": "Acme",
+    "domain": "Payments",
+    "system": "Settlement Platform"
+  },
+  "status": "superseded",
+  "importance": "high",
+  "confidence": 1.0,
+  "owner": "payments-platform",
+  "provenance": [
+    {
+      "type": "adr",
+      "uri": "github://acme/settlement-engine/docs/adr/0029.md"
+    }
+  ],
+  "superseded_by": ["EA-006"],
+  "authorization": {
+    "inherit_from_scope": true,
+    "source_aligned": true
+  },
+  "effective_from": "2025-08-01T00:00:00Z",
+  "created_at": "2025-08-01T00:00:00Z",
+  "created_by": "payments-platform",
+  "approved_at": "2025-08-01T00:00:00Z",
+  "approved_by": "architecture-review-board"
+}
