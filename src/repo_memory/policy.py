@@ -7,9 +7,9 @@ supersession, and explicit overrides.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Iterable
 
 from .models import EngineeringAssertion, Scope
 
