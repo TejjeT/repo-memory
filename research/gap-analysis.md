@@ -16,7 +16,7 @@ Test: model a realistic multi-repository application and compare how existing sy
 
 Most coding products optimize memory for their own agent surfaces. Repository instruction files are portable but static. General memory systems are portable but usually lack engineering semantics.
 
-Hypothesis: a small open memory contract plus MCP/API interface could let Codex, Claude Code, Copilot, Cursor, CI agents, and internal agents consume the same governed engineering memory.
+Hypothesis: a small open memory contract plus MCP/API interface could let multiple coding-agent runtimes, CI agents, and internal agents consume the same governed engineering memory.
 
 Test: build one memory service and demonstrate identical retrieval from at least two agent runtimes.
 
