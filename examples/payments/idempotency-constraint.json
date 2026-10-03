@@ -1,0 +1,43 @@
+{
+  "id": "EA-002",
+  "type": "incident-derived-constraint",
+  "content": "Idempotency keys must survive retries across gateway, queue, and worker boundaries.",
+  "rationale": "Incident INC-412 demonstrated duplicate settlement when retry metadata was regenerated.",
+  "scope": {
+    "organization": "Acme",
+    "domain": "Payments",
+    "system": "Settlement Platform"
+  },
+  "applies_to": [
+    {"kind": "repository", "id": "payment-api"},
+    {"kind": "repository", "id": "settlement-engine"},
+    {"kind": "repository", "id": "payment-worker"}
+  ],
+  "status": "approved",
+  "importance": "critical",
+  "confidence": 1.0,
+  "owner": "payments-platform",
+  "provenance": [
+    {
+      "type": "incident",
+      "uri": "incident://INC-412",
+      "access_policy_ref": "incident-access:INC-412"
+    },
+    {
+      "type": "adr",
+      "uri": "github://acme/settlement-engine/docs/adr/0037.md",
+      "revision": "main"
+    }
+  ],
+  "authorization": {
+    "inherit_from_scope": true,
+    "source_aligned": true,
+    "policy_refs": ["payments-engineering"]
+  },
+  "effective_from": "2026-03-02T00:00:00Z",
+  "review_after": "2027-03-02T00:00:00Z",
+  "created_at": "2026-03-02T00:00:00Z",
+  "created_by": "payments-platform",
+  "approved_at": "2026-03-03T00:00:00Z",
+  "approved_by": "architecture-review-board"
+}
