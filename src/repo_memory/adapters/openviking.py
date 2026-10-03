@@ -15,7 +15,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from repo_memory.models import EngineeringAssertion, Scope
+from repo_memory.models import EngineeringAssertion
 from repo_memory.policy import ResolutionContext, ResolutionResult, resolve_assertions
 from repo_memory.serialization import assertion_from_json_dict, assertion_to_dict
 
