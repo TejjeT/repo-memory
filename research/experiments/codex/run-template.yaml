@@ -1,0 +1,30 @@
+condition: repo-only
+task: payment-worker-retry
+agent: codex
+model: null
+repo_revision: null
+memory_revision: null
+
+completed: null
+policy_violations: []
+
+assertions_expected:
+  - EA-002
+  - EA-006
+
+assertions_retrieved: []
+assertions_missed: []
+stale_assertions_used: []
+
+provenance_used: []
+turns: null
+context_notes: null
+
+implementation:
+  files_changed: []
+  summary: null
+
+review:
+  reviewer: null
+  outcome: null
+  notes: null
