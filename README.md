@@ -159,6 +159,18 @@ Those integrations belong at the edges.
 
 That keeps the contract and policy semantics reusable across storage and agent runtimes.
 
+## Agent instructions
+
+The canonical repository instructions live in:
+
+- [AGENTS.md](AGENTS.md)
+
+Agent-specific bootstrap files should reference the canonical instructions rather than duplicate them.
+
+For Claude Code:
+
+- [CLAUDE.md](CLAUDE.md)
+
 ## Quickstart
 
 Requires Python 3.11+.
@@ -178,7 +190,7 @@ ruff check .
 ## Example usage
 
 ```python
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from repo_memory.models import EngineeringAssertion, Provenance, Scope
 from repo_memory.policy import ResolutionContext, resolve_assertions
@@ -191,7 +203,7 @@ assertion = EngineeringAssertion(
     status="approved",
     importance="high",
     provenance=(Provenance(type="policy", uri="policy://PLAT-JAVA-2026-04"),),
-    created_at=datetime(2026, 4, 1, tzinfo=timezone.utc),
+    created_at=datetime(2026, 4, 1, tzinfo=UTC),
 )
 
 result = resolve_assertions(
@@ -203,7 +215,7 @@ result = resolve_assertions(
             system="Settlement Platform",
             repository="payment-api",
         ),
-        when=datetime.now(timezone.utc),
+        when=datetime.now(UTC),
     ),
 )
 
@@ -222,6 +234,7 @@ Current work includes:
 - OpenViking deep dive
 - Copilot vs OpenViking vs repo-memory benchmark
 - a multi-repository payments experiment
+- coding-agent evaluation
 - memory-worthiness research
 
 Start here:
@@ -230,6 +243,7 @@ Start here:
 - [research/industry-landscape.md](research/industry-landscape.md)
 - [research/benchmarks/copilot-openviking-repomemory.md](research/benchmarks/copilot-openviking-repomemory.md)
 - [research/experiments/payments-system/README.md](research/experiments/payments-system/README.md)
+- [research/experiments/coding-agent/README.md](research/experiments/coding-agent/README.md)
 
 ## Current architectural hypothesis
 
@@ -247,7 +261,7 @@ GitHub / ADRs / Incidents / Policies / Catalog
           pluggable context backend
               (e.g. OpenViking)
                     ↓
-      Codex / Claude / Copilot / Cursor
+            coding-agent runtimes
 ```
 
 The backend remains intentionally replaceable.
