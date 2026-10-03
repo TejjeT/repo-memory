@@ -1,198 +1,311 @@
 # repo-memory
 
-**Persistent, permission-aware memory for software repositories and AI coding agents.**
+**An open engineering-memory contract for durable context across repositories, systems, and agent runtimes.**
 
-AI coding agents can read a repository. They can inspect its current state, search its history, and retrieve documentation. What they usually cannot do is remember the *reasoning* that shaped the repository — architectural decisions, failed approaches, migration lessons, ownership boundaries, security constraints, and organization-wide engineering context.
+AI coding agents can read code, search history, and retrieve documentation. What they often cannot preserve reliably is the **durable engineering reasoning** that shaped a system:
 
-**repo-memory** explores a durable memory layer for repositories and the organizations around them.
+- architectural decisions
+- incident lessons
+- approved exceptions
+- cross-repository constraints
+- ownership boundaries
+- rejected approaches
+- migration rules
+- organization-wide platform policies
 
-> Context tells an agent what exists. Memory helps explain why it exists.
+> Context tells an agent what exists. Engineering memory explains why it exists, where it applies, and whether it is still valid.
 
-## The problem
+## Project status
 
-A fresh coding agent entering a repository may be able to reconstruct a lot from source code, but important context is often distributed across:
+Early research + reference implementation.
+
+The project currently focuses on three things:
+
+1. **Engineering Assertion specification** — a typed contract for durable engineering knowledge.
+2. **Deterministic policy resolution** — scope, lifecycle, overrides, supersession, and conflicts without asking an LLM to invent precedence.
+3. **Industry benchmarking** — comparing GitHub Copilot Memory, OpenViking, Cursor, AgentCore, Graphiti, and related systems to identify real gaps before building infrastructure.
+
+The current architectural hypothesis is:
+
+> repo-memory should be a reusable engineering-memory protocol and policy layer, not another generic vector database.
+
+## Why this exists
+
+A fresh coding agent may be able to reconstruct current code, but important context is often scattered across:
 
 - pull requests and review threads
-- ADRs and design docs
+- ADRs and design documents
 - incidents and postmortems
-- Slack or Teams discussions
-- issue trackers
-- developer portals and service catalogs
+- service catalogs
 - security findings
-- tribal knowledge
+- tickets
+- platform policies
+- human tribal knowledge
 
-Examples of context that should survive individual conversations:
+Examples:
 
-- "Java 17 → 25 migrations in this organization also require Jakarta migration."
-- "This authentication pattern was rejected because it bypassed the enterprise identity layer."
-- "Repository X owns the API contract; repository Y owns the runtime."
-- "A previous implementation caused a production incident; do not reintroduce it."
-- "This odd-looking design is intentional and documented in ADR-27."
+- “Java 17 → 25 migrations in this organization also require Jakarta migration.”
+- “This repository is temporarily exempt from the Java 25 runtime policy until retirement.”
+- “Idempotency keys must survive queue boundaries because a prior incident caused duplicate settlement.”
+- “Repository A owns the API contract; repository B owns the implementation.”
+- “Gateway retries were deliberately removed; do not reintroduce them.”
 
-Without durable memory, each agent starts from zero and repeatedly rediscovers the same facts.
+These are not just documents. They are **engineering assertions** with scope, evidence, lifecycle, and ownership.
 
-## Thesis
+## Core abstraction: Engineering Assertion
 
-Repository memory should be:
+A durable assertion is a structured engineering statement.
 
-1. **Hierarchical** — organization → domain → system → repository → component → branch/PR.
-2. **Permission-aware** — retrieval must respect the caller's access.
-3. **Provenanced** — memories should link back to evidence.
-4. **Freshness-aware** — memory can decay, expire, or require reconfirmation.
-5. **Human-governed** — important memories can be proposed by agents but approved by people.
-6. **Agent-neutral** — Claude Code, Codex, Copilot, IDE agents, CI agents, and internal tooling should be able to consume the same memory.
-7. **Useful without replacing source-of-truth systems** — memory complements Git, documentation, service catalogs, and ticketing systems.
-
-## A simple mental model
-
-```text
-Organization
-   │
-   ├── Domain
-   │     │
-   │     └── System / Application
-   │             │
-   │             └── Repository
-   │                    │
-   │                    ├── Component
-   │                    └── Branch / PR
-   │
-   └── Enterprise policies and learned patterns
-```
-
-Each memory has content plus metadata such as scope, provenance, permissions, confidence, freshness, and relationships.
-
-## Initial workflow
-
-The first end-to-end workflow we want to prove:
-
-```text
-Agent investigates issue
-        ↓
-Discovers durable context
-        ↓
-Proposes a memory
-        ↓
-Human reviews / approves
-        ↓
-Memory becomes available to future agents
-        ↓
-Relevant memory is injected on demand
-```
-
-This makes memory a continuously improving organizational asset rather than a static vector index.
-
-## What repo-memory is not
-
-This project is **not** intended to be:
-
-- another generic RAG framework
-- a replacement for Git history
-- a documentation dumping ground
-- a hidden agent scratchpad
-- an ungoverned knowledge graph
-- a system that blindly stores every conversation
-
-The goal is to identify the small amount of durable context that materially improves future engineering decisions.
-
-## Architecture direction
-
-The initial architecture separates four concerns:
-
-- **Ingestion** — proposed memories from humans, agents, GitHub, CI/CD, service catalogs, incidents, etc.
-- **Memory service** — validation, lifecycle, provenance, scope, and policy.
-- **Storage / retrieval** — deterministic metadata filtering plus semantic retrieval where appropriate.
-- **Interfaces** — REST API, MCP server, CLI, and integrations.
-
-See [docs/architecture.md](docs/architecture.md).
-
-## Memory model
-
-A memory is more than text.
+Example:
 
 ```json
 {
-  "id": "mem_123",
+  "id": "EA-002",
+  "type": "incident-derived-constraint",
+  "content": "Idempotency keys must survive retries across gateway, queue, and worker boundaries.",
   "scope": {
-    "organization": "example",
-    "system": "payments",
-    "repository": "checkout-service"
+    "organization": "Acme",
+    "domain": "Payments",
+    "system": "Settlement Platform"
   },
-  "type": "architecture-decision",
-  "content": "Use the shared auth middleware for all externally exposed endpoints.",
-  "provenance": [
-    {
-      "type": "adr",
-      "uri": "github://example/checkout-service/docs/adr/0027.md"
-    }
+  "applies_to": [
+    {"kind": "repository", "id": "payment-api"},
+    {"kind": "repository", "id": "settlement-engine"},
+    {"kind": "repository", "id": "payment-worker"}
   ],
-  "confidence": 0.98,
   "status": "approved",
-  "freshness": {
-    "review_after": "2027-01-01"
-  }
+  "importance": "critical",
+  "provenance": [
+    {"type": "incident", "uri": "incident://INC-412"},
+    {"type": "adr", "uri": "github://acme/settlement-engine/docs/adr/0037.md"}
+  ],
+  "created_at": "2026-03-02T00:00:00Z"
 }
 ```
 
-See [docs/memory-model.md](docs/memory-model.md).
+The draft machine-readable contract lives at:
+
+- [spec/engineering-assertion.schema.json](spec/engineering-assertion.schema.json)
+
+## Deterministic policy semantics
+
+The policy engine does **not** use an LLM to decide which rules win.
+
+Resolution order:
+
+```text
+authorization
+    ↓
+lifecycle
+    ↓
+scope / explicit applicability
+    ↓
+supersession
+    ↓
+explicit overrides
+    ↓
+conflict reporting
+    ↓
+stable ordering
+```
+
+See:
+
+- [docs/applicability-and-precedence.md](docs/applicability-and-precedence.md)
+
+Important rules include:
+
+- authorization constrains the candidate set first
+- parent scopes apply to descendants
+- explicit repository targets cannot cross the organization boundary in v0
+- exceptions override only assertion IDs they explicitly name
+- superseded assertions remain historically inspectable
+- conflicts are surfaced, not guessed away
+
+## Repository layout
+
+```text
+repo-memory/
+├── spec/
+│   └── engineering-assertion.schema.json
+├── src/repo_memory/
+│   ├── models.py
+│   ├── loader.py
+│   └── policy.py
+├── tests/
+├── examples/
+│   └── payments/
+├── docs/
+├── research/
+│   ├── benchmarks/
+│   ├── vendors/
+│   ├── open-source/
+│   └── experiments/
+└── ROADMAP.md
+```
+
+### Design boundary
+
+The core package intentionally does **not** depend on:
+
+- a web framework
+- an ORM
+- a vector database
+- an LLM SDK
+- OpenViking
+- MCP
+
+Those integrations belong at the edges.
+
+That keeps the contract and policy semantics reusable across storage and agent runtimes.
+
+## Quickstart
+
+Requires Python 3.11+.
+
+```bash
+git clone https://github.com/TejjeT/repo-memory.git
+cd repo-memory
+
+python -m venv .venv
+source .venv/bin/activate
+
+pip install -e ".[dev]"
+pytest
+ruff check .
+```
+
+## Example usage
+
+```python
+from datetime import datetime, timezone
+
+from repo_memory.models import EngineeringAssertion, Provenance, Scope
+from repo_memory.policy import ResolutionContext, resolve_assertions
+
+assertion = EngineeringAssertion(
+    id="EA-001",
+    type="policy",
+    content="New Java services must target Java 25.",
+    scope=Scope(organization="Acme"),
+    status="approved",
+    importance="high",
+    provenance=(Provenance(type="policy", uri="policy://PLAT-JAVA-2026-04"),),
+    created_at=datetime(2026, 4, 1, tzinfo=timezone.utc),
+)
+
+result = resolve_assertions(
+    [assertion],
+    ResolutionContext(
+        scope=Scope(
+            organization="Acme",
+            domain="Payments",
+            system="Settlement Platform",
+            repository="payment-api",
+        ),
+        when=datetime.now(timezone.utc),
+    ),
+)
+
+print([item.id for item in result.active])
+```
+
+## Research program
+
+The research folder is first-class project material, not background notes.
+
+Current work includes:
+
+- industry landscape
+- common benchmark framework
+- GitHub Copilot Memory deep dive
+- OpenViking deep dive
+- Copilot vs OpenViking vs repo-memory benchmark
+- a multi-repository payments experiment
+- memory-worthiness research
+
+Start here:
+
+- [research/README.md](research/README.md)
+- [research/industry-landscape.md](research/industry-landscape.md)
+- [research/benchmarks/copilot-openviking-repomemory.md](research/benchmarks/copilot-openviking-repomemory.md)
+- [research/experiments/payments-system/README.md](research/experiments/payments-system/README.md)
+
+## Current architectural hypothesis
+
+The first implementation should avoid rebuilding generic memory infrastructure.
+
+A likely architecture is:
+
+```text
+GitHub / ADRs / Incidents / Policies / Catalog
+                    ↓
+           Engineering Assertions
+                    ↓
+     repo-memory contract + policy layer
+                    ↓
+          pluggable context backend
+              (e.g. OpenViking)
+                    ↓
+      Codex / Claude / Copilot / Cursor
+```
+
+The backend remains intentionally replaceable.
 
 ## Design principles
 
-### Deterministic before semantic
+### Engineering semantics before embeddings
 
-If a caller asks for memories about a known repository, system, policy, or component, metadata and relationships should narrow the search first. Embeddings are useful for relevance, not for reconstructing identity and access boundaries.
+Identity, scope, authorization, lifecycle, and applicability are deterministic metadata problems.
 
-### Memory should carry evidence
+Semantic ranking may improve recall later, but it must not reconstruct access boundaries or policy precedence.
 
-An important memory without provenance is just another assertion. Wherever possible, a memory should reference the commit, ADR, issue, incident, PR, or human decision that created it.
+### Evidence matters
 
-### Retrieval is part of authorization
+Important assertions should point back to the commit, ADR, PR, incident, policy, catalog entity, or human decision that supports them.
 
-It is not sufficient to authorize the API call and then search a global vector store. Permissions must constrain the candidate memory set *before* semantic ranking.
+### Memory should be selective
 
-### Agents propose; humans govern
+The project is not trying to persist every fact an LLM notices.
 
-Agents are excellent at identifying reusable context. They should be able to propose memory. High-impact memory should have explicit ownership and review.
+A useful durable assertion should be difficult or costly to rediscover, likely to matter again, actionable, scoped, and evidence-backed.
 
-### Forgetting is a feature
+### Forgetting and supersession are features
 
-Engineering knowledge changes. Memories need expiry, supersession, confidence, and review semantics.
+Engineering knowledge changes. A memory system that only accumulates facts eventually becomes a misinformation system.
+
+## What repo-memory is not
+
+It is not intended to be:
+
+- another generic RAG framework
+- a repository code index
+- a hidden agent scratchpad
+- a vector database wrapper
+- an ungoverned knowledge graph
+- a replacement for source-of-truth systems
+- a dump of every conversation
 
 ## Roadmap
 
-The first milestones are intentionally small:
+Near-term focus:
 
-- **M0 — Contract:** memory schema + API semantics
-- **M1 — Local prototype:** save, search, recall, supersede
-- **M2 — MCP interface:** expose repo memory to coding agents
-- **M3 — GitHub integration:** propose memories from PRs/issues
-- **M4 — Permission model:** organization/repository/user-aware retrieval
-- **M5 — Evaluation:** measure whether memory actually improves agent outcomes
+- finish v0 contract semantics
+- validate example assertions
+- build the OpenViking-backed experiment
+- test permission-aware retrieval
+- evaluate cross-repository tasks
+- compare repo-only vs live retrieval vs durable engineering assertions
 
 See [ROADMAP.md](ROADMAP.md).
 
-## Open questions
-
-Some of the questions this project will explore:
-
-- What deserves to become durable memory?
-- What should remain in source systems and simply be retrieved?
-- How should enterprise, system, and repository memory interact?
-- How do we detect contradictory or stale memories?
-- When should memory be automatically accepted versus reviewed?
-- Can we measure memory quality using downstream engineering outcomes?
-- How much context should an agent receive proactively versus fetch on demand?
-- How should memory work across repositories while preserving access controls?
-
-## Status
-
-**Early design / experimental.**
-
-The goal right now is to make the model precise, build a deliberately small reference implementation, and validate it against real software-engineering workflows.
-
 ## Contributing
 
-Ideas, counterexamples, architecture critiques, and experiments are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Architecture critiques and counterexamples are especially useful.
+
+If an existing system already solves a problem better, the project should adopt it rather than recreate it.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
