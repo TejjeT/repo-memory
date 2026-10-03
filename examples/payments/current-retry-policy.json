@@ -1,0 +1,35 @@
+{
+  "id": "EA-006",
+  "type": "incident-derived-constraint",
+  "content": "Retry must exist at exactly one orchestration layer for settlement submission; gateway and client retries must not both be enabled.",
+  "scope": {
+    "organization": "Acme",
+    "domain": "Payments",
+    "system": "Settlement Platform"
+  },
+  "status": "approved",
+  "importance": "critical",
+  "confidence": 1.0,
+  "owner": "payments-platform",
+  "provenance": [
+    {
+      "type": "incident",
+      "uri": "incident://INC-463"
+    },
+    {
+      "type": "adr",
+      "uri": "github://acme/settlement-engine/docs/adr/0041.md"
+    }
+  ],
+  "supersedes": ["EA-005"],
+  "authorization": {
+    "inherit_from_scope": true,
+    "source_aligned": true
+  },
+  "effective_from": "2026-06-12T00:00:00Z",
+  "review_after": "2027-06-12T00:00:00Z",
+  "created_at": "2026-06-12T00:00:00Z",
+  "created_by": "payments-platform",
+  "approved_at": "2026-06-13T00:00:00Z",
+  "approved_by": "architecture-review-board"
+}
