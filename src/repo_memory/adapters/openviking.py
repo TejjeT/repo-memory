@@ -99,15 +99,18 @@ class OpenVikingAssertionStore:
     def list_for_organization(self, organization: str) -> tuple[EngineeringAssertion, ...]:
         """Load readable assertions within one organization.
 
-        OpenViking ACLs are expected to filter unreadable descendants. Entries
-        explicitly marked as access denied are ignored.
+        Traversal is done level by level instead of relying on the server's
+        recursive listing: live-server verification showed recursive ``ls``
+        may return descendant directories without their files. OpenViking
+        ACLs are expected to filter unreadable descendants. Entries
+        explicitly marked as access denied are ignored, and denied
+        directories are not descended into.
         """
 
         root = f"{self._config.normalized_root()}/{_slug(organization)}/"
-        entries = self._client.ls(root, recursive=True)
 
         assertions: list[EngineeringAssertion] = []
-        for entry in entries:
+        for entry in _walk_files(self._client, root):
             uri = _entry_uri(entry)
             if uri is None or not uri.endswith(".json"):
                 continue
@@ -173,6 +176,24 @@ def assertion_tags(assertion: EngineeringAssertion) -> list[str]:
             tags.append(f"{key}={_tag_value(value)}")
 
     return tags
+
+
+def _walk_files(client: OpenVikingClient, root: str) -> Any:
+    """Yield file entries under ``root`` via level-by-level traversal."""
+
+    stack = [root]
+    while stack:
+        directory = stack.pop()
+        for entry in client.ls(directory):
+            if _entry_access_denied(entry):
+                continue
+            uri = _entry_uri(entry)
+            if uri is None:
+                continue
+            if isinstance(entry, dict) and entry.get("isDir"):
+                stack.append(uri if uri.endswith("/") else uri + "/")
+            else:
+                yield entry
 
 
 def _entry_uri(entry: Any) -> str | None:

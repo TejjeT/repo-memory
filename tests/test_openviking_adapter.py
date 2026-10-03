@@ -42,17 +42,30 @@ class FakeOpenVikingClient:
         recursive: bool = False,
         **kwargs: Any,
     ) -> list[dict[str, Any]]:
-        assert recursive is True
-        return [
-            {
-                "uri": path,
-                "name": path.rsplit("/", 1)[-1],
-                "isDir": False,
-                **({"access": "denied"} if path in self.denied else {}),
-            }
-            for path in sorted(self.files)
-            if path.startswith(uri)
-        ]
+        # The adapter traverses level by level and never relies on the
+        # server's recursive listing; emulate a non-recursive server here.
+        assert recursive is False
+        prefix = uri if uri.endswith("/") else uri + "/"
+        children: dict[str, dict[str, Any]] = {}
+        for path in sorted(self.files):
+            if not path.startswith(prefix):
+                continue
+            rest = path[len(prefix):]
+            child, _, _ = rest.partition("/")
+            child_uri = prefix + child
+            is_dir = "/" in rest
+            entry = children.setdefault(
+                child_uri,
+                {
+                    "uri": child_uri,
+                    "name": child,
+                    "isDir": is_dir,
+                },
+            )
+            entry["isDir"] = entry["isDir"] or is_dir
+            if not is_dir and child_uri in self.denied:
+                entry["access"] = "denied"
+        return list(children.values())
 
 
 def make_assertion(

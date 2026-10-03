@@ -91,11 +91,16 @@ v0 does **not** use semantic search to determine the authoritative candidate set
 
 Instead:
 
-1. enumerate readable assertion files under the organization root using recursive `ls`
-2. skip access-denied entries
+1. traverse the organization subtree level by level with non-recursive `ls`
+2. skip access-denied entries (and do not descend into denied directories)
 3. read canonical assertion JSON
 4. run repo-memory deterministic authorization/applicability/lifecycle rules
 5. optionally add semantic ranking later within the safe set
+
+Level-by-level traversal is deliberate: live-server verification (OpenViking
+0.4.23) showed the server's recursive `ls` returns descendant directories
+without their files, so the adapter does not rely on recursive listing
+semantics.
 
 This deliberately matches the retrieval contract:
 
