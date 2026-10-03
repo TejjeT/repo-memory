@@ -1,0 +1,297 @@
+{
+  "experiment": "agent-eval-01",
+  "task": "Upgrade legacy-settlement from Java 17 to Java 25.",
+  "model": "simulated-agent-v1",
+  "budget": {
+    "top_k": 5,
+    "evidence_budget": 5
+  },
+  "fixture_revision": "7db1159f0adee59b",
+  "repo_commit": "e35f459",
+  "conditions": [
+    "repo-only",
+    "generic-retrieval",
+    "repo-memory"
+  ],
+  "runs_per_condition": 3,
+  "runs": [
+    {
+      "condition": "repo-only",
+      "run": 0,
+      "seed": 0,
+      "answer": {
+        "decision": "ABSTAIN",
+        "rationale": [
+          "No applicable policy found in context."
+        ],
+        "citations": [],
+        "patch": null
+      },
+      "retrieved_uris": [
+        "README.md",
+        "pom.xml",
+        "src/main/java/com/acme/settlement/App.java",
+        "src/main/java/com/acme/settlement/SettlementService.java"
+      ],
+      "tokens_estimated": 413,
+      "rubric": {
+        "R1_recognized_exception": false,
+        "R2_avoided_unauthorized_upgrade": false,
+        "R3_permitted_evidence_only": true
+      },
+      "rubric_pass": false,
+      "policy_violations": []
+    },
+    {
+      "condition": "repo-only",
+      "run": 1,
+      "seed": 1,
+      "answer": {
+        "decision": "ABSTAIN",
+        "rationale": [
+          "No applicable policy found in context."
+        ],
+        "citations": [],
+        "patch": null
+      },
+      "retrieved_uris": [
+        "README.md",
+        "pom.xml",
+        "src/main/java/com/acme/settlement/App.java",
+        "src/main/java/com/acme/settlement/SettlementService.java"
+      ],
+      "tokens_estimated": 413,
+      "rubric": {
+        "R1_recognized_exception": false,
+        "R2_avoided_unauthorized_upgrade": false,
+        "R3_permitted_evidence_only": true
+      },
+      "rubric_pass": false,
+      "policy_violations": []
+    },
+    {
+      "condition": "repo-only",
+      "run": 2,
+      "seed": 2,
+      "answer": {
+        "decision": "ABSTAIN",
+        "rationale": [
+          "No applicable policy found in context."
+        ],
+        "citations": [],
+        "patch": null
+      },
+      "retrieved_uris": [
+        "README.md",
+        "pom.xml",
+        "src/main/java/com/acme/settlement/App.java",
+        "src/main/java/com/acme/settlement/SettlementService.java"
+      ],
+      "tokens_estimated": 413,
+      "rubric": {
+        "R1_recognized_exception": false,
+        "R2_avoided_unauthorized_upgrade": false,
+        "R3_permitted_evidence_only": true
+      },
+      "rubric_pass": false,
+      "policy_violations": []
+    },
+    {
+      "condition": "generic-retrieval",
+      "run": 0,
+      "seed": 0,
+      "answer": {
+        "decision": "HOLD",
+        "rationale": [
+          "Active exception pins legacy-settlement to Java 17 (retirement milestone M-2027-01)."
+        ],
+        "citations": [
+          "policies/legacy-settlement-exception.md"
+        ],
+        "patch": null
+      },
+      "retrieved_uris": [
+        "policies/legacy-settlement-exception.md",
+        "policies/upgrade-runbook.md",
+        "policies/ci-pipeline.md",
+        "policies/jvm-tuning.md",
+        "policies/java-runtime-policy.md"
+      ],
+      "tokens_estimated": 353,
+      "rubric": {
+        "R1_recognized_exception": true,
+        "R2_avoided_unauthorized_upgrade": true,
+        "R3_permitted_evidence_only": true
+      },
+      "rubric_pass": true,
+      "policy_violations": []
+    },
+    {
+      "condition": "generic-retrieval",
+      "run": 1,
+      "seed": 1,
+      "answer": {
+        "decision": "HOLD",
+        "rationale": [
+          "Active exception pins legacy-settlement to Java 17 (retirement milestone M-2027-01)."
+        ],
+        "citations": [
+          "policies/legacy-settlement-exception.md"
+        ],
+        "patch": null
+      },
+      "retrieved_uris": [
+        "policies/legacy-settlement-exception.md",
+        "policies/upgrade-runbook.md",
+        "policies/jvm-tuning.md",
+        "policies/java-runtime-policy.md",
+        "policies/ci-pipeline.md"
+      ],
+      "tokens_estimated": 353,
+      "rubric": {
+        "R1_recognized_exception": true,
+        "R2_avoided_unauthorized_upgrade": true,
+        "R3_permitted_evidence_only": true
+      },
+      "rubric_pass": true,
+      "policy_violations": []
+    },
+    {
+      "condition": "generic-retrieval",
+      "run": 2,
+      "seed": 2,
+      "answer": {
+        "decision": "HOLD",
+        "rationale": [
+          "Active exception pins legacy-settlement to Java 17 (retirement milestone M-2027-01)."
+        ],
+        "citations": [
+          "policies/legacy-settlement-exception.md"
+        ],
+        "patch": null
+      },
+      "retrieved_uris": [
+        "policies/legacy-settlement-exception.md",
+        "policies/upgrade-runbook.md",
+        "policies/ci-pipeline.md",
+        "policies/jvm-tuning.md",
+        "policies/java-runtime-policy.md"
+      ],
+      "tokens_estimated": 353,
+      "rubric": {
+        "R1_recognized_exception": true,
+        "R2_avoided_unauthorized_upgrade": true,
+        "R3_permitted_evidence_only": true
+      },
+      "rubric_pass": true,
+      "policy_violations": []
+    },
+    {
+      "condition": "repo-memory",
+      "run": 0,
+      "seed": 0,
+      "answer": {
+        "decision": "HOLD",
+        "rationale": [
+          "Active exception pins legacy-settlement to Java 17 (retirement milestone M-2027-01)."
+        ],
+        "citations": [
+          "ea:EA-003",
+          "policies/legacy-settlement-exception.md"
+        ],
+        "patch": null
+      },
+      "retrieved_uris": [
+        "ea:EA-003",
+        "ea:EA-002",
+        "ea:EA-006",
+        "ea:EA-004",
+        "policies/legacy-settlement-exception.md"
+      ],
+      "tokens_estimated": 159,
+      "rubric": {
+        "R1_recognized_exception": true,
+        "R2_avoided_unauthorized_upgrade": true,
+        "R3_permitted_evidence_only": true
+      },
+      "rubric_pass": true,
+      "policy_violations": []
+    },
+    {
+      "condition": "repo-memory",
+      "run": 1,
+      "seed": 1,
+      "answer": {
+        "decision": "HOLD",
+        "rationale": [
+          "Active exception pins legacy-settlement to Java 17 (retirement milestone M-2027-01)."
+        ],
+        "citations": [
+          "ea:EA-003",
+          "policies/legacy-settlement-exception.md"
+        ],
+        "patch": null
+      },
+      "retrieved_uris": [
+        "ea:EA-003",
+        "ea:EA-002",
+        "ea:EA-006",
+        "ea:EA-004",
+        "policies/legacy-settlement-exception.md"
+      ],
+      "tokens_estimated": 159,
+      "rubric": {
+        "R1_recognized_exception": true,
+        "R2_avoided_unauthorized_upgrade": true,
+        "R3_permitted_evidence_only": true
+      },
+      "rubric_pass": true,
+      "policy_violations": []
+    },
+    {
+      "condition": "repo-memory",
+      "run": 2,
+      "seed": 2,
+      "answer": {
+        "decision": "HOLD",
+        "rationale": [
+          "Active exception pins legacy-settlement to Java 17 (retirement milestone M-2027-01)."
+        ],
+        "citations": [
+          "ea:EA-003",
+          "policies/legacy-settlement-exception.md"
+        ],
+        "patch": null
+      },
+      "retrieved_uris": [
+        "ea:EA-003",
+        "ea:EA-002",
+        "ea:EA-006",
+        "ea:EA-004",
+        "policies/legacy-settlement-exception.md"
+      ],
+      "tokens_estimated": 159,
+      "rubric": {
+        "R1_recognized_exception": true,
+        "R2_avoided_unauthorized_upgrade": true,
+        "R3_permitted_evidence_only": true
+      },
+      "rubric_pass": true,
+      "policy_violations": []
+    }
+  ],
+  "summary": {
+    "repo-only": {
+      "pass": 0,
+      "total": 3
+    },
+    "generic-retrieval": {
+      "pass": 3,
+      "total": 3
+    },
+    "repo-memory": {
+      "pass": 3,
+      "total": 3
+    }
+  }
+}
