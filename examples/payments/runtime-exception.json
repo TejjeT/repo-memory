@@ -1,0 +1,31 @@
+{
+  "id": "EA-003",
+  "type": "approved-exception",
+  "content": "legacy-settlement remains on Java 17 until retirement milestone M-2027-01.",
+  "scope": {
+    "organization": "Acme",
+    "domain": "Payments",
+    "system": "Settlement Platform",
+    "repository": "legacy-settlement"
+  },
+  "status": "approved",
+  "importance": "high",
+  "confidence": 1.0,
+  "owner": "settlement-runtime",
+  "provenance": [
+    {
+      "type": "document",
+      "uri": "architecture-exception://EX-93"
+    }
+  ],
+  "authorization": {
+    "inherit_from_scope": true,
+    "source_aligned": true
+  },
+  "effective_from": "2026-08-01T00:00:00Z",
+  "review_after": "2027-01-15T00:00:00Z",
+  "created_at": "2026-08-01T00:00:00Z",
+  "created_by": "architecture-review-board",
+  "approved_at": "2026-08-01T00:00:00Z",
+  "approved_by": "architecture-review-board"
+}
