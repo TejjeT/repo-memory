@@ -1,0 +1,28 @@
+{
+  "id": "EA-001",
+  "type": "policy",
+  "content": "New Java services must target Java 25 unless an approved exception exists.",
+  "scope": {
+    "organization": "Acme"
+  },
+  "status": "approved",
+  "importance": "high",
+  "confidence": 1.0,
+  "owner": "platform-engineering",
+  "provenance": [
+    {
+      "type": "policy",
+      "uri": "policy://PLAT-JAVA-2026-04"
+    }
+  ],
+  "authorization": {
+    "inherit_from_scope": true,
+    "source_aligned": true
+  },
+  "effective_from": "2026-04-01T00:00:00Z",
+  "review_after": "2027-04-01T00:00:00Z",
+  "created_at": "2026-04-01T00:00:00Z",
+  "created_by": "platform-engineering",
+  "approved_at": "2026-04-01T00:00:00Z",
+  "approved_by": "architecture-review-board"
+}
