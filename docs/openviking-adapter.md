@@ -151,11 +151,12 @@ Unit tests cover:
 
 Tests use an in-memory compatible client so CI does not require an OpenViking server.
 
-## What is not yet proven
+## Live verification status (OpenViking 0.4.23, 2026-10-03)
 
-A live-server smoke test is still required before calling the integration production-ready.
+The live-server checks below were all verified; the smoke test is no longer
+a pending requirement.
 
-Run it against a reachable server with:
+Run the smoke test against a reachable server with:
 
 ```bash
 OPENVIKING_URL=http://localhost:1933 \\
@@ -163,13 +164,30 @@ OPENVIKING_API_KEY=... \\
 python scripts/openviking_smoke.py
 ```
 
-That test should verify:
+Verified:
 
-- official `SyncHTTPClient` compatibility
-- recursive `ls` response shape
-- ACL-denied entry behavior
-- read/write semantics
-- semantic/vector refresh behavior
+- official `SyncHTTPClient` compatibility — write, read, non-recursive `ls`,
+  and policy resolution all pass via `scripts/openviking_smoke.py`
+- recursive `ls` response shape — verified, and found wanting: the server
+  returns descendant directories without their files, so the adapter
+  traverses level by level instead of relying on recursive `ls`
+- ACL-denied entry behavior — verified live in `api_key` mode with ACL
+  enforcement on: `read` and `ls`-into a restricted path raise
+  `PermissionDeniedError`; the restricted directory name still appears in
+  the parent listing, so the adapter handles denial at descent time
+- read/write semantics — verified through the smoke test and the ACL
+  fixtures
+- embedding generation — true local embeddings verified
+  (`llama-cpp-python`, 512-dim vectors); `write(wait=True)` completes where
+  it previously timed out
+
+Still open:
+
+- semantic *search* returned zero hits in manual probes; parked as
+  non-blocking because the adapter deliberately does not use vector search
+  for the candidate set
+- the #10 written verdict on whether OpenViking-backed storage/retrieval is
+  sufficient for v0
 
 ## Known v0 limitations
 
