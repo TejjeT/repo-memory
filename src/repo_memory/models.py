@@ -13,10 +13,7 @@ from typing import Iterable
 
 @dataclass(frozen=True, slots=True)
 class Scope:
-    """Hierarchical engineering scope.
-
-    Scope values are optional because an assertion may stop at any level.
-    """
+    """Hierarchical engineering scope."""
 
     organization: str | None = None
     domain: str | None = None
@@ -29,19 +26,7 @@ class Scope:
     def as_path(self) -> tuple[str, ...]:
         """Return populated scope levels in hierarchy order."""
 
-        return tuple(
-            value
-            for value in (
-                self.organization,
-                self.domain,
-                self.system,
-                self.repository,
-                self.component,
-                self.branch,
-                self.pull_request,
-            )
-            if value is not None
-        )
+        return tuple(value for value in _scope_values(self) if value is not None)
 
     def depth(self) -> int:
         """Return the number of populated hierarchical levels."""
@@ -49,18 +34,19 @@ class Scope:
         return len(self.as_path())
 
     def applies_to(self, target: "Scope") -> bool:
-        """Return True when this scope is an ancestor/equal of the target scope.
-
-        A populated level must match the target at the same level. Missing levels
-        behave like wildcards below the last populated parent.
-        """
+        """Return whether this scope is an ancestor/equal of the target."""
 
         for own, other in zip(_scope_values(self), _scope_values(target), strict=True):
-            if own is None:
-                continue
-            if other != own:
+            if own is not None and other != own:
                 return False
         return True
+
+    def same_organization(self, target: "Scope") -> bool:
+        """Return whether explicit targeting stays inside the same organization."""
+
+        if self.organization is None or target.organization is None:
+            return False
+        return self.organization == target.organization
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,12 +87,13 @@ class EngineeringAssertion:
     effective_from: datetime | None = None
     review_after: datetime | None = None
     expires_at: datetime | None = None
+    overrides: tuple[str, ...] = field(default_factory=tuple)
     supersedes: tuple[str, ...] = field(default_factory=tuple)
     superseded_by: tuple[str, ...] = field(default_factory=tuple)
     conflicts_with: tuple[str, ...] = field(default_factory=tuple)
 
     def active_at(self, when: datetime) -> bool:
-        """Return True when lifecycle and effective dates make this assertion active."""
+        """Return whether lifecycle and effective dates make this assertion active."""
 
         if self.status != "approved":
             return False
@@ -117,7 +104,7 @@ class EngineeringAssertion:
         return True
 
     def explicitly_targets_repository(self, repository: str | None) -> bool:
-        """Return True if applies_to explicitly contains the repository."""
+        """Return whether applies_to explicitly contains the repository."""
 
         if repository is None:
             return False
