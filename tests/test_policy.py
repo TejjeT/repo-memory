@@ -1,9 +1,9 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from repo_memory.models import EngineeringAssertion, Provenance, Scope, Target
 from repo_memory.policy import ResolutionContext, resolve_assertions
 
-NOW = datetime(2026, 10, 3, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 3, tzinfo=UTC)
 SOURCE = (Provenance(type="document", uri="test://source"),)
 
 
