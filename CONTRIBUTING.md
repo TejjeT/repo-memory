@@ -1,43 +1,135 @@
 # Contributing
 
-repo-memory is an early-stage exploration of durable engineering memory for software repositories and AI agents.
+repo-memory is an early-stage research and reference project for durable engineering memory.
 
-Contributions are welcome, especially when they challenge the assumptions in the design.
+The project values **clear semantics, small reusable components, and evidence-backed design** over feature count.
 
-## Useful contributions
+## Development setup
 
-- concrete examples of repository context that agents repeatedly miss
-- counterexamples where memory creates risk or noise
-- proposals for permission-aware retrieval
-- memory lifecycle designs
-- evaluation methods
-- small reference implementations
-- MCP integrations
-- GitHub workflow experiments
-- approaches for stale or contradictory memory
+Requires Python 3.11+.
 
-## Design philosophy
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
 
-Please prefer the smallest mechanism that can test an idea.
+pytest
+ruff check .
+```
 
-In particular, avoid adding infrastructure simply because it is common in AI architectures. A vector database, knowledge graph, event stream, or agent framework should earn its place through a demonstrated requirement.
+## Code principles
 
-## Issues
+### Keep the core backend-agnostic
 
-For design discussions, open an issue describing:
+Code under `src/repo_memory/` should not depend directly on:
 
-1. the engineering scenario
-2. the context an agent currently lacks
-3. why the source repository alone is insufficient
-4. what durable memory would change
-5. potential risks or failure modes
+- web frameworks
+- databases or ORMs
+- vector stores
+- model SDKs
+- MCP
+- vendor-specific context systems
+
+Adapters belong in separate integration modules.
+
+### Prefer deterministic policy over model judgment
+
+Authorization, applicability, supersession, overrides, and conflict detection should be explicit and testable.
+
+Do not use an LLM where a deterministic rule can define the contract.
+
+### Make relationships explicit
+
+Avoid implicit precedence.
+
+For example:
+
+```json
+{
+  "type": "approved-exception",
+  "overrides": ["EA-001"]
+}
+```
+
+is preferred over “a narrower exception probably wins.”
+
+### Preserve history
+
+Do not overwrite important historical assertions merely because guidance changed.
+
+Prefer explicit relationships such as:
+
+- `supersedes`
+- `superseded_by`
+- `conflicts_with`
+
+### Keep examples realistic
+
+Examples should model real engineering situations:
+
+- cross-repository constraints
+- incident-derived lessons
+- migration rules
+- policy exceptions
+- ownership boundaries
+- rejected approaches
+
+## Tests
+
+Every policy semantic should have a focused unit test.
+
+At minimum, changes to resolution behavior should cover:
+
+- scope inheritance
+- organization boundaries
+- explicit applicability
+- lifecycle
+- overrides
+- supersession
+- conflicts
+- authorization hooks
+
+## Research contributions
+
+Research is a first-class contribution.
+
+When adding a vendor, project, or paper:
+
+1. Prefer primary documentation or original papers.
+2. Record the observation date.
+3. Separate documented behavior from interpretation.
+4. Use the common benchmark dimensions.
+5. Identify what repo-memory should borrow.
+6. Identify what remains unresolved.
+7. Do not manufacture differentiation.
+
+See [research/benchmark-framework.md](research/benchmark-framework.md).
 
 ## Pull requests
 
-Keep PRs narrow and explain the architectural reason for the change.
+Keep PRs narrow.
 
-When introducing a dependency or subsystem, include the use case that requires it.
+A good PR should explain:
+
+- the engineering problem
+- the chosen behavior
+- why it belongs in the core or an adapter
+- tests proving the behavior
+- any contract compatibility impact
+
+## Issues
+
+For design discussions, include:
+
+1. scenario
+2. missing context
+3. why live source retrieval is insufficient
+4. proposed durable assertion
+5. scope
+6. provenance
+7. lifecycle implications
+8. authorization implications
 
 ## Principle
 
-The project should optimize for **useful durable context**, not maximum stored context.
+Optimize for **useful durable engineering context**, not maximum stored context.
