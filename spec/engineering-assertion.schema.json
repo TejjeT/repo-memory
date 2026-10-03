@@ -33,94 +33,57 @@
         "policy"
       ]
     },
-    "content": {
-      "type": "string",
-      "minLength": 1
-    },
-    "rationale": {
-      "type": "string"
-    },
-    "scope": {
-      "$ref": "#/$defs/scope"
-    },
+    "content": {"type": "string", "minLength": 1},
+    "rationale": {"type": "string"},
+    "scope": {"$ref": "#/$defs/scope"},
     "applies_to": {
       "type": "array",
-      "items": {
-        "$ref": "#/$defs/target"
-      },
+      "items": {"$ref": "#/$defs/target"},
       "uniqueItems": true
     },
     "status": {
       "type": "string",
-      "enum": [
-        "proposed",
-        "approved",
-        "superseded",
-        "expired",
-        "rejected",
-        "archived"
-      ]
+      "enum": ["proposed", "approved", "superseded", "expired", "rejected", "archived"]
     },
     "importance": {
       "type": "string",
       "enum": ["low", "medium", "high", "critical"]
     },
-    "confidence": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1
-    },
-    "owner": {
-      "type": "string"
-    },
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "owner": {"type": "string"},
     "provenance": {
       "type": "array",
       "minItems": 1,
-      "items": {
-        "$ref": "#/$defs/provenance"
-      }
+      "items": {"$ref": "#/$defs/provenance"}
     },
-    "effective_from": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "review_after": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "expires_at": {
-      "type": "string",
-      "format": "date-time"
+    "effective_from": {"type": "string", "format": "date-time"},
+    "review_after": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "overrides": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
     },
     "supersedes": {
       "type": "array",
-      "items": {"type": "string"}
+      "items": {"type": "string"},
+      "uniqueItems": true
     },
     "superseded_by": {
       "type": "array",
-      "items": {"type": "string"}
+      "items": {"type": "string"},
+      "uniqueItems": true
     },
     "conflicts_with": {
       "type": "array",
-      "items": {"type": "string"}
+      "items": {"type": "string"},
+      "uniqueItems": true
     },
-    "authorization": {
-      "$ref": "#/$defs/authorization"
-    },
-    "created_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "created_by": {
-      "type": "string"
-    },
-    "approved_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "approved_by": {
-      "type": "string"
-    }
+    "authorization": {"$ref": "#/$defs/authorization"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "created_by": {"type": "string"},
+    "approved_at": {"type": "string", "format": "date-time"},
+    "approved_by": {"type": "string"}
   },
   "$defs": {
     "scope": {
@@ -179,24 +142,15 @@
         "uri": {"type": "string"},
         "revision": {"type": "string"},
         "access_policy_ref": {"type": "string"},
-        "last_validated_at": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "last_validated_at": {"type": "string", "format": "date-time"}
       },
       "additionalProperties": false
     },
     "authorization": {
       "type": "object",
       "properties": {
-        "inherit_from_scope": {
-          "type": "boolean",
-          "default": true
-        },
-        "source_aligned": {
-          "type": "boolean",
-          "default": true
-        },
+        "inherit_from_scope": {"type": "boolean", "default": true},
+        "source_aligned": {"type": "boolean", "default": true},
         "policy_refs": {
           "type": "array",
           "items": {"type": "string"}
