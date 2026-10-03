@@ -1,0 +1,11 @@
+{
+  "id": "EA-invalid-missing-provenance",
+  "type": "constraint",
+  "content": "This example is intentionally invalid because provenance is required.",
+  "scope": {
+    "organization": "Acme"
+  },
+  "status": "approved",
+  "importance": "high",
+  "created_at": "2026-10-03T00:00:00Z"
+}
