@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://repo-memory.dev/schema/engineering-assertion.v0.json",
+  "title": "Engineering Assertion",
+  "description": "Draft durable engineering-memory contract.",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "content",
+    "scope",
+    "status",
+    "importance",
+    "provenance",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^EA-[A-Za-z0-9._-]+$"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "architecture-decision",
+        "constraint",
+        "incident-derived-constraint",
+        "migration-lesson",
+        "ownership-boundary",
+        "approved-exception",
+        "convention",
+        "rejected-approach",
+        "policy"
+      ]
+    },
+    "content": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/scope"
+    },
+    "applies_to": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/target"
+      },
+      "uniqueItems": true
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "approved",
+        "superseded",
+        "expired",
+        "rejected",
+        "archived"
+      ]
+    },
+    "importance": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "owner": {
+      "type": "string"
+    },
+    "provenance": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/provenance"
+      }
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_after": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "superseded_by": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "conflicts_with": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "authorization": {
+      "$ref": "#/$defs/authorization"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_by": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "scope": {
+      "type": "object",
+      "properties": {
+        "organization": {"type": "string"},
+        "domain": {"type": "string"},
+        "system": {"type": "string"},
+        "repository": {"type": "string"},
+        "component": {"type": "string"},
+        "branch": {"type": "string"},
+        "pull_request": {"type": "string"}
+      },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "organization",
+            "domain",
+            "system",
+            "repository",
+            "component",
+            "branch",
+            "pull-request"
+          ]
+        },
+        "id": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["type", "uri"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "commit",
+            "pull-request",
+            "issue",
+            "adr",
+            "incident",
+            "policy",
+            "service-catalog",
+            "security-finding",
+            "document",
+            "human-assertion"
+          ]
+        },
+        "uri": {"type": "string"},
+        "revision": {"type": "string"},
+        "access_policy_ref": {"type": "string"},
+        "last_validated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "authorization": {
+      "type": "object",
+      "properties": {
+        "inherit_from_scope": {
+          "type": "boolean",
+          "default": true
+        },
+        "source_aligned": {
+          "type": "boolean",
+          "default": true
+        },
+        "policy_refs": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
