@@ -8,9 +8,18 @@ Assembly order mirrors the retrieval contract:
 1. deterministic candidate set via :func:`resolve_assertions`
    (scope resolution -> authorization -> lifecycle filtering ->
    applicability / overrides / supersession)
-2. evidence providers may add supporting material, but only items related to
-   the authorized set; orphaned evidence is dropped and a provider can never
-   promote evidence into an assertion
+2. evidence providers receive the resolved safe candidates explicitly and may
+   add supporting material, but two boundaries are enforced before any
+   ranking or budgeting:
+
+   - relevance is not authorization: links outside the safe set are stripped
+     from ``relates_to`` (items left with no safe links are dropped), and an
+     optional ``authorize_evidence`` hook enforces caller/source
+     authorization on the evidence itself
+   - assertion authorization is not provenance authorization: provenance the
+     caller may not inspect is redacted (URIs, revisions, and policy
+     references withheld) via an optional ``authorize_provenance`` hook
+
 3. provenance is attached throughout; the evidence budget is applied last
 
 This module is backend-neutral: it defines protocols, not providers.
@@ -20,7 +29,8 @@ belong under ``adapters/``.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any, Protocol
 
@@ -32,6 +42,14 @@ from repo_memory.policy import (
     resolve_assertions,
 )
 
+#: Sentinel URI marking a redacted provenance entry. The entry keeps its
+#: ``type`` (so the caller knows what kind of evidence existed) while the
+#: URI, revision, and policy reference are withheld.
+REDACTED_URI = "redacted"
+
+#: Decides whether the caller may inspect one provenance entry's details.
+ProvenanceAuthorizationHook = Callable[[Provenance], bool]
+
 
 @dataclass(frozen=True, slots=True)
 class Evidence:
@@ -39,8 +57,8 @@ class Evidence:
 
     Evidence is never authoritative: it cannot add assertions, change
     precedence, or widen permissions. ``relates_to`` links the item to the
-    assertion ids it supports; items unrelated to the authorized set are
-    dropped during assembly.
+    assertion ids it supports; links outside the authorized set are stripped
+    during assembly, and items left with no safe links are dropped.
     """
 
     uri: str
@@ -73,7 +91,7 @@ class ContextRequest:
 
 @dataclass(frozen=True, slots=True)
 class AssembledContext:
-    """The deterministic core plus bounded retrieval assist."""
+    """The deterministic core plus bounded, caller-safe retrieval assist."""
 
     assertions: tuple[EngineeringAssertion, ...]
     evidence: tuple[Evidence, ...]
@@ -82,17 +100,52 @@ class AssembledContext:
     assembled_at: datetime | None = None
 
 
+#: Decides whether the caller may inspect one evidence item's source.
+#: Relevance is not authorization: a provider item linked to an authorized
+#: assertion is still dropped when its own source is off-limits.
+EvidenceAuthorizationHook = Callable[[Evidence], bool]
+
+
 class EvidenceProvider(Protocol):
     """Retrieval-assist source: ranks and surfaces supporting material.
 
-    Implementations must respect the caller's permissions; the assembler
-    additionally drops any evidence unrelated to the authorized assertion
-    set, so a provider can never expand authority.
+    Providers receive the resolved safe candidates explicitly so retrieval
+    can be scoped to them. Relevance is not authorization: the assembler
+    still strips out-of-scope links and enforces the evidence authorization
+    hook, so a provider can never expand authority.
     """
 
-    def collect(self, request: ContextRequest) -> tuple[Evidence, ...]:
+    def collect(
+        self,
+        request: ContextRequest,
+        candidates: tuple[EngineeringAssertion, ...],
+    ) -> tuple[Evidence, ...]:
         """Return candidate supporting evidence for the request."""
         ...
+
+
+def redact_provenance(
+    provenance: tuple[Provenance, ...],
+    authorize: ProvenanceAuthorizationHook | None,
+) -> tuple[Provenance, ...]:
+    """Return caller-safe provenance, withholding restricted details."""
+    if authorize is None:
+        return provenance
+    safe: list[Provenance] = []
+    for entry in provenance:
+        if authorize(entry):
+            safe.append(entry)
+        else:
+            safe.append(
+                replace(
+                    entry,
+                    uri=REDACTED_URI,
+                    revision=None,
+                    access_policy_ref=None,
+                    last_validated_at=None,
+                )
+            )
+    return tuple(safe)
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,6 +154,8 @@ class ContextAssembler:
 
     providers: tuple[EvidenceProvider, ...] = ()
     authorize: AuthorizationHook | None = None
+    authorize_evidence: EvidenceAuthorizationHook | None = None
+    authorize_provenance: ProvenanceAuthorizationHook | None = None
 
     def assemble(
         self,
@@ -113,15 +168,25 @@ class ContextAssembler:
             request.resolution,
             authorize=self.authorize,
         )
-        authorized_ids = {assertion.id for assertion in result.active}
+        candidates = result.active
+        authorized_ids = {assertion.id for assertion in candidates}
 
         evidence: list[Evidence] = []
         for provider in self.providers:
-            for item in provider.collect(request):
-                # Authority boundary: evidence must support the authorized
-                # set. Orphaned items are dropped, never promoted.
-                if authorized_ids.intersection(item.relates_to):
-                    evidence.append(item)
+            for item in provider.collect(request, candidates):
+                # Strip links outside the safe set; drop orphaned items.
+                safe_links = tuple(
+                    link for link in item.relates_to if link in authorized_ids
+                )
+                if not safe_links:
+                    continue
+                item = replace(item, relates_to=safe_links)
+                # Source authorization boundary, before ranking/budgeting.
+                if self.authorize_evidence is not None and not self.authorize_evidence(
+                    item
+                ):
+                    continue
+                evidence.append(item)
 
         # Ranking is allowed here: it affects relevance, not authority.
         evidence.sort(
@@ -130,9 +195,27 @@ class ContextAssembler:
         )
         evidence = evidence[: max(request.evidence_budget, 0)]
 
+        # Provenance authorization is independent of assertion authorization.
+        safe_assertions = tuple(
+            replace(
+                assertion,
+                provenance=redact_provenance(
+                    assertion.provenance, self.authorize_provenance
+                ),
+            )
+            for assertion in candidates
+        )
+        safe_evidence = tuple(
+            replace(
+                item,
+                provenance=redact_provenance(item.provenance, self.authorize_provenance),
+            )
+            for item in evidence
+        )
+
         return AssembledContext(
-            assertions=result.active,
-            evidence=tuple(evidence),
+            assertions=safe_assertions,
+            evidence=tuple(safe_evidence),
             repository=request.repository,
             conflicts=result.conflicts,
         )

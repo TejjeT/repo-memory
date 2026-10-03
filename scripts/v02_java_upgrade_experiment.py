@@ -1,15 +1,26 @@
 """v0.2 thin experiment: Java 17 -> 25 upgrade task.
 
+Synthetic context-coverage smoke test (not a measured agent comparison).
+
 Compares two context pipelines for the same engineering task:
 
   baseline:    repo doc chunks -> keyword retrieval ("plain repo RAG" stand-in)
   repo-memory: ContextAssembler — deterministic assertions first (scope,
                authorization, lifecycle), then supporting evidence
 
-Measurement is a checklist of must-have facts per task. The repo-memory path
-is asserted (it is the deterministic product claim); the baseline is reported
-for comparison. This is the positioning experiment from issue #15: it measures
-the value of the trusted layers, not the vector search.
+Limitations, stated plainly:
+
+- The baseline corpus intentionally omits the authoritative facts, so the
+  baseline "missing" them is constructed, not discovered. No agent is
+  invoked and no agent answer is scored; this does not prove superiority to
+  RAG or that the baseline would act wrongly in practice.
+- Fair evaluation methodology (agent-in-the-loop measurement) belongs to
+  issue #5.
+
+What it does check: the repo-memory path deterministically assembles the
+required assertions (EA-001 mandate for payment-api; EA-003 block with EA-001
+suppressed for legacy-settlement) while the assembler enforces the authority
+boundary on supporting evidence.
 """
 
 from __future__ import annotations
@@ -72,13 +83,20 @@ def keyword_retrieve(task: str, top_k: int = 3) -> list[str]:
 class CorpusEvidenceProvider(EvidenceProvider):
     """Fake semantic-evidence provider over the synthetic corpus."""
 
-    def collect(self, request: ContextRequest) -> tuple[Evidence, ...]:
+    def collect(
+        self,
+        request: ContextRequest,
+        candidates: tuple[EngineeringAssertion, ...],
+    ) -> tuple[Evidence, ...]:
+        candidate_ids = {assertion.id for assertion in candidates}
         return tuple(
             Evidence(
                 uri=uri,
                 kind="doc",
                 snippet=text[:120],
-                relates_to=("EA-001", "EA-003"),
+                relates_to=tuple(
+                    aid for aid in ("EA-001", "EA-003") if aid in candidate_ids
+                ),
                 score=0.5,
                 provenance=SOURCE,
             )
