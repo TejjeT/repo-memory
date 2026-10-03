@@ -38,7 +38,7 @@ The strongest existing benchmarks are complementary:
 | Authorization | repository access + Copilot policies | account/user roles, groups, resource ACLs, OIDC/LDAP/API-key/trusted modes | source-aligned scope authorization |
 | Retrieval | Copilot-managed | semantic + directory traversal + read/find/search | authorize/filter first, hybrid rank second |
 | Progressive context | product-managed | L0/L1/L2 summaries and on-demand detail | task-budgeted context assembly |
-| Agent interoperability | Copilot surfaces | broad: MCP, Codex, Claude Code, Cursor, LangChain, others | vendor-neutral MCP/API/schema |
+| Agent interoperability | Copilot surfaces | broad: MCP and multiple agent runtimes/frameworks | vendor-neutral MCP/API/schema |
 | Portability | GitHub/Copilot-owned | self-hostable open-source context store | open schema + export |
 | Auditability | admin memory export/delete audit events; repo facts review | observable retrieval trajectories + filesystem state; auth/admin controls | full creation/approval/use/validation lineage |
 | Evaluation focus | product effectiveness; no public repo-memory benchmark known | publishes memory/context evaluations | engineering task outcome benchmark |
@@ -249,7 +249,7 @@ Conceptually:
           +--------------+---------------+
                          |
                          v
-          Codex / Copilot / Claude / Cursor
+              coding-agent runtimes
 
 That keeps the project focused on the part that is plausibly differentiated.
 
