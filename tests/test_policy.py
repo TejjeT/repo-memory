@@ -15,6 +15,7 @@ def assertion(
     status: str = "approved",
     importance: str = "high",
     applies_to: tuple[Target, ...] = (),
+    overrides: tuple[str, ...] = (),
     supersedes: tuple[str, ...] = (),
     superseded_by: tuple[str, ...] = (),
     conflicts_with: tuple[str, ...] = (),
@@ -28,6 +29,7 @@ def assertion(
         status=status,
         importance=importance,
         provenance=SOURCE,
+        overrides=overrides,
         supersedes=supersedes,
         superseded_by=superseded_by,
         conflicts_with=conflicts_with,
@@ -52,7 +54,7 @@ def test_parent_scope_applies_to_repository():
     assert [a.id for a in result.active] == ["EA-001"]
 
 
-def test_explicit_repository_target_applies_from_broader_scope():
+def test_explicit_repository_target_can_cross_system_inside_same_org():
     item = assertion(
         "EA-002",
         scope=Scope(organization="Acme", domain="Payments", system="Settlement"),
@@ -61,8 +63,8 @@ def test_explicit_repository_target_applies_from_broader_scope():
     context = ResolutionContext(
         scope=Scope(
             organization="Acme",
-            domain="OtherDomain",
-            system="OtherSystem",
+            domain="Operations",
+            system="WorkerFleet",
             repository="payment-worker",
         ),
         when=NOW,
@@ -71,6 +73,26 @@ def test_explicit_repository_target_applies_from_broader_scope():
     result = resolve_assertions([item], context)
 
     assert [a.id for a in result.active] == ["EA-002"]
+
+
+def test_explicit_repository_target_cannot_cross_organization():
+    item = assertion(
+        "EA-002",
+        scope=Scope(organization="Acme", domain="Payments"),
+        applies_to=(Target(kind="repository", id="payment-worker"),),
+    )
+    context = ResolutionContext(
+        scope=Scope(
+            organization="OtherCo",
+            domain="Payments",
+            repository="payment-worker",
+        ),
+        when=NOW,
+    )
+
+    result = resolve_assertions([item], context)
+
+    assert result.active == ()
 
 
 def test_superseded_assertion_is_not_active():
@@ -99,9 +121,14 @@ def test_superseded_assertion_is_not_active():
     assert [a.id for a in result.active] == ["EA-006"]
 
 
-def test_narrower_approved_exception_shadows_broader_policy():
+def test_exception_only_overrides_policy_it_names():
     policy = assertion(
         "EA-001",
+        type="policy",
+        scope=Scope(organization="Acme"),
+    )
+    unrelated_policy = assertion(
+        "EA-010",
         type="policy",
         scope=Scope(organization="Acme"),
     )
@@ -114,6 +141,7 @@ def test_narrower_approved_exception_shadows_broader_policy():
             system="Settlement",
             repository="legacy-settlement",
         ),
+        overrides=("EA-001",),
     )
     context = ResolutionContext(
         scope=Scope(
@@ -125,9 +153,9 @@ def test_narrower_approved_exception_shadows_broader_policy():
         when=NOW,
     )
 
-    result = resolve_assertions([policy, exception], context)
+    result = resolve_assertions([policy, unrelated_policy, exception], context)
 
-    assert [a.id for a in result.active] == ["EA-003"]
+    assert {a.id for a in result.active} == {"EA-003", "EA-010"}
 
 
 def test_authorization_happens_before_candidate_resolution():
