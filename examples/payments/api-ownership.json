@@ -1,0 +1,30 @@
+{
+  "approved_at": "2026-02-02T00:00:00Z",
+  "approved_by": "architecture-review-board",
+  "authorization": {
+    "inherit_from_scope": true,
+    "source_aligned": true
+  },
+  "confidence": 1.0,
+  "content": "payments-platform owns the API contract; settlement-runtime owns the settlement-engine implementation.",
+  "created_at": "2026-02-01T00:00:00Z",
+  "created_by": "payments-platform",
+  "effective_from": "2026-02-01T00:00:00Z",
+  "id": "EA-004",
+  "importance": "medium",
+  "owner": "payments-platform",
+  "provenance": [
+    {
+      "type": "document",
+      "uri": "catalog://acme/services/payments"
+    }
+  ],
+  "review_after": "2027-02-01T00:00:00Z",
+  "scope": {
+    "domain": "Payments",
+    "organization": "Acme",
+    "system": "Settlement Platform"
+  },
+  "status": "approved",
+  "type": "ownership-boundary"
+}
