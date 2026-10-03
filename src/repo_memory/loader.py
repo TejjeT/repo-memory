@@ -28,7 +28,6 @@ def load_assertion(path: str | Path, schema_path: str | Path) -> EngineeringAsse
 def assertion_from_dict(raw: dict[str, Any]) -> EngineeringAssertion:
     """Deserialize a validated assertion dictionary."""
 
-    scope = Scope(**raw["scope"])
     provenance = tuple(
         Provenance(
             type=item["type"],
@@ -39,14 +38,20 @@ def assertion_from_dict(raw: dict[str, Any]) -> EngineeringAssertion:
         )
         for item in raw["provenance"]
     )
-    targets = tuple(Target(kind=item["kind"], id=item["id"]) for item in raw.get("applies_to", []))
+    targets = tuple(
+        Target(kind=item["kind"], id=item["id"])
+        for item in raw.get("applies_to", [])
+    )
+
+    created_at = _parse_datetime(raw["created_at"], required=True)
+    assert created_at is not None
 
     return EngineeringAssertion(
         id=raw["id"],
         type=raw["type"],
         content=raw["content"],
         rationale=raw.get("rationale"),
-        scope=scope,
+        scope=Scope(**raw["scope"]),
         applies_to=targets,
         status=raw["status"],
         importance=raw["importance"],
@@ -56,10 +61,11 @@ def assertion_from_dict(raw: dict[str, Any]) -> EngineeringAssertion:
         effective_from=_parse_datetime(raw.get("effective_from")),
         review_after=_parse_datetime(raw.get("review_after")),
         expires_at=_parse_datetime(raw.get("expires_at")),
+        overrides=tupleize(raw.get("overrides")),
         supersedes=tupleize(raw.get("supersedes")),
         superseded_by=tupleize(raw.get("superseded_by")),
         conflicts_with=tupleize(raw.get("conflicts_with")),
-        created_at=_parse_datetime(raw["created_at"], required=True),
+        created_at=created_at,
     )
 
 
