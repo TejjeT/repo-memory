@@ -18,6 +18,7 @@
       "uri": "architecture-exception://EX-93"
     }
   ],
+  "overrides": ["EA-001"],
   "authorization": {
     "inherit_from_scope": true,
     "source_aligned": true
