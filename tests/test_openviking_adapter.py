@@ -42,17 +42,30 @@ class FakeOpenVikingClient:
         recursive: bool = False,
         **kwargs: Any,
     ) -> list[dict[str, Any]]:
-        assert recursive is True
-        return [
-            {
-                "uri": path,
-                "name": path.rsplit("/", 1)[-1],
-                "isDir": False,
-                **({"access": "denied"} if path in self.denied else {}),
-            }
-            for path in sorted(self.files)
-            if path.startswith(uri)
-        ]
+        # The adapter traverses level by level and never relies on the
+        # server's recursive listing; emulate a non-recursive server here.
+        assert recursive is False
+        prefix = uri if uri.endswith("/") else uri + "/"
+        children: dict[str, dict[str, Any]] = {}
+        for path in sorted(self.files):
+            if not path.startswith(prefix):
+                continue
+            rest = path[len(prefix):]
+            child, _, _ = rest.partition("/")
+            child_uri = prefix + child
+            is_dir = "/" in rest
+            entry = children.setdefault(
+                child_uri,
+                {
+                    "uri": child_uri,
+                    "name": child,
+                    "isDir": is_dir,
+                },
+            )
+            entry["isDir"] = entry["isDir"] or is_dir
+            if not is_dir and child_uri in self.denied:
+                entry["access"] = "denied"
+        return list(children.values())
 
 
 def make_assertion(
@@ -211,3 +224,84 @@ def test_denied_openviking_entry_is_not_read_or_resolved():
     )
 
     assert [item.id for item in result.active] == ["EA-visible"]
+
+
+class PermissionDeniedError(Exception):
+    """Mirrors openviking_sdk.errors.PermissionDeniedError by class name."""
+
+
+class RaisingOpenVikingClient(FakeOpenVikingClient):
+    """Fake whose ls/read raise on denied paths, like the live server."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.denied_dirs: set[str] = set()
+        self.denied_files: set[str] = set()
+
+    def ls(
+        self, uri: str, simple: bool = False, recursive: bool = False, **kwargs: Any
+    ) -> list[dict[str, Any]]:
+        prefix = uri if uri.endswith("/") else uri + "/"
+        denied = prefix.rstrip("/") in self.denied_dirs or uri.rstrip("/") in self.denied_dirs
+        if denied:
+            raise PermissionDeniedError(f"Access denied for {uri}")
+        return super().ls(uri, simple=simple, recursive=recursive, **kwargs)
+
+    def read(self, uri: str) -> str:
+        if uri in self.denied_files:
+            raise PermissionDeniedError(f"Access denied for {uri}")
+        return super().read(uri)
+
+
+def _resolution_context() -> ResolutionContext:
+    return ResolutionContext(
+        scope=Scope(organization="Acme", domain="Payments", repository="payment-api"),
+        when=NOW,
+    )
+
+
+def test_denied_directory_ls_raise_is_skipped_not_propagated():
+    client = RaisingOpenVikingClient()
+    store = OpenVikingAssertionStore(client)
+
+    visible = make_assertion("EA-visible", scope=Scope(organization="Acme", domain="Payments"))
+    hidden = make_assertion("EA-hidden", scope=Scope(organization="Acme", domain="Restricted"))
+    store.put(visible)
+    hidden_uri = store.put(hidden)
+
+    restricted_dir = hidden_uri.rsplit("/", 1)[0]
+    client.denied_dirs.add(restricted_dir)
+
+    found = store.list_for_organization("Acme")
+    assert [item.id for item in found] == ["EA-visible"]
+
+
+def test_denied_file_read_raise_is_skipped_not_propagated():
+    client = RaisingOpenVikingClient()
+    store = OpenVikingAssertionStore(client)
+
+    visible = make_assertion("EA-visible", scope=Scope(organization="Acme", domain="Payments"))
+    hidden = make_assertion("EA-hidden", scope=Scope(organization="Acme", domain="Restricted"))
+    store.put(visible)
+    hidden_uri = store.put(hidden)
+    client.denied_files.add(hidden_uri)
+
+    found = store.list_for_organization("Acme")
+    assert [item.id for item in found] == ["EA-visible"]
+
+
+def test_unrelated_ls_error_still_propagates():
+    client = RaisingOpenVikingClient()
+    store = OpenVikingAssertionStore(client)
+    store.put(make_assertion("EA-visible", scope=Scope(organization="Acme", domain="Payments")))
+
+    def boom(uri: str, **kwargs: Any) -> list[dict[str, Any]]:
+        raise RuntimeError("boom")
+
+    client.ls = boom  # type: ignore[method-assign]
+    try:
+        store.resolve(_resolution_context())
+    except RuntimeError as exc:
+        assert str(exc) == "boom"
+    else:
+        raise AssertionError("expected RuntimeError to propagate")

@@ -48,6 +48,17 @@ class OpenVikingClient(Protocol):
 AclResolver = Callable[[EngineeringAssertion], dict[str, Any] | None]
 AuthorizationHook = Callable[[EngineeringAssertion], bool]
 
+# Exception class names that signal an authorization denial from an OpenViking
+# server. Matched by name so this adapter does not need to import the SDK.
+_ACCESS_DENIED_ERROR_NAMES = frozenset(
+    {"PermissionDeniedError", "AccessDeniedError", "ForbiddenError"}
+)
+
+
+def _is_access_denied(error: BaseException) -> bool:
+    """Return True when ``error`` is an OpenViking authorization denial."""
+    return type(error).__name__ in _ACCESS_DENIED_ERROR_NAMES
+
 
 @dataclass(frozen=True, slots=True)
 class OpenVikingAdapterConfig:
@@ -99,22 +110,33 @@ class OpenVikingAssertionStore:
     def list_for_organization(self, organization: str) -> tuple[EngineeringAssertion, ...]:
         """Load readable assertions within one organization.
 
-        OpenViking ACLs are expected to filter unreadable descendants. Entries
-        explicitly marked as access denied are ignored.
+        Traversal is done level by level instead of relying on the server's
+        recursive listing: live-server verification showed recursive ``ls``
+        may return descendant directories without their files. OpenViking
+        ACLs are expected to filter unreadable descendants. Entries
+        explicitly marked as access denied are ignored, denied directories
+        are not descended into, and authorization denials raised by the live
+        server during listing or reading are skipped rather than propagated.
         """
 
         root = f"{self._config.normalized_root()}/{_slug(organization)}/"
-        entries = self._client.ls(root, recursive=True)
 
         assertions: list[EngineeringAssertion] = []
-        for entry in entries:
+        for entry in _walk_files(self._client, root):
             uri = _entry_uri(entry)
             if uri is None or not uri.endswith(".json"):
                 continue
             if _entry_access_denied(entry):
                 continue
 
-            payload = json.loads(self._client.read(uri))
+            try:
+                payload = json.loads(self._client.read(uri))
+            except Exception as exc:
+                # The file may have become unreadable between listing and
+                # reading; the live server raises instead of marking entries.
+                if _is_access_denied(exc):
+                    continue
+                raise
             assertions.append(assertion_from_json_dict(payload))
 
         return tuple(assertions)
@@ -173,6 +195,32 @@ def assertion_tags(assertion: EngineeringAssertion) -> list[str]:
             tags.append(f"{key}={_tag_value(value)}")
 
     return tags
+
+
+def _walk_files(client: OpenVikingClient, root: str) -> Any:
+    """Yield file entries under ``root`` via level-by-level traversal."""
+
+    stack = [root]
+    while stack:
+        directory = stack.pop()
+        try:
+            entries = client.ls(directory)
+        except Exception as exc:
+            # The live server raises on unreadable directories instead of
+            # returning marked entries; skip them without descending.
+            if _is_access_denied(exc):
+                continue
+            raise
+        for entry in entries:
+            if _entry_access_denied(entry):
+                continue
+            uri = _entry_uri(entry)
+            if uri is None:
+                continue
+            if isinstance(entry, dict) and entry.get("isDir"):
+                stack.append(uri if uri.endswith("/") else uri + "/")
+            else:
+                yield entry
 
 
 def _entry_uri(entry: Any) -> str | None:
