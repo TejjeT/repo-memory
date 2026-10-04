@@ -1,0 +1,5 @@
+DECISION: ABSTAIN
+RATIONALE: The context contains no explicit statement of the form "legacy-settlement remains on Java 17 until <M-YYYY-MM>", and no mandate for Java 25. The code comment only points to an exception document that is not included in this context, which is not enough to decide safely.
+CITATIONS: NONE
+PATCH:
+NONE

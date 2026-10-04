@@ -1,0 +1,5 @@
+DECISION: ABSTAIN
+RATIONALE: The context mentions an approved exception for legacy-settlement staying on Java 17 (see policies/legacy-settlement-exception.md), but that document is not included in the context, so I cannot verify the exception's scope or milestone. No Java 25 mandate appears in the context either, so there is not enough information to decide safely.
+CITATIONS: README.md, src/main/java/com/acme/settlement/SettlementService.java
+PATCH:
+NONE

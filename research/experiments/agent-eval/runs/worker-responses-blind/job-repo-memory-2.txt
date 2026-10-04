@@ -1,0 +1,5 @@
+DECISION: HOLD
+RATIONALE: Engineering assertion EA-003 and the approved exception policy both state that legacy-settlement remains on Java 17 until retirement milestone M-2027-01, so the upgrade to Java 25 is blocked.
+CITATIONS: ea:EA-003, policies/legacy-settlement-exception.md
+PATCH:
+NONE

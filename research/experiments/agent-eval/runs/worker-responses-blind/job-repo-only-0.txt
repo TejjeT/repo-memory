@@ -1,0 +1,5 @@
+DECISION: ABSTAIN
+RATIONALE: The context contains only the repository's own files, which reference the enterprise runtime policy and the legacy-settlement exception policy without including them; no explicit "<repository> remains on Java 17 until <M-YYYY-MM>" statement for legacy-settlement is present, and nothing mandates Java 25 for it.
+CITATIONS: NONE
+PATCH:
+NONE

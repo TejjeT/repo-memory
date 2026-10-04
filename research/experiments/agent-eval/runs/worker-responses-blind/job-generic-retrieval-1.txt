@@ -1,0 +1,5 @@
+DECISION: HOLD
+RATIONALE: An approved exception states legacy-settlement remains on Java 17 until retirement milestone M-2027-01, and this exception takes precedence over the enterprise Java 25 runtime policy within the legacy-settlement scope, so the upgrade is blocked.
+CITATIONS: policies/legacy-settlement-exception.md, policies/java-runtime-policy.md
+PATCH:
+NONE

@@ -1,0 +1,5 @@
+DECISION: ABSTAIN
+RATIONALE: The context contains no explicit statement that legacy-settlement remains on Java 17 until a retirement milestone, and no mandate to target Java 25, so there is not enough information to decide safely.
+CITATIONS: NONE
+PATCH:
+NONE

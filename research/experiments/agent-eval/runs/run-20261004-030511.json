@@ -27,15 +27,15 @@
       "examples/payments/runtime-policy.json": "2e42599118635173387bfba1234ffa25fa899f53364854b1b044a28974d4d04a",
       "examples/payments/superseded-retry-policy.json": "935098da67469e3ec07eddbc7286bea71185aac2c4473f77c34a119a2027e577",
       "src/repo_memory/__init__.py": "cd0b59fd01b1c6b85945ad3dfdbfadd84da760bb3239550f92f1c302f8bf3a2e",
-      "src/repo_memory/context.py": "bc753c4e46d274ca80e5720e89df78cf13c9c5e5ff6cb5c5a220b317db95520c",
+      "src/repo_memory/context.py": "3f2aea86a2eab9ffcae62651aeced859b2fae1e86659d3b2a1bb9a6424513aa7",
       "src/repo_memory/loader.py": "6d8842edd7b4cde3c27f51ffa04c73b58a71dad3846c9d92fe9bfc2020a76276",
       "src/repo_memory/models.py": "8c7b2786a9fd92cf058fb53b014e4895038007913c5fbc0d63c36063be5194ca",
       "src/repo_memory/policy.py": "f65e6796d47f8aff4ae4aa3ddc3c3fc3cf972fdf1f542750e8e5e69249b337f1",
       "src/repo_memory/serialization.py": "458ca5c89fd6aaaa8bb8c30f77ecbd78772945ce6450074a78d51c62e66c344a",
       "spec/engineering-assertion.schema.json": "583786eb00e47e026a20f121de13a1445b71d9c058db536c493ee5451fb0465e",
-      "research/experiments/agent-eval/run.py": "548ed8cadf06b865a39cd0b46bdfa91d350a8b655999aef83b1a819651fb14f7"
+      "research/experiments/agent-eval/run.py": "5e248488b1f4059ccdb51716a9873ab0184b13f8173676ec8f5ebf0704c8d527"
     },
-    "git_commit": "2830d81c6e74e59f8c14dc7e84bc32070ff5e8e6",
+    "git_commit": "50df13bb6e7b159a490fe86588332ff30218fbb5",
     "git_dirty": false,
     "runner": {
       "model": "simulated-agent-v2",
