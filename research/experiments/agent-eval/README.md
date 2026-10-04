@@ -133,7 +133,7 @@ Three batches produced this identical pattern:
    the job file was their only task material. Same 0/3 / 3/3 / 3/3 pattern,
    no violations, no unparseable responses. Exploratory: its receipts were
    issued post-hoc (labeled `issued_posthoc`).
-3. **Controlled batch** (`runs/worker-exec-20261004-050814.json`): 9 fresh
+3. **Controlled batch** (`runs/worker-exec-20261004-051430.json`): 9 fresh
    workers orchestrated from a new history-free side chat, each response
    receipted at collection time (`issued_posthoc: false`, per-response
    timestamps across the collection window). Same 0/3 / 3/3 / 3/3 pattern,
@@ -183,7 +183,12 @@ real-agent path consumes the exact prepared context:
 ```bash
 python research/experiments/agent-eval/run.py prepare-workers  # 9 job files
 # ... one worker trial per job: fixed prompt, single response, no tools ...
-python research/experiments/agent-eval/run.py score-workers    # mechanical scoring
+# after collecting each response, immediately issue its receipt:
+python research/experiments/agent-eval/run.py record-receipt <resp_dir> <job-name>
+# ... then score mechanically:
+python research/experiments/agent-eval/run.py score-workers       # runs/worker-responses/
+python research/experiments/agent-eval/run.py score-workers-blind # runs/worker-responses-blind/
+python research/experiments/agent-eval/run.py score-workers-exec  # runs/worker-responses-exec/
 ```
 
 Each job file carries the full fixed prompt (task, target repository, and
