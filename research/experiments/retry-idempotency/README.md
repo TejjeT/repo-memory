@@ -83,12 +83,21 @@ tells them apart:
 | Variant | Result |
 |---|---|
 | reference (worker retry, stable key, gateway layer off) | 5/5 pass |
+| reference-logging (reference + print to stdout) | 5/5 pass (result protocol is stdout-separated) |
 | invalid-regenerated-key (fresh UUID per attempt) | R1, R2 fail |
 | invalid-duplicate-layer (worker loop + gateway retries on) | R5 fails |
 | invalid-unsafe-resubmit (retries with key=None) | R1, R2 fail |
+| invalid-swallowed-ambiguous (returns None on response-lost) | R2 fails (settlement count right, no settled response) |
+| invalid-raise-on-success (PermanentError after successful submit) | R2, R3 fail |
+| invalid-hardcoded-key (literal "key-1", ignores caller key) | R1 fails (two-batch scenario) |
 
 Every invalid variant imports cleanly and settles the happy path --
-compilation and test success alone do not pass the rubric.
+compilation and test success alone do not pass the rubric. The driver
+reports through `result.json`, never stdout, so candidate debug output
+cannot corrupt scoring; a missing/malformed result is a recorded harness
+failure. Every retryable scenario (clean, transient, ambiguous, multi)
+must return the gateway's settled response with no exception, and two
+distinct batches on one gateway must settle under their own caller keys.
 
 ## Scope of this PR
 

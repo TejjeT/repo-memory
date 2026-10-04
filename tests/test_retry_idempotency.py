@@ -111,23 +111,100 @@ def test_invalid_variants_still_import_and_settle_happy_path():
     import py_compile
 
     rubric = load_rubric()
+    one = [{"batch_id": "batch-1", "key": "key-1"}]
     for name in (
         "invalid-regenerated-key-worker.py",
         "invalid-duplicate-layer-worker.py",
         "invalid-unsafe-resubmit-worker.py",
+        "invalid-swallowed-ambiguous-worker.py",
+        "invalid-raise-on-success-worker.py",
+        "invalid-hardcoded-key-worker.py",
     ):
         path = VARIANTS / name
         py_compile.compile(str(path), doraise=True)
         work_dir = rubric.apply_variant(path)
         try:
-            run = rubric.run_scenario(work_dir, ["ok"])
+            run = rubric.run_scenario(work_dir, ["ok"], one)
         finally:
             import shutil
 
             shutil.rmtree(work_dir, ignore_errors=True)
-        assert run.get("raised") is None, f"{name} fails even the happy path"
+        if name == "invalid-raise-on-success-worker.py":
+            # This one fails even the happy path -- that is its bug.
+            assert run["batch_results"][0]["raised"] == "PermanentError"
+        else:
+            assert run["batch_results"][0]["raised"] is None, (
+                f"{name} fails even the happy path"
+            )
         result = rubric.score_variant(path)
         assert not all(result["checks"].values()), f"{name} unexpectedly passes"
+
+
+def test_swallowed_ambiguous_fails_r2_only():
+    """Returning None on the response-lost failure keeps the settlement
+    count right but swallows the failure: R2 must fail."""
+    rubric = load_rubric()
+    result = rubric.score_variant(
+        VARIANTS / "invalid-swallowed-ambiguous-worker.py"
+    )
+    assert not result["checks"]["R2_no_duplicate"]
+    assert all(
+        v for k, v in result["checks"].items() if k != "R2_no_duplicate"
+    ), result["detail"]
+
+
+def test_raise_on_success_fails_r2_and_r3():
+    """Raising PermanentError after a successful submit breaks clean and
+    retried completions."""
+    rubric = load_rubric()
+    result = rubric.score_variant(
+        VARIANTS / "invalid-raise-on-success-worker.py"
+    )
+    assert not result["checks"]["R2_no_duplicate"]
+    assert not result["checks"]["R3_transient_retried"]
+    assert result["checks"]["R1_key_stable"]
+    assert result["checks"]["R4_permanent_stops"]
+    assert result["checks"]["R5_single_retry_layer"]
+
+
+def test_hardcoded_key_fails_r1_only():
+    """A literal key is invisible to single-batch scenarios; the two-batch
+    scenario must catch it."""
+    rubric = load_rubric()
+    result = rubric.score_variant(VARIANTS / "invalid-hardcoded-key-worker.py")
+    assert not result["checks"]["R1_key_stable"]
+    assert all(
+        v for k, v in result["checks"].items() if k != "R1_key_stable"
+    ), result["detail"]
+
+
+def test_logging_worker_still_passes():
+    """Ordinary debug output on stdout must not corrupt scoring: the
+    result travels through the result file, not stdout."""
+    rubric = load_rubric()
+    result = rubric.score_variant(VARIANTS / "reference-logging-worker.py")
+    assert all(result["checks"].values()), result["detail"]
+
+
+def test_malformed_result_is_recorded_not_raised():
+    """A missing result file becomes a harness failure in the report,
+    never an exception escaping score_variant."""
+    import shutil
+
+    rubric = load_rubric()
+    work_dir = rubric.apply_variant(VARIANTS / "reference-worker.py")
+    try:
+        # Poison the driver so no result file is written.
+        (work_dir / "driver.py").write_text("import sys; sys.exit(0)\n")
+        result = rubric.run_scenario(
+            work_dir, ["ok"], [{"batch_id": "batch-1", "key": "key-1"}]
+        )
+        assert result.get("harness_error"), result
+        scored = rubric.score_variant(VARIANTS / "reference-worker.py")
+        # Sanity: the real driver still scores fine (poisoning was local).
+        assert all(scored["checks"].values())
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
 
 
 def test_starting_fixture_has_no_retry():

@@ -9,8 +9,7 @@ Task: add retry handling for transient settlement submission failures in
 """
 from gateway import GatewayClient
 
-# Gateway/client retry layer. The worker is the layer that will own retry
-# after this task; keep the gateway layer disabled.
+# Gateway/client retry layer.
 GATEWAY_MAX_RETRIES = 0
 
 
