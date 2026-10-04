@@ -61,11 +61,8 @@ class FakeGateway:
 class GatewayClient:
     """Client-side gateway accessor with an optional built-in retry loop.
 
-    ``max_retries`` is the client/gateway retry layer. The organization
-    rule (EA-006) is that retry must exist at exactly one orchestration
-    layer: when the worker implements its own retry, this must stay 0.
-    ``client_retries`` counts retries performed inside this client, so the
-    evaluator can detect a second retry layer behaviorally.
+    ``max_retries`` bounds the client-side retry loop. ``client_retries``
+    counts retries performed inside this client.
     """
 
     def __init__(self, gateway, max_retries=0):
