@@ -5,6 +5,7 @@ conditions, grounded (non-invented) agent claims, permission measured on
 delivered context, and a replayable input manifest.
 """
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -432,11 +433,14 @@ def test_parse_requires_patch_label_and_rationale():
         )
         is None
     )
-    # PATCH: present with empty value parses as no patch.
-    answer = run.parse_worker_response(
-        "DECISION: HOLD\nRATIONALE: exception holds.\nCITATIONS: ea:EA-003\nPATCH:"
+    # PATCH: present with empty value is not a valid response: the format
+    # requires a diff or the single word NONE.
+    assert (
+        run.parse_worker_response(
+            "DECISION: HOLD\nRATIONALE: exception holds.\nCITATIONS: ea:EA-003\nPATCH:"
+        )
+        is None
     )
-    assert answer is not None and answer.patch is None
 
 
 def test_parse_rejects_duplicate_fields():
@@ -503,7 +507,7 @@ def test_parse_inline_patch_none_is_no_patch():
 def test_load_job_validates_prompt_binding(tmp_path):
     run.prepare_worker_jobs(dest=tmp_path / "jobs")
     job, note = run.load_job_for_scoring(
-        tmp_path / "jobs", "job-repo-memory-0"
+        tmp_path / "jobs", "job-repo-memory-0", "repo-memory", 0
     )
     assert note == "ok" and job is not None
 
@@ -512,7 +516,9 @@ def test_load_job_validates_prompt_binding(tmp_path):
     data = json.loads(tampered.read_text())
     data["prompt"] = "No exception evidence was delivered."
     tampered.write_text(json.dumps(data))
-    _, note = run.load_job_for_scoring(tmp_path / "jobs", "job-repo-memory-0")
+    _, note = run.load_job_for_scoring(
+        tmp_path / "jobs", "job-repo-memory-0", "repo-memory", 0
+    )
     assert note == "job_inconsistent"
 
     # Dropped URIs: context/URI disagreement -> inconsistent.
@@ -523,20 +529,22 @@ def test_load_job_validates_prompt_binding(tmp_path):
     (tmp_path / "jobs" / "job-repo-memory-1.json").write_text(
         json.dumps(data)
     )
-    _, note = run.load_job_for_scoring(tmp_path / "jobs", "job-repo-memory-1")
+    _, note = run.load_job_for_scoring(
+        tmp_path / "jobs", "job-repo-memory-1", "repo-memory", 1
+    )
     assert note == "job_inconsistent"
 
 
 def test_load_job_missing_and_corrupt(tmp_path):
     jobs = tmp_path / "jobs"
     jobs.mkdir()
-    _, note = run.load_job_for_scoring(jobs, "job-repo-memory-0")
+    _, note = run.load_job_for_scoring(jobs, "job-repo-memory-0", "repo-memory", 0)
     assert note == "job_missing"
     (jobs / "job-repo-memory-0.json").write_text("{not json")
-    _, note = run.load_job_for_scoring(jobs, "job-repo-memory-0")
+    _, note = run.load_job_for_scoring(jobs, "job-repo-memory-0", "repo-memory", 0)
     assert note == "job_corrupt"
     (jobs / "job-repo-memory-0.json").write_text(json.dumps({"a": 1}))
-    _, note = run.load_job_for_scoring(jobs, "job-repo-memory-0")
+    _, note = run.load_job_for_scoring(jobs, "job-repo-memory-0", "repo-memory", 0)
     assert note == "job_corrupt"
 
 
@@ -578,3 +586,167 @@ def test_worker_metadata_recorded(tmp_path, monkeypatch):
     assert report["worker"]["turns_per_run"] == 1
     assert len(report["worker"]["brief_sha256"]) == 64
     assert "unknown" in report["worker"]["sampling_params"]
+
+
+HOLD_RESPONSE = (
+    "DECISION: HOLD\n"
+    "RATIONALE: legacy-settlement remains on Java 17 until retirement "
+    "milestone M-2027-01 per the approved exception.\n"
+    "CITATIONS: {citation}\n"
+    "PATCH:\n"
+    "NONE\n"
+)
+
+# Per-condition valid citations: the URI that actually carries the grounded
+# exception in each arm's prepared context.
+CONDITION_CITATION = {
+    "generic-retrieval": "policies/legacy-settlement-exception.md",
+    "repo-memory": "ea:EA-003",
+}
+
+
+def _tmp_batch(tmp_path, monkeypatch):
+    """A complete valid batch: jobs, one passing response per run, receipts."""
+    jobs = tmp_path / "jobs"
+    resp = tmp_path / "resp"
+    (tmp_path / "runs").mkdir()
+    resp.mkdir()
+    run.prepare_worker_jobs(dest=jobs)
+    for condition in ("repo-only", "generic-retrieval", "repo-memory"):
+        for seed in range(3):
+            name = f"job-{condition}-{seed}"
+            # repo-only has no exception in context; a HOLD citing EA-003
+            # would be a fabricated citation there, so abstain instead.
+            if condition == "repo-only":
+                text = (
+                    "DECISION: ABSTAIN\n"
+                    "RATIONALE: no policy information in context.\n"
+                    "CITATIONS: NONE\n"
+                    "PATCH:\n"
+                    "NONE\n"
+                )
+            else:
+                text = HOLD_RESPONSE.format(
+                    citation=CONDITION_CITATION[condition]
+                ).replace("M-2027-01", f"M-2027-01 (run {seed})")
+            (resp / f"{name}.txt").write_text(text)
+    run.record_receipts(jobs, resp)
+    monkeypatch.setattr(run, "ROOT", tmp_path)
+    return jobs, resp
+
+
+def _score_tag(tmp_path, tag):
+    report = json.loads(
+        next((tmp_path / "runs").glob(f"{tag}-*.json")).read_text()
+    )
+    return {(r["condition"], r["run"]): r for r in report["runs"]}
+
+
+def test_stale_response_against_regenerated_job_fails(tmp_path, monkeypatch):
+    """The reviewer's repro: a regenerated (different) job paired with the
+    old response must not pass."""
+    jobs, resp = _tmp_batch(tmp_path, monkeypatch)
+    run.score_worker_responses(jobs, resp, tag="base")
+    base = _score_tag(tmp_path, "base")
+    assert base[("repo-memory", 0)]["rubric_pass"]
+
+    # Regenerate the job coherently for a different task (identity fields
+    # kept, prompt rebound with a fresh hash): the old response and its
+    # receipt no longer bind to it.
+    job_path = jobs / "job-repo-memory-0.json"
+    job = json.loads(job_path.read_text())
+    job["prompt"] = job["prompt"].replace(
+        "Upgrade legacy-settlement", "Upgrade payment-api"
+    )
+    job["prompt_sha256"] = hashlib.sha256(job["prompt"].encode()).hexdigest()
+    job_path.write_text(json.dumps(job))
+
+    run.score_worker_responses(jobs, resp, tag="regen")
+    rows = _score_tag(tmp_path, "regen")
+    row = rows[("repo-memory", 0)]
+    assert not row["rubric_pass"]
+    assert row["receipt"] == "receipt_mismatch"
+    # Untouched runs still pass.
+    assert rows[("repo-memory", 1)]["rubric_pass"]
+
+
+def test_misidentified_job_fails(tmp_path, monkeypatch):
+    jobs, resp = _tmp_batch(tmp_path, monkeypatch)
+    job_path = jobs / "job-repo-memory-0.json"
+    job = json.loads(job_path.read_text())
+    job["seed"] = 2  # job claims a different run slot
+    job_path.write_text(json.dumps(job))
+    run.score_worker_responses(jobs, resp, tag="misid")
+    rows = _score_tag(tmp_path, "misid")
+    row = rows[("repo-memory", 0)]
+    assert not row["rubric_pass"]
+    assert row["notes"] == ["job_misidentified"]
+
+
+def test_null_and_malformed_job_fields_do_not_crash(tmp_path, monkeypatch):
+    jobs, resp = _tmp_batch(tmp_path, monkeypatch)
+    for name, field, bad in [
+        ("job-repo-memory-0", "prompt", None),
+        ("job-repo-memory-1", "repo_uris", None),
+        ("job-repo-memory-2", "context_items", [["only-one"]]),
+        ("job-generic-retrieval-0", "seed", "0"),
+    ]:
+        p = jobs / f"{name}.json"
+        job = json.loads(p.read_text())
+        job[field] = bad
+        p.write_text(json.dumps(job))
+    run.score_worker_responses(jobs, resp, tag="malformed")
+    rows = _score_tag(tmp_path, "malformed")
+    for key in [
+        ("repo-memory", 0),
+        ("repo-memory", 1),
+        ("repo-memory", 2),
+        ("generic-retrieval", 0),
+    ]:
+        assert rows[key]["notes"] == ["job_corrupt"]
+        assert not rows[key]["rubric_pass"]
+    # Untouched runs still pass.
+    assert rows[("generic-retrieval", 1)]["rubric_pass"]
+
+
+def test_invalid_utf8_response_does_not_crash(tmp_path, monkeypatch):
+    jobs, resp = _tmp_batch(tmp_path, monkeypatch)
+    (resp / "job-repo-memory-0.txt").write_bytes(b"\xff\xfe invalid \x80 utf8")
+    run.score_worker_responses(jobs, resp, tag="badutf8")
+    rows = _score_tag(tmp_path, "badutf8")
+    row = rows[("repo-memory", 0)]
+    assert not row["rubric_pass"]
+    assert "response_unreadable" in row["notes"]
+    assert row["raw_response"] is None
+    assert rows[("repo-memory", 1)]["rubric_pass"]
+
+
+def test_swapped_responses_break_receipts(tmp_path, monkeypatch):
+    jobs, resp = _tmp_batch(tmp_path, monkeypatch)
+    a = resp / "job-repo-memory-0.txt"
+    b = resp / "job-repo-memory-1.txt"
+    ta, tb = a.read_bytes(), b.read_bytes()
+    a.write_bytes(tb)
+    b.write_bytes(ta)
+    run.score_worker_responses(jobs, resp, tag="swapped")
+    rows = _score_tag(tmp_path, "swapped")
+    assert rows[("repo-memory", 0)]["receipt"] == "receipt_mismatch"
+    assert rows[("repo-memory", 1)]["receipt"] == "receipt_mismatch"
+    assert not rows[("repo-memory", 0)]["rubric_pass"]
+
+
+def test_missing_receipt_fails_run(tmp_path, monkeypatch):
+    jobs = tmp_path / "jobs"
+    resp = tmp_path / "resp"
+    (tmp_path / "runs").mkdir()
+    resp.mkdir()
+    run.prepare_worker_jobs(dest=jobs)
+    (resp / "job-repo-memory-0.txt").write_text(
+        HOLD_RESPONSE.format(citation="ea:EA-003")
+    )
+    monkeypatch.setattr(run, "ROOT", tmp_path)
+    run.score_worker_responses(jobs, resp, tag="noreceipt")
+    rows = _score_tag(tmp_path, "noreceipt")
+    row = rows[("repo-memory", 0)]
+    assert row["receipt"] == "receipt_missing"
+    assert not row["rubric_pass"]

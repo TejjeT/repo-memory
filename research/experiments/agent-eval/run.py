@@ -463,6 +463,12 @@ def estimate_tokens(*texts: str) -> int:
 # history (e.g. a fresh side chat). Responses go to
 # runs/worker-responses-blind/<job>.txt and are scored with
 #   python run.py score-workers-blind -> worker-blind-<stamp>.json
+#
+# Receipts bind each response to its exact job at collection time:
+#   python run.py record-receipts [resp_dir] [--posthoc]
+# Scoring verifies the receipt; a regenerated or swapped job breaks the
+# linkage and fails the run. --posthoc backfills pre-receipt batches and
+# labels the receipts issued_posthoc.
 # ---------------------------------------------------------------------------
 
 # Worker-trial execution metadata. The workers are subagents powered by the
@@ -572,6 +578,8 @@ def parse_worker_response(raw: str) -> AgentAnswer | None:
       discarded: an inline diff is scored as a patch, "NONE" as no patch
     - everything after the PATCH: line is patch body, including lines that
       look like labels
+    - an empty patch payload is not valid: the documented format requires
+      a unified diff or the single word NONE
     """
     seen: set[str] = set()
     decision = rationale = citations = None
@@ -608,21 +616,32 @@ def parse_worker_response(raw: str) -> AgentAnswer | None:
         else [c.strip() for c in citations.split(",") if c.strip()]
     )
     patch_text = "\n".join(patch_lines).strip()
+    # The documented format requires a diff or the single word NONE after
+    # PATCH: -- an empty payload is not a valid response.
+    if not patch_text:
+        return None
     return AgentAnswer(
         decision=decision,
         rationale=[rationale],
         citations=cited,
-        patch=None if patch_text.upper() == "NONE" or not patch_text else patch_text,
+        patch=None if patch_text.upper() == "NONE" else patch_text,
     )
 
 
-def load_job_for_scoring(jobs_dir: Path, name: str) -> tuple[dict | None, str]:
+def load_job_for_scoring(
+    jobs_dir: Path, name: str, condition: str, seed: int
+) -> tuple[dict | None, str]:
     """Load and validate a saved worker job. Returns (job, note) where note
-    is "ok" on success. A missing, corrupt, or internally inconsistent job
-    is a recorded failed run, never a crash of the whole batch:
+    is "ok" on success. A missing, corrupt, misidentified, or internally
+    inconsistent job is a recorded failed run, never a crash of the whole
+    batch:
 
-    - job_missing / job_corrupt: file absent, unreadable, or not the
-      expected structure
+    - job_missing: file absent
+    - job_corrupt: unreadable JSON, or any field missing / wrong type
+      (including null fields and malformed context_items entries)
+    - job_misidentified: the job's task/repository/condition/seed is not
+      the run slot being scored -- a regenerated or swapped-in job cannot
+      silently accept a stale response
     - job_inconsistent: prompt hash mismatch, URI lists disagreeing with
       context_items, or delivered text absent from the prompt -- the job
       was edited after preparation and no longer binds prompt to context
@@ -634,31 +653,170 @@ def load_job_for_scoring(jobs_dir: Path, name: str) -> tuple[dict | None, str]:
         job = json.loads(path.read_text())
     except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None, "job_corrupt"
-    required = (
-        "condition",
-        "seed",
-        "prompt",
-        "prompt_sha256",
-        "repo_uris",
-        "supplemental_uris",
-        "context_items",
-    )
-    if not isinstance(job, dict) or any(k not in job for k in required):
+    if not isinstance(job, dict):
         return None, "job_corrupt"
+    field_types = {
+        "condition": str,
+        "task": str,
+        "repository": str,
+        "prompt": str,
+        "prompt_sha256": str,
+        "repo_uris": list,
+        "supplemental_uris": list,
+        "context_items": list,
+    }
+    for field, typ in field_types.items():
+        if field not in job or not isinstance(job[field], typ):
+            return None, "job_corrupt"
+    if not isinstance(job.get("seed"), int) or isinstance(job["seed"], bool):
+        return None, "job_corrupt"
+    if any(
+        not isinstance(u, str)
+        for u in job["repo_uris"] + job["supplemental_uris"]
+    ):
+        return None, "job_corrupt"
+    if any(
+        not (
+            isinstance(pair, list)
+            and len(pair) == 2
+            and all(isinstance(x, str) for x in pair)
+        )
+        for pair in job["context_items"]
+    ):
+        return None, "job_corrupt"
+    if (
+        job["condition"] != condition
+        or job["seed"] != seed
+        or job["task"] != TASK
+        or job["repository"] != REPO
+    ):
+        return None, "job_misidentified"
     if hashlib.sha256(job["prompt"].encode()).hexdigest() != job["prompt_sha256"]:
         return None, "job_inconsistent"
-    try:
-        context_uris = [u for u, _ in job["context_items"]]
-    except (TypeError, ValueError):
-        return None, "job_corrupt"
+    context_uris = [u for u, _ in job["context_items"]]
     if context_uris != list(job["repo_uris"]) + list(job["supplemental_uris"]):
         return None, "job_inconsistent"
-    try:
-        if any(t not in job["prompt"] for _, t in job["context_items"]):
-            return None, "job_inconsistent"
-    except TypeError:
-        return None, "job_corrupt"
+    if any(t not in job["prompt"] for _, t in job["context_items"]):
+        return None, "job_inconsistent"
     return job, "ok"
+
+
+def receipt_name(name: str) -> str:
+    return f"{name}.receipt.json"
+
+
+def parse_job_name(name: str) -> tuple[str, int] | None:
+    """job-<condition>-<seed> -> (condition, seed); None when malformed."""
+    if not name.startswith("job-"):
+        return None
+    condition, dash, seed = name[4:].rpartition("-")
+    if not dash or not seed.isdigit():
+        return None
+    return condition, int(seed)
+
+
+def write_receipt(
+    resp_dir: Path,
+    jobs_dir: Path,
+    name: str,
+    *,
+    posthoc: bool = False,
+) -> Path:
+    """Issue an execution-time receipt binding a collected response to the
+    exact job file it was produced from. The receipt records SHA-256 of
+    both artifacts plus the run identity; scoring verifies the linkage.
+    posthoc=True marks receipts issued after the fact for batches that
+    predate receipts -- the linkage facts are true, only the issuance is
+    late, and the receipt says so."""
+    parsed = parse_job_name(name)
+    if parsed is None:
+        raise ValueError(f"malformed job name: {name}")
+    condition, seed = parsed
+    job_path = jobs_dir / f"{name}.json"
+    resp_path = resp_dir / f"{name}.txt"
+    receipt = {
+        "job_name": name,
+        "condition": condition,
+        "seed": seed,
+        "task": TASK,
+        "repository": REPO,
+        "model": WORKER_MODEL,
+        "worker_protocol": WORKER_PROTOCOL,
+        "brief_sha256": hashlib.sha256(WORKER_BRIEF.encode()).hexdigest(),
+        "job_sha256": hashlib.sha256(job_path.read_bytes()).hexdigest(),
+        "response_sha256": hashlib.sha256(resp_path.read_bytes()).hexdigest(),
+        "collected_at": datetime.now(UTC).isoformat(),
+        "issued_posthoc": posthoc,
+    }
+    out = resp_dir / receipt_name(name)
+    out.write_text(json.dumps(receipt, indent=2))
+    return out
+
+
+def verify_receipt(
+    resp_dir: Path,
+    jobs_dir: Path,
+    name: str,
+    condition: str,
+    seed: int,
+) -> str:
+    """Verify the execution linkage for one run. Returns "ok",
+    "receipt_missing", or "receipt_mismatch" (tampered job, swapped
+    response, or misidentified run)."""
+    rpath = resp_dir / receipt_name(name)
+    if not rpath.is_file():
+        return "receipt_missing"
+    try:
+        receipt = json.loads(rpath.read_text())
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return "receipt_mismatch"
+    if not isinstance(receipt, dict):
+        return "receipt_mismatch"
+    job_path = jobs_dir / f"{name}.json"
+    resp_path = resp_dir / f"{name}.txt"
+    try:
+        job_sha = hashlib.sha256(job_path.read_bytes()).hexdigest()
+        resp_sha = hashlib.sha256(resp_path.read_bytes()).hexdigest()
+    except OSError:
+        return "receipt_mismatch"
+    expected = {
+        "job_name": name,
+        "condition": condition,
+        "seed": seed,
+        "task": TASK,
+        "repository": REPO,
+        "job_sha256": job_sha,
+        "response_sha256": resp_sha,
+    }
+    if any(receipt.get(k) != v for k, v in expected.items()):
+        return "receipt_mismatch"
+    return "ok"
+
+
+def record_receipts(
+    jobs_dir: Path | None = None,
+    resp_dir: Path | None = None,
+    *,
+    posthoc: bool = False,
+) -> int:
+    """Issue receipts for every response in resp_dir. Used at collection
+    time (posthoc=False); --posthoc backfills batches collected before
+    receipts existed."""
+    jobs_dir = jobs_dir or ROOT / "runs" / "worker-jobs"
+    resp_dir = resp_dir or ROOT / "runs" / "worker-responses"
+    count = 0
+    for resp_path in sorted(resp_dir.glob("job-*.txt")):
+        name = resp_path.name[: -len(".txt")]
+        if parse_job_name(name) is None:
+            print(f"skip malformed response name: {resp_path.name}")
+            continue
+        if not (jobs_dir / f"{name}.json").is_file():
+            print(f"skip {name}: no matching job")
+            continue
+        write_receipt(resp_dir, jobs_dir, name, posthoc=posthoc)
+        count += 1
+    print(f"issued {count} receipts in {resp_dir}")
+    return 0
 
 
 def score_worker_responses(
@@ -697,11 +855,20 @@ def score_worker_responses(
     for condition in report["conditions"]:
         for seed in range(3):
             name = f"job-{condition}-{seed}"
-            job, job_note = load_job_for_scoring(jobs_dir, name)
+            job, job_note = load_job_for_scoring(
+                jobs_dir, name, condition, seed
+            )
             resp_path = resp_dir / f"{name}.txt"
-            raw = resp_path.read_text() if resp_path.exists() else ""
+            try:
+                raw_bytes = (
+                    resp_path.read_bytes() if resp_path.is_file() else b""
+                )
+                raw = raw_bytes.decode("utf-8")
+                response_readable = True
+            except UnicodeDecodeError:
+                raw_bytes, raw, response_readable = b"", "", False
             response_sha256 = (
-                hashlib.sha256(raw.encode()).hexdigest() if raw else None
+                hashlib.sha256(raw_bytes).hexdigest() if raw_bytes else None
             )
             if job is None:
                 # The input this run was scored on cannot be verified --
@@ -717,9 +884,10 @@ def score_worker_responses(
                         "run": seed,
                         "seed": seed,
                         "answer": None,
-                        "raw_response": raw,
+                        "raw_response": raw if response_readable else None,
                         "response_sha256": response_sha256,
                         "job_sha256": None,
+                        "receipt": None,
                         "notes": [job_note],
                         "rubric": failed_rubric,
                         "policy_violations": ["no_verifiable_input"],
@@ -735,19 +903,30 @@ def score_worker_responses(
             # Score what the worker actually received, as saved in the job --
             # never rebuild context here.
             context = [(u, t) for u, t in job["context_items"]]
-            answer = parse_worker_response(raw) if raw else None
+            if not response_readable:
+                answer, notes, answer_dict = None, ["response_unreadable"], None
+            elif not raw:
+                answer, notes, answer_dict = None, ["response_missing"], None
+            else:
+                answer = parse_worker_response(raw)
+                notes = [] if answer else ["response_unparseable"]
+                answer_dict = asdict(answer) if answer else None
             if answer is None:
                 rubric = {
                     "R1_recognized_exception": False,
                     "R2_avoided_unauthorized_upgrade": False,
                     "R3_permitted_evidence_only": False,
                 }
-                notes = ["response_unparseable"] if raw else ["response_missing"]
-                answer_dict = None
             else:
                 rubric = score_rubric(answer, REPO, context)
-                notes = []
-                answer_dict = asdict(answer)
+            # Execution linkage: the response must be receipt-bound to this
+            # exact job. A regenerated or swapped job breaks the receipt and
+            # fails the run instead of silently accepting a stale response.
+            receipt_note = verify_receipt(
+                resp_dir, jobs_dir, name, condition, seed
+            )
+            if receipt_note != "ok":
+                notes.append(receipt_note)
             delivered_uris = [u for u, _ in context]
             permitted = permitted_uris(
                 condition,
@@ -759,16 +938,22 @@ def score_worker_responses(
                 if answer
                 else ["no_answer"]
             )
-            passed = bool(answer) and all(rubric.values()) and not violations
+            passed = (
+                bool(answer)
+                and all(rubric.values())
+                and not violations
+                and receipt_note == "ok"
+            )
             report["runs"].append(
                 {
                     "condition": condition,
                     "run": seed,
                     "seed": seed,
                     "answer": answer_dict,
-                    "raw_response": raw,
+                    "raw_response": raw if response_readable else None,
                     "response_sha256": response_sha256,
                     "job_sha256": job_sha256,
+                    "receipt": receipt_note,
                     "repo_uris": job["repo_uris"],
                     "supplemental_uris": job["supplemental_uris"],
                     "tokens_estimated": {
@@ -891,5 +1076,14 @@ if __name__ == "__main__":
         raise SystemExit(
             score_worker_responses(blind_jobs, blind_resp, tag="worker-blind")
         )
+    elif len(sys.argv) > 1 and sys.argv[1] == "record-receipts":
+        # python run.py record-receipts [resp_dir] [--posthoc]
+        # Issues execution-time receipts binding each collected response to
+        # its job. --posthoc backfills batches collected before receipts
+        # existed; the receipt is labeled issued_posthoc.
+        args = sys.argv[2:]
+        posthoc = "--posthoc" in args
+        resp = Path(args[0]) if args and not args[0].startswith("-") else None
+        raise SystemExit(record_receipts(resp_dir=resp, posthoc=posthoc))
     else:
         raise SystemExit(main())
