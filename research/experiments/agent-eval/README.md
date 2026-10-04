@@ -128,10 +128,11 @@ Two batches produced this identical pattern:
 1. **Unblinded pilot** (`runs/worker-20261004-030511.json`): workers ran in
    a conversation whose history included the experiment design. Labeled
    unblinded; does not establish a controlled comparison on its own.
-2. **Blinded batch** (`runs/worker-blind-20261004-044020.json`): workers
+2. **Blinded batch** (`runs/worker-blind-20261004-044932.json`): workers
    were orchestrated from a fresh side chat with no experiment history --
    the job file was their only task material. Same 0/3 / 3/3 / 3/3 pattern,
-   no violations, no unparseable responses.
+   no violations, no unparseable responses. Every run carries a verified
+   execution receipt (`receipt: ok`) binding its response to its exact job.
 
 Same pattern as the simulator: with the exception facts available to both
 retrieval arms, representation alone does not change the outcome on this
@@ -197,11 +198,27 @@ Output validation is strict: every labeled field must appear exactly
 once (a repeated label is contradictory input and rejected), content on
 the `PATCH:` line itself is patch content (never silently discarded --
 `PATCH: NONE` is still no patch), and everything after the `PATCH:` line
-is patch body. A missing `PATCH:` label or empty rationale is
-unparseable; a patch without a PROCEED decision fails R2
+is patch body. A missing `PATCH:` label, an empty rationale, or an empty
+patch payload is unparseable: the documented format requires a unified
+diff or the single word NONE. A patch without a PROCEED decision fails R2
 (`patch_without_proceed` violation); citations to undelivered sources
 fail R3 (`fabricated_citation` violation). Token counts are estimated
 (chars/4) and labeled as such; turns = 1 by construction.
+
+Execution linkage: when a response is collected, issue a receipt binding
+it to its exact job --
+`python research/experiments/agent-eval/run.py record-receipts [resp_dir]`.
+The receipt records SHA-256 of the job file and the response bytes plus
+the run identity (condition/seed/task/repository) and the brief hash.
+Scoring verifies every receipt: a regenerated or swapped job breaks the
+linkage and fails the run (`receipt_mismatch`); a missing receipt fails
+it too (`receipt_missing`). Jobs are also identity-checked against the
+run slot (`job_misidentified`) and structurally validated field by field
+(`job_corrupt` on null/mistyped fields). Missing/corrupt jobs and
+undecodable responses are recorded as failed runs, never batch-aborting
+crashes. The two checked-in batches predate receipts, so their receipts
+were issued post-hoc and are labeled `issued_posthoc: true` -- the
+linkage facts are true, only the issuance is late.
 
 Worker identity: the workers are subagents powered by Muse Spark. The
 runtime does not expose a model version string, sampling parameters, or
