@@ -78,10 +78,24 @@ TOP_K = 5  # supplemental-item budget, applied identically to both retrieval arm
 SUPPLEMENTAL_BUDGET = TOP_K
 NOW = datetime(2026, 10, 3, tzinfo=UTC)
 
-MILESTONE_RE = re.compile(r"M-\d{4}-\d{2}")
-PIN_PHRASE = "remains on java 17"
-SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
-WORD_RE = re.compile(r"[a-z0-9-]+")
+MILESTONE_RE = re.compile(r"M-\d{4}-\d{2}", re.IGNORECASE)
+
+
+def pin_statement_re(task_repo: str) -> re.Pattern[str]:
+    """Exact match for the documented synthetic statement grammar.
+
+    ``<exact repo> remains on Java 17 until [retirement milestone] <M-YYYY-MM>``
+
+    with token boundaries around the repository name and flexible
+    whitespace. Anything that does not match this grammar is ungrounded --
+    no proximity heuristics, no NLP.
+    """
+    repo = re.escape(task_repo)
+    return re.compile(
+        rf"(?<![\w-]){repo}(?![\w-])\s+remains\s+on\s+java\s+17\s+until\s+"
+        rf"(?:retirement\s+milestone\s+)?(M-\d{{4}}-\d{{2}})",
+        re.IGNORECASE,
+    )
 
 # The simulated caller is an external agent with no incident access.
 # Permission hooks are wired explicitly BEFORE any context is assembled.
@@ -131,32 +145,22 @@ def extract_grounded_pin(
 ) -> tuple[str, str] | None:
     """Bind repository, pin, and milestone to one explicit statement.
 
-    A pin grounds only when, within a single sentence, the repository name
-    appears as the pin's subject (within the 3 words preceding "remains on
-    Java 17") and a retirement milestone follows the pin before the next pin
-    or the sentence ends. A document that merely co-mentions another
-    repository -- even in an adjacent sentence, or earlier in the same
-    sentence -- never grounds a pin.
+    A pin grounds only when the evidence contains the documented synthetic
+    statement grammar (see ``pin_statement_re``): the exact repository name
+    as a standalone token, directly followed by the pin phrase and the
+    milestone. A document that merely co-mentions another repository --
+    even in a contrastive clause like "Unlike legacy-settlement,
+    other-service remains ..." -- never grounds a pin for the target repo.
+    Unsupported constructions are treated as ungrounded.
 
     This is a narrow documented parser for the synthetic scaffold, not a
-    general NLP claim: it handles singular-subject statements of the form
-    "<repo> remains on Java 17 until <milestone>". Constructions that
-    genuinely entangle two repositories' pins in one clause remain
-    ambiguous and are out of scope.
+    general NLP claim.
     """
-    repo = task_repo.lower()
+    pattern = pin_statement_re(task_repo)
     for uri, text in context:
-        for sentence in SENTENCE_SPLIT.split(text):
-            low = sentence.lower()
-            pins = list(re.finditer(PIN_PHRASE, low))
-            for i, pin in enumerate(pins):
-                before = WORD_RE.findall(low[: pin.start()])
-                if repo not in before[-3:]:
-                    continue
-                window_end = pins[i + 1].start() if i + 1 < len(pins) else len(sentence)
-                match = MILESTONE_RE.search(sentence, pin.end(), window_end)
-                if match:
-                    return uri, match.group(0)
+        match = pattern.search(text)
+        if match:
+            return uri, match.group(1)
     return None
 
 

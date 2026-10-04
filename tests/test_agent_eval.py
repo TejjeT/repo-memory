@@ -116,6 +116,58 @@ def test_pin_binding_requires_subject_before_pin():
     assert run.extract_grounded_pin("legacy-settlement", context) is None
 
 
+def test_contrast_clause_does_not_ground_pin():
+    """Repro from re-review: an unambiguous single-sentence contrast must
+    not create a false exception for the target repository."""
+    context = [
+        (
+            "policies/multi.md",
+            "Unlike legacy-settlement, other-service remains on Java 17 "
+            "until M-2030-02.",
+        )
+    ]
+    assert run.extract_grounded_pin("legacy-settlement", context) is None
+    assert run.extract_grounded_pin("other-service", context) == (
+        "policies/multi.md",
+        "M-2030-02",
+    )
+    answer = run.simulated_agent("legacy-settlement", context)
+    assert answer.decision == "ABSTAIN"
+    rubric = run.score_rubric(answer, "legacy-settlement", context)
+    assert not rubric["R1_recognized_exception"]
+
+
+def test_two_repos_each_bind_their_own_milestone():
+    """A document with separate valid pins binds each milestone correctly."""
+    context = [
+        (
+            "policies/multi.md",
+            "legacy-settlement remains on Java 17 until M-2027-01. "
+            "other-service remains on Java 17 until M-2030-02.",
+        )
+    ]
+    assert run.extract_grounded_pin("legacy-settlement", context) == (
+        "policies/multi.md",
+        "M-2027-01",
+    )
+    assert run.extract_grounded_pin("other-service", context) == (
+        "policies/multi.md",
+        "M-2030-02",
+    )
+
+
+def test_repo_token_boundaries():
+    """The repo name must be a standalone token, not part of a longer one."""
+    context = [
+        ("policies/multi.md", "my-legacy-settlement remains on Java 17 until M-2031-04.")
+    ]
+    assert run.extract_grounded_pin("legacy-settlement", context) is None
+    assert run.extract_grounded_pin("my-legacy-settlement", context) == (
+        "policies/multi.md",
+        "M-2031-04",
+    )
+
+
 def test_pin_binds_repo_subject_and_following_milestone():
     context = [
         (
