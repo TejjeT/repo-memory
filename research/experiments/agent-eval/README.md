@@ -111,7 +111,7 @@ data does not support. The repo-memory path additionally guarantees the
 mandate is suppressed (no contradictory signals) and that restricted
 sources never reach the agent; the baseline offers no such guarantees.
 
-## Worker-trial results (2026-10-04 sample)
+## Worker-trial results (2026-10-04 samples)
 
 Nine real-agent trials (subagent workers, one per condition × seed) ran
 against the exact prepared contexts with a fixed prompt and a single
@@ -123,6 +123,16 @@ response each. Mechanical scoring of the raw responses:
 | generic-retrieval | 3/3 (all HOLD, citing the exception document) |
 | repo-memory | 3/3 (all HOLD, citing EA-003 / the exception document) |
 
+Two batches produced this identical pattern:
+
+1. **Unblinded pilot** (`runs/worker-20261004-030511.json`): workers ran in
+   a conversation whose history included the experiment design. Labeled
+   unblinded; does not establish a controlled comparison on its own.
+2. **Blinded batch** (`runs/worker-blind-20261004-040256.json`): workers
+   were orchestrated from a fresh side chat with no experiment history --
+   the job file was their only task material. Same 0/3 / 3/3 / 3/3 pattern,
+   no violations, no unparseable responses.
+
 Same pattern as the simulator: with the exception facts available to both
 retrieval arms, representation alone does not change the outcome on this
 task. The differentiator remains the guarantees (deterministic precedence,
@@ -130,12 +140,9 @@ permission boundaries), not recall.
 
 Validity notes (read before citing these numbers):
 
-- Workers inherit the orchestrator's conversation history as background,
-  which includes the experiment design and the expected answer. They were
-  instructed to use only the prepared context. Counter-evidence against
-  leakage driving the results: all three repo-only workers ABSTAINED
-  rather than exploiting the known-correct HOLD — they followed the
-  prompt's grounding rule instead of the background knowledge.
+- The blinded batch is the controlled comparison: identical prompts,
+  identical blinding, only the prepared context varies. The unblinded
+  pilot is retained for the record but superseded by it.
 - Each trial was one file read (input delivery) plus one response; no
   browsing, no follow-up turns. Token counts are estimated (chars/4).
 - Three trials per condition on one task do not establish general
@@ -143,8 +150,9 @@ Validity notes (read before citing these numbers):
 
 ## Limitations
 
-- Simulated agent, not an LLM; the real-agent comparison remains
-  outstanding in #5/#15.
+- The simulator is a deterministic actor, not an LLM; the real-agent
+  comparison (9 blinded Muse-worker trials) is recorded above under
+  "Worker-trial results".
 - Keyword retrieval stands in for vector search.
 - Fixture validated: compiles cleanly with `javac --release 17` (JDK
   17.0.20, no external dependencies). Full `mvn compile` was not possible
@@ -173,9 +181,19 @@ python research/experiments/agent-eval/run.py score-workers    # mechanical scor
 
 Each job file carries the full fixed prompt (task, target repository, and
 the numbered context items -- identical assembly to the simulator runs,
-same permission hooks). Worker responses are saved raw under
-`runs/worker-responses/`; scoring parses them with the fixed output format,
-then applies the same rubric and violation gates as the simulator. An
-unparseable or missing response is a failed run, recorded alongside
-successes. Token counts are estimated (chars/4) and labeled as such;
-turns = 1 by construction.
+same permission hooks) plus the exact delivered context as
+`context_items`. Worker responses are saved raw under
+`runs/worker-responses/`; scoring reads the saved job's `context_items`
+(it never rebuilds context), parses responses with the fixed output
+format, then applies the same rubric and violation gates as the simulator.
+An unparseable or missing response is a failed run, recorded alongside
+successes. Invalid outputs are rejected: a missing `PATCH:` label or empty
+rationale is unparseable, a patch without a PROCEED decision fails R2
+(`patch_without_proceed` violation), and citations to undelivered sources
+fail R3 (`fabricated_citation` violation). Token counts are estimated
+(chars/4) and labeled as such; turns = 1 by construction.
+
+Blinded trials: orchestrate from a conversation with no experiment history
+(e.g. a fresh side chat), save responses under
+`runs/worker-responses-blind/`, and score with
+`python research/experiments/agent-eval/run.py score-workers-blind`.

@@ -1,0 +1,5 @@
+DECISION: ABSTAIN
+RATIONALE: The context contains no explicit statement of the form "legacy-settlement remains on Java 17 until M-YYYY-MM", and no mandate for Java 25 on the target repository. References to the exception and policy documents are present but their contents are not included in the context.
+CITATIONS: README.md, pom.xml
+PATCH:
+NONE
