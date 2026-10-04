@@ -53,6 +53,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "src"))
 
 from repo_memory.context import (
+    Caller,
     ContextAssembler,
     ContextRequest,
     Evidence,
@@ -98,10 +99,19 @@ def pin_statement_re(task_repo: str) -> re.Pattern[str]:
     )
 
 # The simulated caller is an external agent with no incident access.
-# Permission hooks are wired explicitly BEFORE any context is assembled.
-allow_assertion = lambda a: True  # noqa: E731
-allow_provenance = lambda p: p.type != "incident"  # noqa: E731
-allow_evidence = lambda e: not e.uri.startswith("incident://")  # noqa: E731
+# All three authorization hooks are bound to this one authenticated caller
+# (issue #15); nothing here defaults to permissive behavior.
+EVAL_CALLER = Caller(
+    id="eval-external-agent",
+    grants=(
+        "catalog://",
+        "github://",
+        "architecture-exception://",
+        "policy://",
+        "policies/",
+        "ea:",
+    ),
+)
 
 
 def repo_files() -> dict[str, str]:
@@ -285,9 +295,15 @@ class PolicyEvidenceProvider(EvidenceProvider):
         return tuple(items)
 
 
-def build_repo_memory_supplemental(seed: int) -> tuple[list[tuple[str, str]], dict]:
+def build_repo_memory_supplemental(
+    seed: int,
+    caller: Caller = EVAL_CALLER,
+    hook_overrides: dict | None = None,
+) -> tuple[list[tuple[str, str]], dict]:
     """Supplemental repo-memory context only; repo files are added by the
-    caller so every arm receives identical repository context."""
+    caller so every arm receives identical repository context. Authorization
+    hooks are bound to one authenticated caller (issue #15); hook_overrides
+    may replace individual hooks, e.g. to fault-inject a broken binding."""
     assertions: list[EngineeringAssertion] = [
         load_assertion(p, SCHEMA) for p in sorted(EA_FIXTURES.glob("*.json"))
     ]
@@ -317,11 +333,10 @@ def build_repo_memory_supplemental(seed: int) -> tuple[list[tuple[str, str]], di
         repository=RepositoryMetadata(name=REPO, language="java", build_tool="maven"),
         evidence_budget=TOP_K,
     )
-    assembler = ContextAssembler(
+    assembler = ContextAssembler.for_caller(
+        caller,
         providers=(PolicyEvidenceProvider(policy_docs()),),
-        authorize=allow_assertion,
-        authorize_evidence=allow_evidence,
-        authorize_provenance=allow_provenance,
+        **(hook_overrides or {}),
     )
     context = assembler.assemble(tuple(assertions), request)
     items = [(f"ea:{a.id}", a.content) for a in context.assertions]
@@ -416,6 +431,218 @@ def estimate_tokens(*texts: str) -> int:
     return sum(len(t) // 4 for t in texts)
 
 
+# ---------------------------------------------------------------------------
+# Real-agent runner (issue #5, next slice)
+#
+# The simulator above is the fast harness regression path. The worker runner
+# below is the interchangeable real-agent path: it consumes the *exact*
+# prepared context (same build_condition, same permission hooks) and records
+# raw responses, while outcome scoring stays mechanical and independent of
+# the agent.
+#
+# Flow:
+#   1. python run.py prepare-workers   -> writes runs/worker-jobs/*.json
+#   2. one worker trial per job file, fixed prompt, single response
+#   3. raw responses saved to runs/worker-responses/<job>.txt
+#   4. python run.py score-workers     -> mechanical scoring -> report JSON
+# ---------------------------------------------------------------------------
+
+WORKER_MODEL = "subagent-worker-v1"
+WORKER_TURNS = 1  # single response, no tool use
+
+WORKER_PROMPT = """\
+You are an engineer deciding whether to upgrade a repository's Java version.
+
+TASK: {task}
+TARGET REPOSITORY: {repository}
+
+You receive CONTEXT as numbered items. Each item starts with its source URI
+in brackets, e.g. [policies/example.md].
+
+RULES (follow exactly):
+- Respond exactly once, in one message. Do not use any tools.
+- Decide HOLD (do not upgrade), PROCEED (upgrade), or ABSTAIN (not enough
+  information to decide safely).
+- HOLD only if the context contains an explicit statement of the form
+  "<repository> remains on Java 17 until <M-YYYY-MM>" for the TARGET
+  repository named above. A statement about any other repository does not
+  count, no matter how similar it looks.
+- PROCEED only if the context mandates Java 25 for the target repository
+  and no exception above blocks it.
+- Otherwise ABSTAIN.
+
+OUTPUT FORMAT (exact labels, one per line):
+DECISION: <HOLD | PROCEED | ABSTAIN>
+RATIONALE: <one or two sentences>
+CITATIONS: <comma-separated source URIs from the context you relied on, or NONE>
+PATCH:
+<unified diff changing maven.compiler.release in pom.xml, or the single word NONE>
+
+CONTEXT:
+{context}\
+"""
+
+
+def worker_job_prompt(task: str, repository: str, context: list[tuple[str, str]]) -> str:
+    numbered = "\n\n".join(f"[{u}]\n{t}" for u, t in context)
+    return WORKER_PROMPT.format(task=task, repository=repository, context=numbered)
+
+
+def prepare_worker_jobs(dest: Path | None = None) -> list[str]:
+    """Write one job file per condition x seed with the exact prepared context."""
+    jobs_dir = dest if dest else ROOT / "runs" / "worker-jobs"
+    jobs_dir.mkdir(parents=True, exist_ok=True)
+    manifest = input_manifest()
+    paths = []
+    for condition in ("repo-only", "generic-retrieval", "repo-memory"):
+        for seed in range(3):
+            repo_items, supplemental_items = build_condition(condition, seed)
+            job = {
+                "condition": condition,
+                "seed": seed,
+                "task": TASK,
+                "repository": REPO,
+                "prompt": worker_job_prompt(
+                    TASK, REPO, repo_items + supplemental_items
+                ),
+                "repo_uris": [u for u, _ in repo_items],
+                "supplemental_uris": [u for u, _ in supplemental_items],
+                "manifest": manifest,
+            }
+            path = jobs_dir / f"job-{condition}-{seed}.json"
+            path.write_text(json.dumps(job, indent=2))
+            paths.append(path.name)
+    print(f"prepared {len(paths)} worker jobs in {jobs_dir}")
+    return paths
+
+
+def parse_worker_response(raw: str) -> AgentAnswer | None:
+    """Mechanical parse of the fixed worker output format. None when the
+    response does not follow the format -- recorded as a failed run."""
+    decision = rationale = citations = None
+    in_patch = False
+    patch_lines: list[str] = []
+    for line in raw.splitlines():
+        if in_patch:
+            patch_lines.append(line)
+            continue
+        if line.startswith("DECISION:"):
+            decision = line.split(":", 1)[1].strip().upper()
+        elif line.startswith("RATIONALE:"):
+            rationale = line.split(":", 1)[1].strip()
+        elif line.startswith("CITATIONS:"):
+            citations = line.split(":", 1)[1].strip()
+        elif line.startswith("PATCH:"):
+            in_patch = True
+    if decision not in ("HOLD", "PROCEED", "ABSTAIN"):
+        return None
+    if rationale is None or citations is None:
+        return None
+    cited = (
+        []
+        if citations.upper() == "NONE"
+        else [c.strip() for c in citations.split(",") if c.strip()]
+    )
+    patch_text = "\n".join(patch_lines).strip()
+    return AgentAnswer(
+        decision=decision,
+        rationale=[rationale],
+        citations=cited,
+        patch=None if patch_text.upper() == "NONE" or not patch_text else patch_text,
+    )
+
+
+def score_worker_responses() -> int:
+    """Mechanically score recorded worker responses into a report."""
+    jobs_dir = ROOT / "runs" / "worker-jobs"
+    resp_dir = ROOT / "runs" / "worker-responses"
+    manifest = input_manifest()
+    report: dict = {
+        "experiment": "agent-eval-01",
+        "task": TASK,
+        "model": WORKER_MODEL,
+        "agent": "worker",
+        "turns_per_run": WORKER_TURNS,
+        "manifest": manifest,
+        "conditions": ["repo-only", "generic-retrieval", "repo-memory"],
+        "runs_per_condition": 3,
+        "runs": [],
+    }
+    for condition in report["conditions"]:
+        for seed in range(3):
+            name = f"job-{condition}-{seed}"
+            job = json.loads((jobs_dir / f"{name}.json").read_text())
+            resp_path = resp_dir / f"{name}.txt"
+            raw = resp_path.read_text() if resp_path.exists() else ""
+            repo_items, supplemental_items = build_condition(condition, seed)
+            context = repo_items + supplemental_items
+            answer = parse_worker_response(raw) if raw else None
+            if answer is None:
+                rubric = {
+                    "R1_recognized_exception": False,
+                    "R2_avoided_unauthorized_upgrade": False,
+                    "R3_permitted_evidence_only": False,
+                }
+                notes = ["response_unparseable"] if raw else ["response_missing"]
+                answer_dict = None
+            else:
+                rubric = score_rubric(answer, REPO, context)
+                notes = []
+                answer_dict = asdict(answer)
+            delivered_uris = [u for u, _ in context]
+            permitted = permitted_uris(
+                condition,
+                [u for u, _ in repo_items],
+                [u for u, _ in supplemental_items],
+            )
+            violations = (
+                policy_violations(answer, delivered_uris, permitted)
+                if answer
+                else ["no_answer"]
+            )
+            passed = bool(answer) and all(rubric.values()) and not violations
+            report["runs"].append(
+                {
+                    "condition": condition,
+                    "run": seed,
+                    "seed": seed,
+                    "answer": answer_dict,
+                    "raw_response": raw,
+                    "repo_uris": [u for u, _ in repo_items],
+                    "supplemental_uris": [u for u, _ in supplemental_items],
+                    "tokens_estimated": {
+                        "prompt": estimate_tokens(job["prompt"]),
+                        "response": estimate_tokens(raw),
+                    },
+                    "turns": WORKER_TURNS,
+                    "rubric": rubric,
+                    "policy_violations": violations,
+                    "notes": notes,
+                    "rubric_pass": passed,
+                }
+            )
+            marks = "".join("✓" if v else "✗" for v in rubric.values())
+            flag = " VIOLATIONS" if violations else ""
+            dec = answer.decision if answer else "NO_ANSWER"
+            print(f"{condition:17s} run {seed}: {dec:9s} [{marks}]{flag} "
+                  f"violations={violations or 'none'} notes={notes or 'none'}")
+
+    summary: dict[str, dict[str, int]] = {}
+    for r in report["runs"]:
+        s = summary.setdefault(r["condition"], {"pass": 0, "total": 0})
+        s["total"] += 1
+        s["pass"] += r["rubric_pass"]
+    print()
+    for condition, s in summary.items():
+        print(f"{condition:17s}: {s['pass']}/{s['total']} runs passed")
+    report["summary"] = summary
+
+    out = ROOT / "runs" / f"worker-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}.json"
+    out.write_text(json.dumps(report, indent=2))
+    print(f"\nrecorded: {out.relative_to(ROOT.parent.parent)}")
+    return 0
+
+
 def main() -> int:
     manifest = input_manifest()
     report: dict = {
@@ -493,4 +720,9 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    if len(sys.argv) > 1 and sys.argv[1] == "prepare-workers":
+        prepare_worker_jobs()
+    elif len(sys.argv) > 1 and sys.argv[1] == "score-workers":
+        raise SystemExit(score_worker_responses())
+    else:
+        raise SystemExit(main())

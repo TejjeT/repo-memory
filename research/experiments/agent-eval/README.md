@@ -52,15 +52,23 @@ real-agent execution path with actual outputs.
 
 ## Permission wiring
 
-The simulated caller is an external agent with no incident access. Before
-any context is assembled:
+The simulated caller is an external agent with no incident access, modeled
+as a single authenticated `Caller` (`EVAL_CALLER` in `run.py`) whose grants
+cover the fixture sources, `policies/`, and `ea:` URIs -- but not
+`incident://`. `ContextAssembler.for_caller` binds all three authorization
+hooks to that identity (issue #15):
 
-- `authorize`: assertions readable at conclusion level
+- `authorize`: assertions readable when the caller may access at least one
+  provenance source
 - `authorize_evidence`: drops `incident://` sources (a restricted
   incident-sourced evidence item is deliberately planted at the highest
   relevance score to verify the boundary)
 - `authorize_provenance`: redacts incident provenance entries on assertions
   and evidence (mirrors the retrieval contract's `read_provenance`)
+
+No hook defaults to permissive behavior. A `hook_overrides` parameter on
+the context builder supports fault-injection tests (e.g. a deliberately
+broken allow-all evidence hook).
 
 Permission is measured on the **delivered** agent input, not just the
 citations: any restricted URI in the delivered context is a violation even
@@ -103,13 +111,44 @@ data does not support. The repo-memory path additionally guarantees the
 mandate is suppressed (no contradictory signals) and that restricted
 sources never reach the agent; the baseline offers no such guarantees.
 
+## Worker-trial results (2026-10-04 sample)
+
+Nine real-agent trials (subagent workers, one per condition × seed) ran
+against the exact prepared contexts with a fixed prompt and a single
+response each. Mechanical scoring of the raw responses:
+
+| Condition | Rubric pass |
+|---|---|
+| repo-only | 0/3 (all ABSTAIN — no policy information in context) |
+| generic-retrieval | 3/3 (all HOLD, citing the exception document) |
+| repo-memory | 3/3 (all HOLD, citing EA-003 / the exception document) |
+
+Same pattern as the simulator: with the exception facts available to both
+retrieval arms, representation alone does not change the outcome on this
+task. The differentiator remains the guarantees (deterministic precedence,
+permission boundaries), not recall.
+
+Validity notes (read before citing these numbers):
+
+- Workers inherit the orchestrator's conversation history as background,
+  which includes the experiment design and the expected answer. They were
+  instructed to use only the prepared context. Counter-evidence against
+  leakage driving the results: all three repo-only workers ABSTAINED
+  rather than exploiting the known-correct HOLD — they followed the
+  prompt's grounding rule instead of the background knowledge.
+- Each trial was one file read (input delivery) plus one response; no
+  browsing, no follow-up turns. Token counts are estimated (chars/4).
+- Three trials per condition on one task do not establish general
+  superiority in either direction.
+
 ## Limitations
 
 - Simulated agent, not an LLM; the real-agent comparison remains
   outstanding in #5/#15.
 - Keyword retrieval stands in for vector search.
-- No JDK in this environment: the fixture is a coherent Maven layout,
-  verified by structure, not compiled.
+- Fixture validated: compiles cleanly with `javac --release 17` (JDK
+  17.0.20, no external dependencies). Full `mvn compile` was not possible
+  here -- Maven Central is unreachable from this environment.
 - Three seeded runs on a deterministic actor exercise the harness, not
   independent agent behavior.
 
@@ -120,3 +159,23 @@ python research/experiments/agent-eval/run.py
 ```
 
 Reports land in `runs/` as JSON.
+
+## Real-agent runner (worker)
+
+The simulator is the fast harness regression path. The interchangeable
+real-agent path consumes the exact prepared context:
+
+```bash
+python research/experiments/agent-eval/run.py prepare-workers  # 9 job files
+# ... one worker trial per job: fixed prompt, single response, no tools ...
+python research/experiments/agent-eval/run.py score-workers    # mechanical scoring
+```
+
+Each job file carries the full fixed prompt (task, target repository, and
+the numbered context items -- identical assembly to the simulator runs,
+same permission hooks). Worker responses are saved raw under
+`runs/worker-responses/`; scoring parses them with the fixed output format,
+then applies the same rubric and violation gates as the simulator. An
+unparseable or missing response is a failed run, recorded alongside
+successes. Token counts are estimated (chars/4) and labeled as such;
+turns = 1 by construction.
