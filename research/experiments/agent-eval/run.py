@@ -823,11 +823,13 @@ def score_worker_responses(
     jobs_dir: Path | None = None,
     resp_dir: Path | None = None,
     tag: str = "worker",
+    blinded: bool = False,
 ) -> int:
     """Mechanically score recorded worker responses into a report.
 
     Scoring reads the saved job files (the exact context each worker
-    received); it never rebuilds context."""
+    received); it never rebuilds context. blinding is explicit protocol
+    metadata -- it is never inferred from the output tag."""
     jobs_dir = jobs_dir or ROOT / "runs" / "worker-jobs"
     resp_dir = resp_dir or ROOT / "runs" / "worker-responses"
     manifest = input_manifest()
@@ -849,7 +851,7 @@ def score_worker_responses(
         "manifest": manifest,
         "conditions": ["repo-only", "generic-retrieval", "repo-memory"],
         "runs_per_condition": 3,
-        "blinded": "blind" in tag,
+        "blinded": blinded,
         "runs": [],
     }
     for condition in report["conditions"]:
@@ -1074,7 +1076,17 @@ if __name__ == "__main__":
         blind_jobs = ROOT / "runs" / "worker-jobs"
         blind_resp = ROOT / "runs" / "worker-responses-blind"
         raise SystemExit(
-            score_worker_responses(blind_jobs, blind_resp, tag="worker-blind")
+            score_worker_responses(
+                blind_jobs, blind_resp, tag="worker-blind", blinded=True
+            )
+        )
+    elif len(sys.argv) > 1 and sys.argv[1] == "score-workers-exec":
+        exec_jobs = ROOT / "runs" / "worker-jobs"
+        exec_resp = ROOT / "runs" / "worker-responses-exec"
+        raise SystemExit(
+            score_worker_responses(
+                exec_jobs, exec_resp, tag="worker-exec", blinded=True
+            )
         )
     elif len(sys.argv) > 1 and sys.argv[1] == "record-receipts":
         # python run.py record-receipts [resp_dir] [--posthoc]
@@ -1085,5 +1097,23 @@ if __name__ == "__main__":
         posthoc = "--posthoc" in args
         resp = Path(args[0]) if args and not args[0].startswith("-") else None
         raise SystemExit(record_receipts(resp_dir=resp, posthoc=posthoc))
+    elif len(sys.argv) > 1 and sys.argv[1] == "record-receipt":
+        # python run.py record-receipt <resp_dir> <job-name> [--posthoc]
+        # Issues a single receipt immediately after collecting one response.
+        args = sys.argv[2:]
+        posthoc = "--posthoc" in args
+        positional = [a for a in args if not a.startswith("-")]
+        if len(positional) != 2:
+            print("usage: run.py record-receipt <resp_dir> <job-name> [--posthoc]")
+            raise SystemExit(2)
+        resp_dir = Path(positional[0])
+        out = write_receipt(
+            resp_dir,
+            ROOT / "runs" / "worker-jobs",
+            positional[1],
+            posthoc=posthoc,
+        )
+        print(f"issued {out.name}")
+        raise SystemExit(0)
     else:
         raise SystemExit(main())

@@ -123,16 +123,21 @@ response each. Mechanical scoring of the raw responses:
 | generic-retrieval | 3/3 (all HOLD, citing the exception document) |
 | repo-memory | 3/3 (all HOLD, citing EA-003 / the exception document) |
 
-Two batches produced this identical pattern:
+Three batches produced this identical pattern:
 
-1. **Unblinded pilot** (`runs/worker-20261004-030511.json`): workers ran in
+1. **Unblinded pilot** (`runs/worker-20261004-044932.json`): workers ran in
    a conversation whose history included the experiment design. Labeled
-   unblinded; does not establish a controlled comparison on its own.
+   unblinded and exploratory; does not establish a controlled comparison.
 2. **Blinded batch** (`runs/worker-blind-20261004-044932.json`): workers
    were orchestrated from a fresh side chat with no experiment history --
    the job file was their only task material. Same 0/3 / 3/3 / 3/3 pattern,
-   no violations, no unparseable responses. Every run carries a verified
-   execution receipt (`receipt: ok`) binding its response to its exact job.
+   no violations, no unparseable responses. Exploratory: its receipts were
+   issued post-hoc (labeled `issued_posthoc`).
+3. **Controlled batch** (`runs/worker-exec-20261004-051430.json`): 9 fresh
+   workers orchestrated from a new history-free side chat, each response
+   receipted at collection time (`issued_posthoc: false`, per-response
+   timestamps across the collection window). Same 0/3 / 3/3 / 3/3 pattern,
+   every run `receipt: ok`, no violations, no unparseable responses.
 
 Same pattern as the simulator: with the exception facts available to both
 retrieval arms, representation alone does not change the outcome on this
@@ -141,9 +146,10 @@ permission boundaries), not recall.
 
 Validity notes (read before citing these numbers):
 
-- The blinded batch is the controlled comparison: identical prompts,
-  identical blinding, only the prepared context varies. The unblinded
-  pilot is retained for the record but superseded by it.
+- The controlled batch is the controlled comparison: identical prompts,
+  identical blinding, only the prepared context varies, and every
+  response is receipt-bound to its exact job at collection time. The two
+  earlier batches are retained for the record as exploratory.
 - Each trial was one file read (input delivery) plus one response; no
   browsing, no follow-up turns. Token counts are estimated (chars/4).
 - Three trials per condition on one task do not establish general
@@ -177,7 +183,12 @@ real-agent path consumes the exact prepared context:
 ```bash
 python research/experiments/agent-eval/run.py prepare-workers  # 9 job files
 # ... one worker trial per job: fixed prompt, single response, no tools ...
-python research/experiments/agent-eval/run.py score-workers    # mechanical scoring
+# after collecting each response, immediately issue its receipt:
+python research/experiments/agent-eval/run.py record-receipt <resp_dir> <job-name>
+# ... then score mechanically:
+python research/experiments/agent-eval/run.py score-workers       # runs/worker-responses/
+python research/experiments/agent-eval/run.py score-workers-blind # runs/worker-responses-blind/
+python research/experiments/agent-eval/run.py score-workers-exec  # runs/worker-responses-exec/
 ```
 
 Each job file carries the full fixed prompt (task, target repository, and

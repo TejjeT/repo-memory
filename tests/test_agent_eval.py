@@ -750,3 +750,22 @@ def test_missing_receipt_fails_run(tmp_path, monkeypatch):
     row = rows[("repo-memory", 0)]
     assert row["receipt"] == "receipt_missing"
     assert not row["rubric_pass"]
+
+
+def test_blinded_metadata_independent_of_tag(tmp_path, monkeypatch):
+    """Blinding is explicit protocol metadata: the report's blinded flag
+    must not depend on the output tag string."""
+    jobs = tmp_path / "jobs"
+    resp = tmp_path / "resp"
+    (tmp_path / "runs").mkdir()
+    resp.mkdir()
+    run.prepare_worker_jobs(dest=jobs)
+    monkeypatch.setattr(run, "ROOT", tmp_path)
+
+    run.score_worker_responses(jobs, resp, tag="worker-exec", blinded=True)
+    rep = json.loads(next((tmp_path / "runs").glob("worker-exec-*.json")).read_text())
+    assert rep["blinded"] is True
+
+    run.score_worker_responses(jobs, resp, tag="worker-blind", blinded=False)
+    rep = json.loads(next((tmp_path / "runs").glob("worker-blind-*.json")).read_text())
+    assert rep["blinded"] is False
