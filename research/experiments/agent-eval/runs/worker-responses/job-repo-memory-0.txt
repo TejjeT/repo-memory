@@ -1,0 +1,5 @@
+DECISION: HOLD
+RATIONALE: An approved exception (EA-003) explicitly pins legacy-settlement on Java 17 until retirement milestone M-2027-01, so the upgrade is not authorized.
+CITATIONS: ea:EA-003, policies/legacy-settlement-exception.md
+PATCH:
+NONE

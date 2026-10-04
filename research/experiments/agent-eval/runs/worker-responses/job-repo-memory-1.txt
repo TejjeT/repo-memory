@@ -1,0 +1,5 @@
+DECISION: HOLD
+RATIONALE: The context contains an approved exception stating legacy-settlement remains on Java 17 until retirement milestone M-2027-01, which takes precedence over the enterprise Java 25 mandate for this repository. Upgrading now would violate that exception.
+CITATIONS: ea:EA-003, policies/legacy-settlement-exception.md
+PATCH:
+NONE
