@@ -106,3 +106,32 @@ in the next PR, reusing the runner/receipt design from the Java batch.
 - The starting `worker.py` exposes `GATEWAY_MAX_RETRIES` as config
   surface but states no rationale -- the repository alone does not
   explain either rule.
+
+## Measured worker execution
+
+`run.py` is the worker runner (mirrors `agent-eval/run.py`'s worker path):
+
+```bash
+python research/experiments/retry-idempotency/run.py prepare-workers
+# ... one worker trial per job, fixed brief, single response, no tools ...
+python research/experiments/retry-idempotency/run.py record-receipt <resp_dir> <job-name>
+# ... then score mechanically:
+python research/experiments/retry-idempotency/run.py score-workers --tag worker --resp-dir <resp_dir>
+```
+
+- 9 job files (`runs/worker-jobs/`): 3 conditions x 3 runs, exact prepared
+  context per condition, `prompt_sha256`-bound. Trials within a condition
+  share byte-identical context; only independent sampling varies.
+- Each worker (subagent, Muse Spark) reads ONLY its job file, produces one
+  response containing the complete new `worker.py`, then stops. Orchestrate
+  from a conversation with no experiment history (fresh side chat); do not
+  consult memory for the trials.
+- Capture-time receipts bind each response to its exact job
+  (`record-receipt` immediately after collecting each response). Scoring
+  verifies the linkage; missing/mismatched receipts fail the run.
+- Scoring is fully mechanical: the produced file is applied to an isolated
+  fixture copy and exercised by `evaluator/rubric.py` (R1-R5). No LLM takes
+  part in scoring. The report records `blinded: true` as explicit protocol
+  metadata (orchestrator had no experiment history).
+- `tests/test_retry_worker_runner.py` covers job integrity, receipt
+  linkage, and response extraction.
