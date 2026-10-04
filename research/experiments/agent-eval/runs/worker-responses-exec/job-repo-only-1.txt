@@ -1,0 +1,5 @@
+DECISION: ABSTAIN
+RATIONALE: The context confirms legacy-settlement builds on Java 17 under an approved repository exception, but it contains no explicit statement of the form "legacy-settlement remains on Java 17 until <M-YYYY-MM>" and no mandate to upgrade to Java 25.
+CITATIONS: README.md, pom.xml, src/main/java/com/acme/settlement/SettlementService.java
+PATCH:
+NONE

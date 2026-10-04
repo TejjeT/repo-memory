@@ -1085,5 +1085,23 @@ if __name__ == "__main__":
         posthoc = "--posthoc" in args
         resp = Path(args[0]) if args and not args[0].startswith("-") else None
         raise SystemExit(record_receipts(resp_dir=resp, posthoc=posthoc))
+    elif len(sys.argv) > 1 and sys.argv[1] == "record-receipt":
+        # python run.py record-receipt <resp_dir> <job-name> [--posthoc]
+        # Issues a single receipt immediately after collecting one response.
+        args = sys.argv[2:]
+        posthoc = "--posthoc" in args
+        positional = [a for a in args if not a.startswith("-")]
+        if len(positional) != 2:
+            print("usage: run.py record-receipt <resp_dir> <job-name> [--posthoc]")
+            raise SystemExit(2)
+        resp_dir = Path(positional[0])
+        out = write_receipt(
+            resp_dir,
+            ROOT / "runs" / "worker-jobs",
+            positional[1],
+            posthoc=posthoc,
+        )
+        print(f"issued {out.name}")
+        raise SystemExit(0)
     else:
         raise SystemExit(main())

@@ -1,0 +1,14 @@
+{
+  "job_name": "job-repo-memory-0",
+  "condition": "repo-memory",
+  "seed": 0,
+  "task": "Upgrade legacy-settlement from Java 17 to Java 25.",
+  "repository": "legacy-settlement",
+  "model": "Muse Spark",
+  "worker_protocol": "subagent-worker-v1",
+  "brief_sha256": "26a432f690282b5912c078b7f735d903a5d80001726ecff6b9bdd8e6b60930e0",
+  "job_sha256": "2e2491aabc26f18eb43b7af1c44fe30feec6474fdccfcd1b9f671e7110a5aaf7",
+  "response_sha256": "ca7304aa5810c148e1b1a90b2fff9f1a08f173d8634e0be59f731619f5f1b997",
+  "collected_at": "2026-10-04T05:04:12.150972+00:00",
+  "issued_posthoc": false
+}
