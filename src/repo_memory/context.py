@@ -200,12 +200,14 @@ class ContextAssembler:
         caller's grants instead of permissive behavior:
 
         - assertion: readable when the caller may access at least one of its
-          provenance sources (or it lists none)
+          provenance sources; an assertion with no provenance sources is
+          unreadable (deny by default -- there is nothing to authorize
+          against)
         - evidence: the item's source URI must be granted
         - provenance: an entry's URI must be granted, otherwise its details
           are redacted (mirroring the read_provenance decision)
 
-        A caller with no grants is denied everything by default. The plain
+        A caller with no grants is denied everything. The plain
         constructor keeps its permissive-when-omitted defaults for backward
         compatibility; caller-facing integrations should use this factory.
         """
@@ -213,8 +215,9 @@ class ContextAssembler:
             providers=providers,
             authorize=authorize
             or (
-                lambda assertion: not assertion.provenance
-                or any(caller.may_access(p.uri) for p in assertion.provenance)
+                lambda assertion: any(
+                    caller.may_access(p.uri) for p in assertion.provenance
+                )
             ),
             authorize_evidence=authorize_evidence
             or (lambda evidence: caller.may_access(evidence.uri)),

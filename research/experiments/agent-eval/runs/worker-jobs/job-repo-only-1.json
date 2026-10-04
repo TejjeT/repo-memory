@@ -11,6 +11,24 @@
     "src/main/java/com/acme/settlement/SettlementService.java"
   ],
   "supplemental_uris": [],
+  "context_items": [
+    [
+      "README.md",
+      "# legacy-settlement\n\nBatch settlement service against the legacy ledger. Currently builds on\n**Java 17** (`maven.compiler.release=17` in `pom.xml`).\n\nRuntime policy is governed by enterprise engineering assertions; see\n`policies/java-runtime-policy.md` and\n`policies/legacy-settlement-exception.md`.\n"
+    ],
+    [
+      "pom.xml",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\n         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n  <modelVersion>4.0.0</modelVersion>\n\n  <groupId>com.acme</groupId>\n  <artifactId>legacy-settlement</artifactId>\n  <version>2.14.0</version>\n  <packaging>jar</packaging>\n\n  <properties>\n    <maven.compiler.release>17</maven.compiler.release>\n    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n  </properties>\n</project>\n"
+    ],
+    [
+      "src/main/java/com/acme/settlement/App.java",
+      "package com.acme.settlement;\n\npublic class App {\n    public static void main(String[] args) {\n        SettlementService service = new SettlementService();\n        System.out.println(\"settled: \" + service.settle(\"batch-001\"));\n    }\n}\n"
+    ],
+    [
+      "src/main/java/com/acme/settlement/SettlementService.java",
+      "package com.acme.settlement;\n\n/**\n * Batch settlement against the legacy ledger. Runs on Java 17 per the\n * approved repository exception (see policies/legacy-settlement-exception.md).\n */\npublic class SettlementService {\n    public boolean settle(String batchId) {\n        if (batchId == null || batchId.isEmpty()) {\n            throw new IllegalArgumentException(\"batchId required\");\n        }\n        // Idempotent batch application; see EA-002.\n        return true;\n    }\n}\n"
+    ]
+  ],
   "manifest": {
     "input_hashes": {
       "research/experiments/agent-eval/fixtures/legacy-settlement/README.md": "73760f3523403d61efe013a2a3c6255e2b9e4464064866ca988e9fb6698a6af3",
@@ -36,15 +54,15 @@
       "examples/payments/runtime-policy.json": "2e42599118635173387bfba1234ffa25fa899f53364854b1b044a28974d4d04a",
       "examples/payments/superseded-retry-policy.json": "935098da67469e3ec07eddbc7286bea71185aac2c4473f77c34a119a2027e577",
       "src/repo_memory/__init__.py": "cd0b59fd01b1c6b85945ad3dfdbfadd84da760bb3239550f92f1c302f8bf3a2e",
-      "src/repo_memory/context.py": "3f2aea86a2eab9ffcae62651aeced859b2fae1e86659d3b2a1bb9a6424513aa7",
+      "src/repo_memory/context.py": "7e9ba30f858e3291d8df36b4ca68ff83c98050fb77d5b875d6c7b230e96bffd8",
       "src/repo_memory/loader.py": "6d8842edd7b4cde3c27f51ffa04c73b58a71dad3846c9d92fe9bfc2020a76276",
       "src/repo_memory/models.py": "8c7b2786a9fd92cf058fb53b014e4895038007913c5fbc0d63c36063be5194ca",
       "src/repo_memory/policy.py": "f65e6796d47f8aff4ae4aa3ddc3c3fc3cf972fdf1f542750e8e5e69249b337f1",
       "src/repo_memory/serialization.py": "458ca5c89fd6aaaa8bb8c30f77ecbd78772945ce6450074a78d51c62e66c344a",
       "spec/engineering-assertion.schema.json": "583786eb00e47e026a20f121de13a1445b71d9c058db536c493ee5451fb0465e",
-      "research/experiments/agent-eval/run.py": "5e248488b1f4059ccdb51716a9873ab0184b13f8173676ec8f5ebf0704c8d527"
+      "research/experiments/agent-eval/run.py": "f26c717148a63d09cc08418d5652911f6b702d2ee1f2a5c30d9bbfeb7f789e25"
     },
-    "git_commit": "580cbb93e64596e03fecd18e43e511b6b37a4227",
+    "git_commit": "46689accaa53d2b17c8f338885f5ded8cfa71782",
     "git_dirty": true,
     "runner": {
       "model": "simulated-agent-v2",
