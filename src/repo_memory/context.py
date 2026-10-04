@@ -25,6 +25,13 @@ Assembly order mirrors the retrieval contract:
 This module is backend-neutral: it defines protocols, not providers.
 Provider implementations (OpenViking search, OpenSearch, pgvector, ...)
 belong under ``adapters/``.
+
+Provider trust boundary: ``EvidenceProvider.collect`` receives the resolved
+safe candidates with their *unredacted* provenance, because a provider needs
+source details to scope retrieval. Providers are therefore trusted
+in-process components. An untrusted or external provider must be wrapped in
+an adapter that redacts what it may see *before* ``collect`` runs -- the
+assembler never hands untrusted code unredacted provenance.
 """
 
 from __future__ import annotations
@@ -106,6 +113,26 @@ class AssembledContext:
 EvidenceAuthorizationHook = Callable[[Evidence], bool]
 
 
+@dataclass(frozen=True, slots=True)
+class Caller:
+    """Authenticated caller identity for authorization decisions.
+
+    The core contract does not define an identity provider (see
+    ``docs/retrieval-contract.md`` §1): adapters resolve their own callers
+    (a user, team, OIDC subject, service account) into this shape.
+    ``grants`` are permitted source URI prefixes; anything not granted is
+    denied. This is the scaffold's default binding -- an explicit, minimal
+    mechanism, not a production policy language.
+    """
+
+    id: str
+    grants: tuple[str, ...] = ()
+
+    def may_access(self, uri: str) -> bool:
+        """Return whether the caller may access the given source URI."""
+        return any(uri.startswith(grant) for grant in self.grants)
+
+
 class EvidenceProvider(Protocol):
     """Retrieval-assist source: ranks and surfaces supporting material.
 
@@ -156,6 +183,44 @@ class ContextAssembler:
     authorize: AuthorizationHook | None = None
     authorize_evidence: EvidenceAuthorizationHook | None = None
     authorize_provenance: ProvenanceAuthorizationHook | None = None
+
+    @classmethod
+    def for_caller(
+        cls,
+        caller: Caller,
+        providers: tuple[EvidenceProvider, ...] = (),
+        *,
+        authorize: AuthorizationHook | None = None,
+        authorize_evidence: EvidenceAuthorizationHook | None = None,
+        authorize_provenance: ProvenanceAuthorizationHook | None = None,
+    ) -> ContextAssembler:
+        """Build an assembler with all hooks bound to one authenticated caller.
+
+        Any hook passed explicitly wins; omitted hooks default to the
+        caller's grants instead of permissive behavior:
+
+        - assertion: readable when the caller may access at least one of its
+          provenance sources (or it lists none)
+        - evidence: the item's source URI must be granted
+        - provenance: an entry's URI must be granted, otherwise its details
+          are redacted (mirroring the read_provenance decision)
+
+        A caller with no grants is denied everything by default. The plain
+        constructor keeps its permissive-when-omitted defaults for backward
+        compatibility; caller-facing integrations should use this factory.
+        """
+        return cls(
+            providers=providers,
+            authorize=authorize
+            or (
+                lambda assertion: not assertion.provenance
+                or any(caller.may_access(p.uri) for p in assertion.provenance)
+            ),
+            authorize_evidence=authorize_evidence
+            or (lambda evidence: caller.may_access(evidence.uri)),
+            authorize_provenance=authorize_provenance
+            or (lambda provenance: caller.may_access(provenance.uri)),
+        )
 
     def assemble(
         self,

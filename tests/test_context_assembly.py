@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from repo_memory.context import (
     REDACTED_URI,
     AssembledContext,
+    Caller,
     ContextAssembler,
     ContextRequest,
     Evidence,
@@ -256,3 +257,88 @@ def test_bob_end_to_end_provenance_redaction():
 
 def test_redact_provenance_without_hook_preserves_all():
     assert redact_provenance(SOURCE, None) == SOURCE
+
+
+def test_for_caller_binds_all_hooks_to_one_identity():
+    """Issue #15: one authenticated caller drives assertion, evidence, and
+    provenance authorization together."""
+    bob = Caller(id="bob", grants=("test://", "doc://"))
+    provider = FakeProvider(
+        (
+            make_evidence("doc://notes", ("EA-001",)),
+            make_evidence("incident://restricted/42", ("EA-001",)),
+        )
+    )
+    assembler = ContextAssembler.for_caller(
+        bob, providers=(provider,), 
+    )
+    context = assembler.assemble(
+        (make_assertion("EA-001", provenance=INCIDENT_SOURCE + SOURCE),),
+        make_request(),
+    )
+    # Assertion readable via the granted document source; incident evidence
+    # dropped; incident provenance redacted.
+    assert [a.id for a in context.assertions] == ["EA-001"]
+    assert [e.uri for e in context.evidence] == ["doc://notes"]
+    incident = next(
+        p for p in context.assertions[0].provenance if p.type == "incident"
+    )
+    assert incident.uri == REDACTED_URI
+
+
+def test_for_caller_denies_assertion_with_only_restricted_provenance():
+    """A caller with no grant covering any provenance source cannot read the
+    assertion at all."""
+    bob = Caller(id="bob", grants=("doc://",))
+    assembler = ContextAssembler.for_caller(bob)
+    context = assembler.assemble(
+        (make_assertion("EA-001", provenance=INCIDENT_SOURCE),), make_request()
+    )
+    assert context.assertions == ()
+
+
+def test_for_caller_with_no_grants_denies_everything():
+    nobody = Caller(id="nobody")
+    provider = FakeProvider((make_evidence("doc://notes", ("EA-001",)),))
+    assembler = ContextAssembler.for_caller(nobody, providers=(provider,))
+    context = assembler.assemble((make_assertion("EA-001"),), make_request())
+    assert context.assertions == ()
+    assert context.evidence == ()
+
+
+def test_for_caller_explicit_hooks_win():
+    """Explicitly passed hooks override the caller-derived defaults."""
+    bob = Caller(id="bob", grants=())
+    provider = FakeProvider((make_evidence("doc://notes", ("EA-001",)),))
+    assembler = ContextAssembler.for_caller(
+        bob,
+        providers=(provider,),
+        authorize=lambda a: True,
+        authorize_evidence=lambda e: True,
+        authorize_provenance=lambda p: True,
+    )
+    context = assembler.assemble(
+        (make_assertion("EA-001", provenance=INCIDENT_SOURCE),), make_request()
+    )
+    assert [a.id for a in context.assertions] == ["EA-001"]
+    assert [e.uri for e in context.evidence] == ["doc://notes"]
+    assert context.assertions[0].provenance[0].uri == "incident://restricted/42"
+
+
+def test_caller_may_access_uses_prefix_grants():
+    caller = Caller(id="x", grants=("doc://",))
+    assert caller.may_access("doc://notes")
+    assert not caller.may_access("incident://restricted/42")
+    assert not caller.may_access("other-doc://notes")
+
+
+def test_plain_constructor_keeps_permissive_defaults():
+    """Backward compatibility: the plain constructor still defaults to
+    permissive behavior when hooks are omitted."""
+    provider = FakeProvider((make_evidence("incident://restricted/42", ("EA-001",)),))
+    assembler = ContextAssembler(providers=(provider,))
+    context = assembler.assemble(
+        (make_assertion("EA-001", provenance=INCIDENT_SOURCE),), make_request()
+    )
+    assert [a.id for a in context.assertions] == ["EA-001"]
+    assert [e.uri for e in context.evidence] == ["incident://restricted/42"]

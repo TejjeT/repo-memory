@@ -69,6 +69,15 @@ Examples:
 
 The core contract does not define an identity provider.
 
+In the v0.2 assembler (`src/repo_memory/context.py`), the resolved caller
+is represented as a `Caller` (identity plus granted source URI prefixes).
+`ContextAssembler.for_caller` binds the assertion, evidence, and provenance
+authorization hooks to that one identity, so all three decisions trace to
+the same authenticated caller. Omitted hooks default to the caller's grants
+(deny by default) instead of permissive behavior. The plain constructor
+keeps permissive-when-omitted defaults for backward compatibility; it is
+not a production identity boundary.
+
 ## 2. Scope resolution
 
 The caller supplies or the adapter derives a target hierarchy:
@@ -300,6 +309,15 @@ The v0 contract does not define:
 - a fixed tokenizer
 
 Those belong to adapters and deployment policy.
+
+## Provider trust boundary
+
+Evidence providers receive the resolved safe candidates with their
+unredacted provenance, because a provider needs source details to scope
+retrieval. Providers are therefore trusted in-process components. An
+untrusted or external provider must be wrapped in an adapter that redacts
+what it may see before `collect` runs — the assembler never hands
+untrusted code unredacted provenance.
 
 ## Design principle
 
