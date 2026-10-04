@@ -128,7 +128,7 @@ Two batches produced this identical pattern:
 1. **Unblinded pilot** (`runs/worker-20261004-030511.json`): workers ran in
    a conversation whose history included the experiment design. Labeled
    unblinded; does not establish a controlled comparison on its own.
-2. **Blinded batch** (`runs/worker-blind-20261004-040256.json`): workers
+2. **Blinded batch** (`runs/worker-blind-20261004-044020.json`): workers
    were orchestrated from a fresh side chat with no experiment history --
    the job file was their only task material. Same 0/3 / 3/3 / 3/3 pattern,
    no violations, no unparseable responses.
@@ -182,16 +182,34 @@ python research/experiments/agent-eval/run.py score-workers    # mechanical scor
 Each job file carries the full fixed prompt (task, target repository, and
 the numbered context items -- identical assembly to the simulator runs,
 same permission hooks) plus the exact delivered context as
-`context_items`. Worker responses are saved raw under
-`runs/worker-responses/`; scoring reads the saved job's `context_items`
-(it never rebuilds context), parses responses with the fixed output
-format, then applies the same rubric and violation gates as the simulator.
-An unparseable or missing response is a failed run, recorded alongside
-successes. Invalid outputs are rejected: a missing `PATCH:` label or empty
-rationale is unparseable, a patch without a PROCEED decision fails R2
-(`patch_without_proceed` violation), and citations to undelivered sources
+`context_items` and a `prompt_sha256` binding the prompt to the job.
+Worker responses are saved raw under `runs/worker-responses/`; scoring
+loads each job through `load_job_for_scoring`, which rejects tampered
+jobs (prompt hash mismatch, URI/context disagreement, or delivered text
+absent from the prompt) and records missing/corrupt jobs as failed runs
+instead of aborting the batch. Scoring reads the saved job's
+`context_items` (it never rebuilds context), parses responses with the
+fixed output format, then applies the same rubric and violation gates as
+the simulator. Each report row binds the response to its exact input
+with `job_sha256` and `response_sha256`.
+
+Output validation is strict: every labeled field must appear exactly
+once (a repeated label is contradictory input and rejected), content on
+the `PATCH:` line itself is patch content (never silently discarded --
+`PATCH: NONE` is still no patch), and everything after the `PATCH:` line
+is patch body. A missing `PATCH:` label or empty rationale is
+unparseable; a patch without a PROCEED decision fails R2
+(`patch_without_proceed` violation); citations to undelivered sources
 fail R3 (`fabricated_citation` violation). Token counts are estimated
 (chars/4) and labeled as such; turns = 1 by construction.
+
+Worker identity: the workers are subagents powered by Muse Spark. The
+runtime does not expose a model version string, sampling parameters, or
+execution IDs, so the report records the model name and marks those
+fields unknown rather than inventing them. The canonical worker brief
+lives in `run.py` as `WORKER_BRIEF`; its SHA-256 is recorded in every
+report. (The unblinded pilot's brief predates this versioning and is not
+hashed.)
 
 Blinded trials: orchestrate from a conversation with no experiment history
 (e.g. a fresh side chat), save responses under

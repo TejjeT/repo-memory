@@ -270,7 +270,7 @@ def test_for_caller_binds_all_hooks_to_one_identity():
         )
     )
     assembler = ContextAssembler.for_caller(
-        bob, providers=(provider,), 
+        bob, providers=(provider,),
     )
     context = assembler.assemble(
         (make_assertion("EA-001", provenance=INCIDENT_SOURCE + SOURCE),),
