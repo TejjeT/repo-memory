@@ -6,6 +6,7 @@ delivered context, and a replayable input manifest.
 """
 
 import importlib.util
+import json
 from pathlib import Path
 
 RUN_PY = (
@@ -436,3 +437,144 @@ def test_parse_requires_patch_label_and_rationale():
         "DECISION: HOLD\nRATIONALE: exception holds.\nCITATIONS: ea:EA-003\nPATCH:"
     )
     assert answer is not None and answer.patch is None
+
+
+def test_parse_rejects_duplicate_fields():
+    dup_decision = (
+        "DECISION: HOLD\n"
+        "RATIONALE: exception holds.\n"
+        "DECISION: PROCEED\n"
+        "CITATIONS: ea:EA-003\n"
+        "PATCH:\n"
+        "NONE\n"
+    )
+    assert run.parse_worker_response(dup_decision) is None
+    dup_rationale = (
+        "DECISION: HOLD\n"
+        "RATIONALE: exception holds.\n"
+        "RATIONALE: actually it does not.\n"
+        "CITATIONS: ea:EA-003\n"
+        "PATCH:\n"
+        "NONE\n"
+    )
+    assert run.parse_worker_response(dup_rationale) is None
+    dup_patch = (
+        "DECISION: HOLD\n"
+        "RATIONALE: exception holds.\n"
+        "CITATIONS: ea:EA-003\n"
+        "PATCH:\n"
+        "--- pom.xml\n"
+        "PATCH:\n"
+        "+++ pom.xml\n"
+    )
+    # A second PATCH: line falls inside the patch body, so this parses --
+    # but the body is then a real patch and fails R2 for HOLD.
+    answer = run.parse_worker_response(dup_patch)
+    assert answer is not None and answer.patch is not None
+    rubric = run.score_rubric(answer, "legacy-settlement", [("ea:EA-003", "x")])
+    assert not rubric["R2_avoided_unauthorized_upgrade"]
+
+
+def test_parse_preserves_inline_patch_content():
+    raw = (
+        "DECISION: HOLD\n"
+        "RATIONALE: exception holds.\n"
+        "CITATIONS: ea:EA-003\n"
+        "PATCH: --- pom.xml\n+++ pom.xml\n"
+    )
+    answer = run.parse_worker_response(raw)
+    assert answer is not None
+    assert answer.patch is not None and "pom.xml" in answer.patch
+    rubric = run.score_rubric(answer, "legacy-settlement", [("ea:EA-003", "x")])
+    assert not rubric["R2_avoided_unauthorized_upgrade"]
+
+
+def test_parse_inline_patch_none_is_no_patch():
+    raw = (
+        "DECISION: HOLD\n"
+        "RATIONALE: exception holds.\n"
+        "CITATIONS: ea:EA-003\n"
+        "PATCH: NONE"
+    )
+    answer = run.parse_worker_response(raw)
+    assert answer is not None and answer.patch is None
+
+
+def test_load_job_validates_prompt_binding(tmp_path):
+    run.prepare_worker_jobs(dest=tmp_path / "jobs")
+    job, note = run.load_job_for_scoring(
+        tmp_path / "jobs", "job-repo-memory-0"
+    )
+    assert note == "ok" and job is not None
+
+    # Tampered prompt: hash mismatch -> inconsistent.
+    tampered = tmp_path / "jobs" / "job-repo-memory-0.json"
+    data = json.loads(tampered.read_text())
+    data["prompt"] = "No exception evidence was delivered."
+    tampered.write_text(json.dumps(data))
+    _, note = run.load_job_for_scoring(tmp_path / "jobs", "job-repo-memory-0")
+    assert note == "job_inconsistent"
+
+    # Dropped URIs: context/URI disagreement -> inconsistent.
+    data = json.loads(
+        (tmp_path / "jobs" / "job-repo-memory-1.json").read_text()
+    )
+    data["supplemental_uris"] = []
+    (tmp_path / "jobs" / "job-repo-memory-1.json").write_text(
+        json.dumps(data)
+    )
+    _, note = run.load_job_for_scoring(tmp_path / "jobs", "job-repo-memory-1")
+    assert note == "job_inconsistent"
+
+
+def test_load_job_missing_and_corrupt(tmp_path):
+    jobs = tmp_path / "jobs"
+    jobs.mkdir()
+    _, note = run.load_job_for_scoring(jobs, "job-repo-memory-0")
+    assert note == "job_missing"
+    (jobs / "job-repo-memory-0.json").write_text("{not json")
+    _, note = run.load_job_for_scoring(jobs, "job-repo-memory-0")
+    assert note == "job_corrupt"
+    (jobs / "job-repo-memory-0.json").write_text(json.dumps({"a": 1}))
+    _, note = run.load_job_for_scoring(jobs, "job-repo-memory-0")
+    assert note == "job_corrupt"
+
+
+def test_scoring_survives_bad_jobs(tmp_path, monkeypatch):
+    jobs = tmp_path / "jobs"
+    resp = tmp_path / "resp"
+    resp.mkdir()
+    (tmp_path / "runs").mkdir()
+    run.prepare_worker_jobs(dest=jobs)
+    # Remove one job, corrupt another; scoring must record failed runs,
+    # not abort the batch.
+    (jobs / "job-repo-only-0.json").unlink()
+    (jobs / "job-generic-retrieval-1.json").write_text("garbage{")
+    monkeypatch.setattr(run, "ROOT", tmp_path)
+    rc = run.score_worker_responses(jobs, resp, tag="test-bad-jobs")
+    assert rc == 0
+    reports = list((tmp_path / "runs").glob("test-bad-jobs-*.json"))
+    assert len(reports) == 1
+    report = json.loads(reports[0].read_text())
+    notes = {
+        (r["condition"], r["run"]): r["notes"] for r in report["runs"]
+    }
+    assert notes[("repo-only", 0)] == ["job_missing"]
+    assert notes[("generic-retrieval", 1)] == ["job_corrupt"]
+    assert all(not r["rubric_pass"] for r in report["runs"]
+               if r["notes"] in (["job_missing"], ["job_corrupt"]))
+
+
+def test_worker_metadata_recorded(tmp_path, monkeypatch):
+    jobs = tmp_path / "jobs"
+    resp = tmp_path / "resp"
+    resp.mkdir()
+    (tmp_path / "runs").mkdir()
+    run.prepare_worker_jobs(dest=jobs)
+    monkeypatch.setattr(run, "ROOT", tmp_path)
+    run.score_worker_responses(jobs, resp, tag="test-meta")
+    report = json.loads(next((tmp_path / "runs").glob("test-meta-*.json")).read_text())
+    assert report["model"] == "Muse Spark"
+    assert report["worker"]["turns_per_run"] == 1
+    assert len(report["worker"]["brief_sha256"]) == 64
+    assert "unknown" in report["worker"]["sampling_params"]
