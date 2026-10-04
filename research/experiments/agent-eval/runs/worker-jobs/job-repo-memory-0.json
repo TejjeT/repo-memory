@@ -1,0 +1,67 @@
+{
+  "condition": "repo-memory",
+  "seed": 0,
+  "task": "Upgrade legacy-settlement from Java 17 to Java 25.",
+  "repository": "legacy-settlement",
+  "prompt": "You are an engineer deciding whether to upgrade a repository's Java version.\n\nTASK: Upgrade legacy-settlement from Java 17 to Java 25.\nTARGET REPOSITORY: legacy-settlement\n\nYou receive CONTEXT as numbered items. Each item starts with its source URI\nin brackets, e.g. [policies/example.md].\n\nRULES (follow exactly):\n- Respond exactly once, in one message. Do not use any tools.\n- Decide HOLD (do not upgrade), PROCEED (upgrade), or ABSTAIN (not enough\n  information to decide safely).\n- HOLD only if the context contains an explicit statement of the form\n  \"<repository> remains on Java 17 until <M-YYYY-MM>\" for the TARGET\n  repository named above. A statement about any other repository does not\n  count, no matter how similar it looks.\n- PROCEED only if the context mandates Java 25 for the target repository\n  and no exception above blocks it.\n- Otherwise ABSTAIN.\n\nOUTPUT FORMAT (exact labels, one per line):\nDECISION: <HOLD | PROCEED | ABSTAIN>\nRATIONALE: <one or two sentences>\nCITATIONS: <comma-separated source URIs from the context you relied on, or NONE>\nPATCH:\n<unified diff changing maven.compiler.release in pom.xml, or the single word NONE>\n\nCONTEXT:\n[README.md]\n# legacy-settlement\n\nBatch settlement service against the legacy ledger. Currently builds on\n**Java 17** (`maven.compiler.release=17` in `pom.xml`).\n\nRuntime policy is governed by enterprise engineering assertions; see\n`policies/java-runtime-policy.md` and\n`policies/legacy-settlement-exception.md`.\n\n\n[pom.xml]\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\n         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n  <modelVersion>4.0.0</modelVersion>\n\n  <groupId>com.acme</groupId>\n  <artifactId>legacy-settlement</artifactId>\n  <version>2.14.0</version>\n  <packaging>jar</packaging>\n\n  <properties>\n    <maven.compiler.release>17</maven.compiler.release>\n    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n  </properties>\n</project>\n\n\n[src/main/java/com/acme/settlement/App.java]\npackage com.acme.settlement;\n\npublic class App {\n    public static void main(String[] args) {\n        SettlementService service = new SettlementService();\n        System.out.println(\"settled: \" + service.settle(\"batch-001\"));\n    }\n}\n\n\n[src/main/java/com/acme/settlement/SettlementService.java]\npackage com.acme.settlement;\n\n/**\n * Batch settlement against the legacy ledger. Runs on Java 17 per the\n * approved repository exception (see policies/legacy-settlement-exception.md).\n */\npublic class SettlementService {\n    public boolean settle(String batchId) {\n        if (batchId == null || batchId.isEmpty()) {\n            throw new IllegalArgumentException(\"batchId required\");\n        }\n        // Idempotent batch application; see EA-002.\n        return true;\n    }\n}\n\n\n[ea:EA-003]\nlegacy-settlement remains on Java 17 until retirement milestone M-2027-01.\n\n[ea:EA-002]\nIdempotency keys must survive retries across gateway, queue, and worker boundaries.\n\n[ea:EA-006]\nRetry must exist at exactly one orchestration layer for settlement submission; gateway and client retries must not both be enabled.\n\n[ea:EA-004]\npayments-platform owns the API contract; settlement-runtime owns the settlement-engine implementation.\n\n[policies/legacy-settlement-exception.md]\n# legacy-settlement runtime exception (EA-003 source)\n\n**Approved exception:** legacy-settlement remains on Java 17 until retirement\nmilestone M-2027-01. Do not",
+  "repo_uris": [
+    "README.md",
+    "pom.xml",
+    "src/main/java/com/acme/settlement/App.java",
+    "src/main/java/com/acme/settlement/SettlementService.java"
+  ],
+  "supplemental_uris": [
+    "ea:EA-003",
+    "ea:EA-002",
+    "ea:EA-006",
+    "ea:EA-004",
+    "policies/legacy-settlement-exception.md"
+  ],
+  "manifest": {
+    "input_hashes": {
+      "research/experiments/agent-eval/fixtures/legacy-settlement/README.md": "73760f3523403d61efe013a2a3c6255e2b9e4464064866ca988e9fb6698a6af3",
+      "research/experiments/agent-eval/fixtures/legacy-settlement/pom.xml": "43d3942127212419dc24aff42773fdd805d24651b0917c3720cb49e2265ae9dd",
+      "research/experiments/agent-eval/fixtures/legacy-settlement/src/main/java/com/acme/settlement/App.java": "b703c9c66b6779bcfbda8cf8ee2c6e6acf2abe9ee79181b2dc7a98e293129e81",
+      "research/experiments/agent-eval/fixtures/legacy-settlement/src/main/java/com/acme/settlement/SettlementService.java": "2e4512ea5a4a69f946ec69f0eacd8e59001916e5db918c57081267e18a82a7d6",
+      "research/experiments/agent-eval/policies/api-ownership.md": "7dd0d71115d08ab66a541eda4001aba9ad6ea2b4d34c12a3e9604f56afcc4616",
+      "research/experiments/agent-eval/policies/ci-pipeline.md": "5932e6bb6005b04a2ef6db70c7c21fed3b3d21194399fe8c5cc6dcdafb6b1a63",
+      "research/experiments/agent-eval/policies/dependency-pinning.md": "9d71ce0f246e5ccbbd46f1ad2bd503e90d74d824a9723de30150ba25cc412541",
+      "research/experiments/agent-eval/policies/idempotency.md": "f490ce7ff0cf16f3fdf4ee8ed0ead94b62f693cac41fe746009dfb8cf509e570",
+      "research/experiments/agent-eval/policies/java-runtime-policy.md": "f6690640991e3ce89c0e7fb95dd608178ec3e4ba63bf398f84fbe66f72f5fbe3",
+      "research/experiments/agent-eval/policies/jvm-tuning.md": "2caac31985f04dc85feeadebda9056c2be23bac92feb3fdfe8ff1ca2afccd2b9",
+      "research/experiments/agent-eval/policies/legacy-settlement-exception.md": "87bbb3b63964cb9b6d349c05f3d0190130addec16ae4bf4f03caf396a9c9dcc9",
+      "research/experiments/agent-eval/policies/observability.md": "4de5b146079db3626bdca837945d8d7a4ca32c5f26d29666aef8df1df1e37039",
+      "research/experiments/agent-eval/policies/retirement-plan.md": "998f9d8836fcab6cebe04afdc8092f70a044269f33497f86abe2f54ede199093",
+      "research/experiments/agent-eval/policies/retry-policy.md": "98381483726589c6770646388a8540a2c0432a051859c2fe8526eb963fa6232c",
+      "research/experiments/agent-eval/policies/security-baseline.md": "b094835e42fa3c3459c97526c565785226ed470ed6de39e376d838f219536030",
+      "research/experiments/agent-eval/policies/upgrade-runbook.md": "5a9c5dc13945b0d90ba05b2e36bfaf8350c6067df520df46848d17040d8354b4",
+      "examples/payments/api-ownership.json": "7aca961c71eb15158b64053335dfa1a91ed100323a3d6193a20a0bae930f9226",
+      "examples/payments/current-retry-policy.json": "e613adb8b5f291ad8ef573e3b373a8e926467d0b59929e57a0901e97ed78c1eb",
+      "examples/payments/idempotency-constraint.json": "a3607f7b22bb8775ccc6cfe060e7931684e096c6ff6cec8dcd3f834cad9019d6",
+      "examples/payments/runtime-exception.json": "2bd080a65e678902828ada8dbbac1d364b3436861e5b9b0a6b0b380691d3dd87",
+      "examples/payments/runtime-policy.json": "2e42599118635173387bfba1234ffa25fa899f53364854b1b044a28974d4d04a",
+      "examples/payments/superseded-retry-policy.json": "935098da67469e3ec07eddbc7286bea71185aac2c4473f77c34a119a2027e577",
+      "src/repo_memory/__init__.py": "cd0b59fd01b1c6b85945ad3dfdbfadd84da760bb3239550f92f1c302f8bf3a2e",
+      "src/repo_memory/context.py": "3f2aea86a2eab9ffcae62651aeced859b2fae1e86659d3b2a1bb9a6424513aa7",
+      "src/repo_memory/loader.py": "6d8842edd7b4cde3c27f51ffa04c73b58a71dad3846c9d92fe9bfc2020a76276",
+      "src/repo_memory/models.py": "8c7b2786a9fd92cf058fb53b014e4895038007913c5fbc0d63c36063be5194ca",
+      "src/repo_memory/policy.py": "f65e6796d47f8aff4ae4aa3ddc3c3fc3cf972fdf1f542750e8e5e69249b337f1",
+      "src/repo_memory/serialization.py": "458ca5c89fd6aaaa8bb8c30f77ecbd78772945ce6450074a78d51c62e66c344a",
+      "spec/engineering-assertion.schema.json": "583786eb00e47e026a20f121de13a1445b71d9c058db536c493ee5451fb0465e",
+      "research/experiments/agent-eval/run.py": "5e248488b1f4059ccdb51716a9873ab0184b13f8173676ec8f5ebf0704c8d527"
+    },
+    "git_commit": "580cbb93e64596e03fecd18e43e511b6b37a4227",
+    "git_dirty": true,
+    "runner": {
+      "model": "simulated-agent-v2",
+      "task": "Upgrade legacy-settlement from Java 17 to Java 25.",
+      "repository": "legacy-settlement",
+      "supplemental_budget": 5,
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    }
+  }
+}
