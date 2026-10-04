@@ -79,6 +79,9 @@ SUPPLEMENTAL_BUDGET = TOP_K
 NOW = datetime(2026, 10, 3, tzinfo=UTC)
 
 MILESTONE_RE = re.compile(r"M-\d{4}-\d{2}")
+PIN_PHRASE = "remains on java 17"
+SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+WORD_RE = re.compile(r"[a-z0-9-]+")
 
 # The simulated caller is an external agent with no incident access.
 # Permission hooks are wired explicitly BEFORE any context is assembled.
@@ -126,19 +129,34 @@ class AgentAnswer:
 def extract_grounded_pin(
     task_repo: str, context: list[tuple[str, str]]
 ) -> tuple[str, str] | None:
-    """Find a repository-specific version pin with its milestone in evidence.
+    """Bind repository, pin, and milestone to one explicit statement.
 
-    Returns (uri, milestone) for the first context item that pins the *target*
-    repository to Java 17 and names a retirement milestone in the same item.
-    An exception written for another service never grounds a pin here, and the
-    milestone is always read from evidence -- never injected by the actor.
+    A pin grounds only when, within a single sentence, the repository name
+    appears as the pin's subject (within the 3 words preceding "remains on
+    Java 17") and a retirement milestone follows the pin before the next pin
+    or the sentence ends. A document that merely co-mentions another
+    repository -- even in an adjacent sentence, or earlier in the same
+    sentence -- never grounds a pin.
+
+    This is a narrow documented parser for the synthetic scaffold, not a
+    general NLP claim: it handles singular-subject statements of the form
+    "<repo> remains on Java 17 until <milestone>". Constructions that
+    genuinely entangle two repositories' pins in one clause remain
+    ambiguous and are out of scope.
     """
+    repo = task_repo.lower()
     for uri, text in context:
-        low = text.lower()
-        if task_repo in low and "remains on java 17" in low:
-            match = MILESTONE_RE.search(text)
-            if match:
-                return uri, match.group(0)
+        for sentence in SENTENCE_SPLIT.split(text):
+            low = sentence.lower()
+            pins = list(re.finditer(PIN_PHRASE, low))
+            for i, pin in enumerate(pins):
+                before = WORD_RE.findall(low[: pin.start()])
+                if repo not in before[-3:]:
+                    continue
+                window_end = pins[i + 1].start() if i + 1 < len(pins) else len(sentence)
+                match = MILESTONE_RE.search(sentence, pin.end(), window_end)
+                if match:
+                    return uri, match.group(0)
     return None
 
 
@@ -350,10 +368,12 @@ def sha256_file(path: Path) -> str:
 def input_manifest() -> dict:
     """Content hashes of every effective input, so a recorded run is
     replayable: fixture files, policy corpus, runner, assertion fixtures,
-    and the schema -- plus the git state they were read from."""
+    the imported core package, and the schema -- plus the git state they
+    were read from."""
     files = [p for p in sorted(FIXTURES.rglob("*")) if p.is_file()]
     files += [p for p in sorted(POLICIES.glob("*.md")) if p.is_file()]
     files += [p for p in sorted(EA_FIXTURES.glob("*.json")) if p.is_file()]
+    files += [p for p in sorted((REPO_ROOT / "src" / "repo_memory").glob("*.py"))]
     files += [SCHEMA, Path(__file__).resolve()]
     hashes = {
         str(p.relative_to(REPO_ROOT)): sha256_file(p) for p in files
@@ -420,6 +440,10 @@ def main() -> int:
             repo_text = "\n".join(t for _, t in repo_items)
             supp_text = "\n".join(t for _, t in supplemental_items)
             answer_text = "\n".join(answer.rationale) + (answer.patch or "")
+            # A run is successful only when the answer is right AND nothing
+            # restricted reached the agent: detected permission failures fail
+            # the run and the summary, even when the answer scores well.
+            passed = all(rubric.values()) and not violations
             report["runs"].append(
                 {
                     "condition": condition,
@@ -437,13 +461,14 @@ def main() -> int:
                         "answer": estimate_tokens(answer_text),
                     },
                     "rubric": rubric,
-                    "rubric_pass": all(rubric.values()),
                     "policy_violations": violations,
+                    "rubric_pass": passed,
                 }
             )
             marks = "".join("✓" if v else "✗" for v in rubric.values())
-            print(f"{condition:17s} run {run}: {answer.decision:7s} [{marks}] "
-                  f"violations={violations or 'none'}")
+            flag = " VIOLATIONS" if violations else ""
+            print(f"{condition:17s} run {run}: {answer.decision:7s} [{marks}]"
+                  f"{flag} violations={violations or 'none'}")
 
     summary: dict[str, dict[str, int]] = {}
     for r in report["runs"]:

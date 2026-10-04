@@ -33,12 +33,15 @@ missing information rather than the value of structured memory.
 ## Agent
 
 `simulated_agent` is a fixed deterministic decision procedure (v2),
-identical across conditions. v2 grounds every claim: it holds only when a
-pin for the *target* repository is present in the evidence it actually
-received, extracting the milestone from that evidence (never injected by
-the actor). An exception written for another service does not trigger a
-hold. Abstaining is safe but unsolved: it fails R1 (no exception
-recognized) while passing R2 (no upgrade performed).
+identical across conditions. v2 grounds every claim through a narrow,
+documented parser: a pin counts only when repository, pin, and milestone
+are bound in one sentence (the repo name as the pin's subject, the
+milestone following the pin). An exception written for another service --
+even one co-mentioned in the same document -- does not trigger a hold.
+Abstaining is safe but unsolved: it fails R1 (no exception recognized)
+while passing R2 (no upgrade performed). A run counts as successful only
+when the rubric passes **and** no policy violations were recorded:
+detected permission failures fail the run and the summary headline.
 
 This is a context-quality dry run, not the measured coding-agent
 experiment requested in #5/#15: three seeds on one deterministic actor are
@@ -78,7 +81,9 @@ Recorded per run: answer/patch, repo URIs, supplemental URIs **and their
 full text**, token estimates by section (chars/4, labeled as estimate),
 rubric marks, policy violations. Each report carries a replayable manifest:
 SHA-256 of every effective input (fixtures, policies, runner, assertion
-fixtures, schema), runner config, git commit, and dirty-tree status.
+fixtures, imported core package, schema), runner config, git commit, and
+dirty-tree status (the sample output directory is excluded from the dirty
+check -- it is not an effective input).
 
 ## Results (2026-10-03 sample)
 

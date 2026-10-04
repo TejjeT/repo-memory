@@ -87,6 +87,74 @@ def test_simulated_agent_ignores_other_service_exception():
     assert "M-2030-02" not in " ".join(answer.rationale)
 
 
+def test_same_document_co_mention_does_not_ground_pin():
+    """Repro from re-review: both repositories in one document, pin belongs
+    to the other service -- the target repository must not hold."""
+    context = [
+        (
+            "policies/multi.md",
+            "legacy-settlement should upgrade to Java 25. "
+            "other-service remains on Java 17 until M-2030-02.",
+        )
+    ]
+    assert run.extract_grounded_pin("legacy-settlement", context) is None
+    answer = run.simulated_agent("legacy-settlement", context)
+    assert answer.decision == "ABSTAIN"  # no grounded pin, no mandate phrasing
+    rubric = run.score_rubric(answer, "legacy-settlement", context)
+    assert not rubric["R1_recognized_exception"]
+
+
+def test_pin_binding_requires_subject_before_pin():
+    """A bare co-mention earlier in the same sentence is not a subject."""
+    context = [
+        (
+            "policies/multi.md",
+            "Notes on legacy-settlement and the fleet: other-service remains "
+            "on Java 17 until M-2031-04.",
+        )
+    ]
+    assert run.extract_grounded_pin("legacy-settlement", context) is None
+
+
+def test_pin_binds_repo_subject_and_following_milestone():
+    context = [
+        (
+            "ea:EA-003",
+            "legacy-settlement remains on Java 17 until retirement milestone "
+            "M-2027-01. Do not upgrade before then.",
+        )
+    ]
+    assert run.extract_grounded_pin("legacy-settlement", context) == (
+        "ea:EA-003",
+        "M-2027-01",
+    )
+
+
+def test_violations_fail_the_run_and_summary():
+    """Repro from re-review: allow-all evidence hook delivers the planted
+    incident item; the run must fail even though the answer scores well."""
+    original = run.allow_evidence
+    run.allow_evidence = lambda e: True
+    try:
+        repo_items, supplemental = run.build_condition("repo-memory", seed=0)
+        context = repo_items + supplemental
+        delivered = [u for u, _ in context]
+        assert "incident://inc-2024-118" in delivered
+        permitted = run.permitted_uris(
+            "repo-memory",
+            [u for u, _ in repo_items],
+            [u for u, _ in supplemental],
+        )
+        answer = run.simulated_agent("legacy-settlement", context)
+        rubric = run.score_rubric(answer, "legacy-settlement", context)
+        violations = run.policy_violations(answer, delivered, permitted)
+        assert any(v.startswith("restricted_context_delivered") for v in violations)
+        # The headline gate: violations fail the run regardless of rubric.
+        assert not (all(rubric.values()) and not violations)
+    finally:
+        run.allow_evidence = original
+
+
 def test_simulated_agent_proceeds_on_mandate():
     context = [("policies/runtime.md", "New Java services must target Java 25.")]
     answer = run.simulated_agent("payment-api", context)
