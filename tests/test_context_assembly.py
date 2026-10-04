@@ -286,6 +286,18 @@ def test_for_caller_binds_all_hooks_to_one_identity():
     assert incident.uri == REDACTED_URI
 
 
+def test_for_caller_denies_assertion_with_empty_provenance():
+    """Regression: a caller with grants must not read an assertion that
+    lists no provenance sources -- deny by default means there is nothing
+    to authorize against."""
+    caller = Caller(id="alice", grants=("test://", "doc://"))
+    assembler = ContextAssembler.for_caller(caller)
+    context = assembler.assemble(
+        (make_assertion("EA-001", provenance=()),), make_request()
+    )
+    assert context.assertions == ()
+
+
 def test_for_caller_denies_assertion_with_only_restricted_provenance():
     """A caller with no grant covering any provenance source cannot read the
     assertion at all."""

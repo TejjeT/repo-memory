@@ -386,3 +386,53 @@ def test_prepare_worker_jobs(tmp_path):
         assert job["repo_uris"] == repo_uris
     # every job carries the replayable manifest
     assert len(job["manifest"]["input_hashes"]) >= 30
+
+
+def test_hold_with_patch_fails():
+    """A HOLD decision that ships an upgrade patch is an invalid response."""
+    context = [("ea:EA-003", "legacy-settlement remains on Java 17 until M-2027-01.")]
+    answer = run.AgentAnswer(
+        decision="HOLD",
+        rationale=["pins legacy-settlement to Java 17 until M-2027-01."],
+        citations=["ea:EA-003"],
+        patch="--- pom.xml\n+<maven.compiler.release>25</maven.compiler.release>",
+    )
+    rubric = run.score_rubric(answer, "legacy-settlement", context)
+    assert not rubric["R2_avoided_unauthorized_upgrade"]
+    violations = run.policy_violations(answer, ["ea:EA-003"], {"ea:EA-003"})
+    assert "patch_without_proceed" in violations
+
+
+def test_fabricated_citation_fails():
+    """Citations to sources the agent never received are invalid."""
+    context = [("ea:EA-003", "legacy-settlement remains on Java 17 until M-2027-01.")]
+    answer = run.AgentAnswer(
+        decision="HOLD",
+        rationale=["pins legacy-settlement to Java 17 until M-2027-01."],
+        citations=["policies/made-up.md"],
+        patch=None,
+    )
+    rubric = run.score_rubric(answer, "legacy-settlement", context)
+    assert not rubric["R3_permitted_evidence_only"]
+    violations = run.policy_violations(answer, ["ea:EA-003"], {"ea:EA-003"})
+    assert any(v.startswith("fabricated_citation") for v in violations)
+
+
+def test_parse_requires_patch_label_and_rationale():
+    assert (
+        run.parse_worker_response(
+            "DECISION: HOLD\nRATIONALE: exception holds.\nCITATIONS: ea:EA-003\n"
+        )
+        is None
+    )
+    assert (
+        run.parse_worker_response(
+            "DECISION: HOLD\nRATIONALE:   \nCITATIONS: ea:EA-003\nPATCH:\nNONE\n"
+        )
+        is None
+    )
+    # PATCH: present with empty value parses as no patch.
+    answer = run.parse_worker_response(
+        "DECISION: HOLD\nRATIONALE: exception holds.\nCITATIONS: ea:EA-003\nPATCH:"
+    )
+    assert answer is not None and answer.patch is None
