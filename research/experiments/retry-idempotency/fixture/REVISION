@@ -1,0 +1,12 @@
+# Fixture revision record
+
+Language: Python, standard library only (no third-party dependencies).
+Runtime verified: CPython 3.12.3.
+
+Frozen starting files (SHA-256):
+- gateway.py: 860b48f82a14adf19f09c67f75a9a3b5d17f94205fb2731e979405b61cf121f9
+- worker.py:  decdf31c93ba8ee75e043fb7fb0895bee6d0cd9141cfda6d15047c3a59a12ea8
+
+The fixture is offline and deterministic: FakeGateway plays a scripted
+outcome sequence, so every evaluator run is reproducible without network
+access, clocks, or randomness. No real payments are involved.
