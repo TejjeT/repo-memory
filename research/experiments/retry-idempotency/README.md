@@ -88,8 +88,9 @@ tells them apart:
 | invalid-duplicate-layer (worker loop + gateway retries on) | R5 fails |
 | invalid-unsafe-resubmit (retries with key=None) | R1, R2 fail |
 | invalid-swallowed-ambiguous (returns None on response-lost) | R2 fails (settlement count right, no settled response) |
-| invalid-raise-on-success (PermanentError after successful submit) | R2, R3 fail |
+| invalid-raise-on-success (PermanentError after successful submit) | R1, R2, R3 fail |
 | invalid-hardcoded-key (literal "key-1", ignores caller key) | R1 fails (two-batch scenario) |
+| invalid-none-second-batch (returns None for batch-B) | R1 fails (per-batch completion) |
 
 Every invalid variant imports cleanly and settles the happy path --
 compilation and test success alone do not pass the rubric. The driver
