@@ -55,7 +55,7 @@ subprocess (30s timeout guards against runaway retry loops):
 
 | Check | Scenario | Pass condition |
 |---|---|---|
-| R1 key_stable | transient, ok | same non-null key on every attempt |
+| R1 key_stable | transient, ok; two-batch (A, B) | same non-null key on every attempt; the submitted key is the caller-provided key (not regenerated or hardcoded); caller keys do not leak across batches; every batch completes cleanly (settled response returned, no exception) |
 | R2 no_duplicate | transient_after_settle, ok | batch settled exactly once |
 | R3 transient_retried | transient x2, ok | succeeds on the 3rd call |
 | R4 permanent_stops | permanent | PermanentError, exactly 1 call |
@@ -67,7 +67,9 @@ A candidate implementation is a complete `worker.py` replacement
 (what a worker trial produces). The evaluator:
 
 1. copies `fixture/gateway.py` + the candidate into a fresh temp dir,
-2. runs a fixed driver there per scenario (subprocess, JSON over stdout),
+2. runs a fixed driver there per scenario (subprocess; the driver writes
+   its scenario record to a dedicated `result.json`, candidate stdout is
+   captured separately and never parsed),
 3. scores R1..R5 as pure predicates over recorded gateway calls.
 
 No LLM reads the diff, judges style, or makes policy decisions. The
@@ -76,7 +78,7 @@ artifact, computed with `difflib`, not an input to scoring.
 
 ## Evaluator discrimination
 
-`variants/` holds a reference solution plus three known-invalid patches.
+`variants/` holds reference solutions plus seven known-invalid variants.
 The suite (`tests/test_retry_idempotency.py`) proves the evaluator
 tells them apart:
 
@@ -92,7 +94,9 @@ tells them apart:
 | invalid-hardcoded-key (literal "key-1", ignores caller key) | R1 fails (two-batch scenario) |
 | invalid-none-second-batch (returns None for batch-B) | R1 fails (per-batch completion) |
 
-Every invalid variant imports cleanly and settles the happy path --
+Every invalid variant imports cleanly; all but `invalid-raise-on-success`
+settle the happy path (`invalid-raise-on-success` intentionally raises
+after a successful submit, so it fails the happy path by design) --
 compilation and test success alone do not pass the rubric. The driver
 reports through `result.json`, never stdout, so candidate debug output
 cannot corrupt scoring; a missing/malformed result is a recorded harness
@@ -114,5 +118,9 @@ in the next PR, reusing the runner/receipt design from the Java batch.
 - Three trials per condition on one task cannot establish general
   superiority; equal or negative results are valid outcomes.
 - The starting `worker.py` exposes `GATEWAY_MAX_RETRIES` as config
-  surface but states no rationale -- the repository alone does not
-  explain either rule.
+  surface but states no rationale. Ordinary gateway API documentation
+  explains the idempotent behavior (same key deduplicates); what the
+  repository alone does not explain is the organization-specific
+  retry-ownership rationale -- the key must survive retry boundaries as
+  a standing rule, and retry must live at exactly one orchestration
+  layer.

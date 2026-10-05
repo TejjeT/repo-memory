@@ -10,19 +10,22 @@ Three conditions x three independent worker trials on one coding task:
                      ContextAssembler.for_caller to an authorized caller
                      (incident provenance redacted, per the hooks)
 
-The workers are subagents (Muse Spark) run from a conversation with no
-experiment history. Each worker reads ONLY its assigned job file, produces
-exactly one response containing the complete new worker.py, then stops.
-Outcome scoring is fully mechanical: the produced file is applied to an
-isolated fixture copy and exercised by evaluator/rubric.py (R1-R5). No LLM
-takes part in scoring, so there is no scorer judgment to blind -- the
-blinding that matters is the orchestrating conversation's lack of
-experiment history, recorded as explicit report metadata.
+The workers are subagents (Muse Spark). Each worker reads ONLY its assigned
+job file, produces exactly one response containing the complete new
+worker.py, then stops. Outcome scoring is fully mechanical: the produced
+file is applied to an isolated fixture copy and exercised by
+evaluator/rubric.py (R1-R5). No LLM takes part in scoring, so there is no
+scorer judgment to blind -- the blinding that matters is the
+orchestrating conversation's lack of experiment history, recorded as
+explicit report metadata. The 2026-10-05 fresh batch was spawned from the
+main chat (experiment history present in orchestrating context) with
+job-file-only worker briefs; the report records this as a limitation.
 
 Flow:
   1. python run.py prepare-workers   -> writes runs/worker-jobs/*.json
   2. one worker trial per job file, fixed brief, single response, no tools
-     (orchestrate from a fresh side chat; do not consult memory)
+     (prefer a fresh side chat with no experiment history; do not consult
+     memory)
   3. after collecting each response, immediately issue its receipt:
      python run.py record-receipt <resp_dir> <job-name>
   4. python run.py score-workers     -> mechanical scoring -> report JSON
@@ -159,8 +162,13 @@ def repo_items() -> list[tuple[str, str]]:
 
 def render_assertion(a) -> str:
     """Render one assembled assertion the way the caller receives it:
-    content, rationale, scope, and provenance with restricted entries
-    redacted by the authorization hooks."""
+    content, scope, and provenance with restricted entries redacted by
+    the authorization hooks.
+
+    The rationale is deliberately withheld: it carries restricted
+    incident background (INC-412/INC-463), which the knowledge boundary
+    withholds in all arms. Only the permitted rule content is delivered.
+    """
     prov = "; ".join(
         f"{p.type}: {p.uri}" for p in a.provenance
     )
@@ -172,9 +180,6 @@ def render_assertion(a) -> str:
         f"[{a.id}] (status: {a.status}, type: {a.type})",
         f"Content: {a.content}",
     ]
-    rationale = getattr(a, "rationale", None)
-    if rationale:
-        lines.append(f"Rationale: {rationale}")
     scope = a.scope
     lines.append(
         f"Scope: {scope.organization} / {scope.domain} / {scope.system}. "
@@ -182,6 +187,17 @@ def render_assertion(a) -> str:
     )
     lines.append(f"Provenance: {prov}")
     return "\n".join(lines)
+
+
+def corpus_docs() -> list[tuple[str, str]]:
+    """The shared ordinary documents. Both retrieval arms receive these:
+    they carry the same underlying facts as EA-002/EA-006 in ordinary
+    prose, so the arms differ only in delivery form (documents vs
+    structured assertions), not in permitted facts."""
+    return [
+        ("corpus/retry-policy.md", (CORPUS / "retry-policy.md").read_text()),
+        ("corpus/idempotency-guide.md", (CORPUS / "idempotency-guide.md").read_text()),
+    ]
 
 
 def repo_memory_supplemental() -> list[tuple[str, str]]:
@@ -210,18 +226,16 @@ def repo_memory_supplemental() -> list[tuple[str, str]]:
 
 def build_condition(condition: str) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
     """Return (repo_items, supplemental_items). Repo items are identical
-    for every condition; only the supplemental path differs."""
+    for every condition; only the supplemental path differs. Both
+    retrieval arms receive the shared ordinary documents; the memory arm
+    additionally receives the structured EA assertions."""
     repo = repo_items()
     if condition == "repo-only":
         return repo, []
     if condition == "generic-retrieval":
-        docs = [
-            ("corpus/retry-policy.md", (CORPUS / "retry-policy.md").read_text()),
-            ("corpus/idempotency-guide.md", (CORPUS / "idempotency-guide.md").read_text()),
-        ]
-        return repo, docs
+        return repo, corpus_docs()
     if condition == "repo-memory":
-        return repo, repo_memory_supplemental()
+        return repo, corpus_docs() + repo_memory_supplemental()
     raise ValueError(condition)
 
 
@@ -318,7 +332,19 @@ def load_job_for_scoring(
     jobs_dir: Path, name: str, condition: str, run: int
 ) -> tuple[dict | None, str]:
     """Verify a job file before scoring. Returns (job, note); job is None
-    when the input this run would be scored on cannot be verified."""
+    when the input this run would be scored on cannot be verified.
+
+    Never raises: a malformed job is recorded as a failed run, it must
+    not abort the batch."""
+    try:
+        return _load_job_for_scoring(jobs_dir, name, condition, run)
+    except Exception as exc:  # noqa: BLE001 -- malformed input, not a bug
+        return None, f"job_malformed: {type(exc).__name__}"
+
+
+def _load_job_for_scoring(
+    jobs_dir: Path, name: str, condition: str, run: int
+) -> tuple[dict | None, str]:
     job_path = jobs_dir / f"{name}.json"
     try:
         job = json.loads(job_path.read_text())
@@ -347,6 +373,15 @@ def receipt_name(name: str) -> str:
     return f"{name}.receipt.json"
 
 
+class ReceiptConflictError(Exception):
+    """A receipt already exists for this run with different content.
+
+    Receipts are evidence: they are never silently overwritten. A
+    conflict means the job or response changed after the receipt was
+    issued -- fail on the drift instead of regenerating the receipt to
+    repair the mismatch."""
+
+
 def write_receipt(
     resp_dir: Path,
     jobs_dir: Path,
@@ -357,7 +392,12 @@ def write_receipt(
     """Issue an execution-time receipt binding a collected response to the
     exact job file it was produced from. The receipt records SHA-256 of
     both artifacts plus the run identity; scoring verifies the linkage.
-    Issue immediately after collecting each response (posthoc=False)."""
+    Issue immediately after collecting each response (posthoc=False).
+
+    Raises ReceiptConflictError if a receipt already exists with
+    different content. Re-issuing an identical receipt is idempotent and
+    keeps the original collected_at.
+    """
     parsed = parse_job_name(name)
     if parsed is None:
         raise ValueError(f"malformed job name: {name}")
@@ -379,6 +419,21 @@ def write_receipt(
         "issued_posthoc": posthoc,
     }
     out = resp_dir / receipt_name(name)
+    if out.is_file():
+        try:
+            existing = json.loads(out.read_text())
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            existing = None
+        if (
+            isinstance(existing, dict)
+            and existing.get("job_sha256") == receipt["job_sha256"]
+            and existing.get("response_sha256") == receipt["response_sha256"]
+        ):
+            return out
+        raise ReceiptConflictError(
+            f"receipt for {name} already exists with different content; "
+            "refusing to overwrite"
+        )
     out.write_text(json.dumps(receipt, indent=2))
     return out
 
@@ -391,8 +446,10 @@ def verify_receipt(
     run: int,
 ) -> str:
     """Verify the execution linkage for one run. Returns "ok",
-    "receipt_missing", or "receipt_mismatch" (tampered job, swapped
-    response, or misidentified run)."""
+    "receipt_missing", "receipt_mismatch" (tampered job, swapped
+    response, or misidentified run), or "receipt_metadata_mismatch"
+    (the recorded execution metadata does not match this experiment's
+    protocol)."""
     rpath = resp_dir / receipt_name(name)
     if not rpath.is_file():
         return "receipt_missing"
@@ -420,6 +477,22 @@ def verify_receipt(
     }
     if any(receipt.get(k) != v for k, v in expected.items()):
         return "receipt_mismatch"
+    # Execution metadata must describe this experiment's protocol; a
+    # receipt from a different model, brief, or protocol version is not
+    # evidence for this batch.
+    meta_expected = {
+        "model": WORKER_MODEL,
+        "worker_protocol": WORKER_PROTOCOL,
+        "brief_sha256": hashlib.sha256(WORKER_BRIEF.encode()).hexdigest(),
+    }
+    if any(receipt.get(k) != v for k, v in meta_expected.items()):
+        return "receipt_metadata_mismatch"
+    try:
+        datetime.fromisoformat(receipt["collected_at"])
+    except (KeyError, TypeError, ValueError):
+        return "receipt_metadata_mismatch"
+    if not isinstance(receipt.get("issued_posthoc"), bool):
+        return "receipt_metadata_mismatch"
     return "ok"
 
 
@@ -442,7 +515,14 @@ def record_receipts(
         if not (jobs_dir / f"{name}.json").is_file():
             print(f"skip {name}: no matching job")
             continue
-        write_receipt(resp_dir, jobs_dir, name, posthoc=posthoc)
+        try:
+            write_receipt(resp_dir, jobs_dir, name, posthoc=posthoc)
+        except ReceiptConflictError as exc:
+            print(f"skip {name}: {exc}")
+            continue
+        except OSError as exc:
+            print(f"skip {name}: cannot read job/response ({exc})")
+            continue
         count += 1
     print(f"issued {count} receipts in {resp_dir}")
     return 0
@@ -468,6 +548,7 @@ def score_worker_responses(
     jobs_dir: Path | None = None,
     resp_dir: Path | None = None,
     tag: str = "worker",
+    out_dir: Path | None = None,
 ) -> int:
     """Mechanically score recorded worker responses into a report.
 
@@ -501,10 +582,22 @@ def score_worker_responses(
         "manifest": manifest,
         "conditions": list(CONDITIONS),
         "runs_per_condition": RUNS_PER_CONDITION,
-        # Explicit protocol metadata: the workers were orchestrated from a
-        # conversation with no experiment history. Scoring itself is
-        # deterministic code, so there is no scorer judgment to blind.
-        "blinded": True,
+        # Explicit protocol metadata. Scoring itself is deterministic
+        # code, so there is no scorer judgment to blind. Worker blinding:
+        # the fresh 2026-10-05 batch was spawned from the main chat, whose
+        # context holds experiment history (rubric, reference solution,
+        # invalid variants, exploratory-batch scores). Each worker's brief
+        # constrained it to read ONLY its assigned job file and produce
+        # one response, so the workers' effective task information was the
+        # job file -- but unlike the exploratory batch (orchestrated from
+        # a fresh side chat), strict orchestration-level blinding did not
+        # hold. Recorded here as a limitation, not a claim.
+        "blinded": False,
+        "blinding_note": (
+            "Workers spawned from the main chat (experiment history in "
+            "orchestrating context); worker briefs restricted each worker "
+            "to its assigned job file only. See code comment."
+        ),
         "scoring": (
             "mechanical: evaluator/rubric.py R1-R5 on the produced worker.py; "
             "no LLM in scoring"
@@ -543,6 +636,19 @@ def score_worker_responses(
                 "receipt": receipt_status,
                 "notes": [],
             }
+            if receipt_status != "ok":
+                # An unverified run is not a valid outcome: a missing or
+                # mismatched receipt can never count as a pass, no matter
+                # what the response scores.
+                row["notes"].append(f"receipt_{receipt_status}")
+                row["rubric"] = {f"R{i}": False for i in range(1, 6)}
+                row["rubric_pass"] = False
+                report["runs"].append(row)
+                print(
+                    f"{condition:17s} run {run}: "
+                    f"RECEIPT_{receipt_status.upper()} -> fail"
+                )
+                continue
             if job is None:
                 row["notes"].append(job_note)
                 row["rubric"] = {f"R{i}": False for i in range(1, 6)}
@@ -550,8 +656,6 @@ def score_worker_responses(
                 report["runs"].append(row)
                 print(f"{condition:17s} run {run}: NO_JOB notes={[job_note]}")
                 continue
-            if receipt_status != "ok":
-                row["notes"].append(receipt_status)
             if not raw_bytes or not response_readable:
                 row["notes"].append("response_missing_or_undecodable")
                 row["rubric"] = {f"R{i}": False for i in range(1, 6)}
@@ -591,7 +695,7 @@ def score_worker_responses(
                 f"({passed}/{len(checks)}) receipt={receipt_status}"
             )
     stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
-    out = ROOT / "runs" / f"worker-{tag}-{stamp}.json"
+    out = (out_dir or ROOT / "runs") / f"worker-{tag}-{stamp}.json"
     out.write_text(json.dumps(report, indent=2))
     print(f"report: {out}")
     return 0
