@@ -153,16 +153,16 @@ def test_swallowed_ambiguous_fails_r2_only():
     ), result["detail"]
 
 
-def test_raise_on_success_fails_r2_and_r3():
+def test_raise_on_success_fails_r1_r2_and_r3():
     """Raising PermanentError after a successful submit breaks clean and
-    retried completions."""
+    retried completions -- including the second batch's, so R1 fails too."""
     rubric = load_rubric()
     result = rubric.score_variant(
         VARIANTS / "invalid-raise-on-success-worker.py"
     )
+    assert not result["checks"]["R1_key_stable"]
     assert not result["checks"]["R2_no_duplicate"]
     assert not result["checks"]["R3_transient_retried"]
-    assert result["checks"]["R1_key_stable"]
     assert result["checks"]["R4_permanent_stops"]
     assert result["checks"]["R5_single_retry_layer"]
 
@@ -184,6 +184,19 @@ def test_logging_worker_still_passes():
     rubric = load_rubric()
     result = rubric.score_variant(VARIANTS / "reference-logging-worker.py")
     assert all(result["checks"].values()), result["detail"]
+
+
+def test_none_second_batch_fails_r1_only():
+    """Returning None for the second batch settles under the right keys
+    but swallows the response: every batch's completion must be checked."""
+    rubric = load_rubric()
+    result = rubric.score_variant(
+        VARIANTS / "invalid-none-second-batch-worker.py"
+    )
+    assert not result["checks"]["R1_key_stable"]
+    assert all(
+        v for k, v in result["checks"].items() if k != "R1_key_stable"
+    ), result["detail"]
 
 
 def test_malformed_result_is_recorded_not_raised():

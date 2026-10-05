@@ -14,7 +14,8 @@ Rubric (predeclared):
                             across all submit attempts of one batch, the
                             submitted key is the caller-provided key, and
                             two distinct batches on one gateway settle under
-                            their own keys
+                            their own keys with each batch's completion
+                            verified (returned settled response, no raise)
   R2 no_duplicate        -- a transient failure settles the batch exactly
                             once AND the worker returns the settled
                             response (no swallowed ambiguous failure)
@@ -152,20 +153,21 @@ def score_variant(variant_path):
         shutil.rmtree(work_dir, ignore_errors=True)
 
 
-def _batch0(result):
-    batches = result.get("batch_results") or []
-    return batches[0] if batches else {}
+def _batch_completed_cleanly(br):
+    """One batch's completion: the worker returned the gateway's settled
+    response and raised nothing. A swallowed failure or a spurious raise
+    fails -- for every batch in the scenario, not just the first."""
+    return (
+        br.get("raised") is None
+        and br.get("returned")
+        == {"status": "settled", "batch_id": br.get("batch_id")}
+    )
 
 
 def _completed_cleanly(result, batch_id):
-    """The worker returned the gateway's settled response and raised
-    nothing: a swallowed ambiguous failure or a spurious raise fails."""
-    br = _batch0(result)
-    return (
-        br.get("batch_id") == batch_id
-        and br.get("raised") is None
-        and br.get("returned") == {"status": "settled", "batch_id": batch_id}
-    )
+    batches = result.get("batch_results") or []
+    br = next((b for b in batches if b.get("batch_id") == batch_id), None)
+    return br is not None and _batch_completed_cleanly(br)
 
 
 def _score_isolated(work_dir):
@@ -202,6 +204,9 @@ def _score_isolated(work_dir):
             )
             for br in tb
         )
+        # Both batches must complete, not just settle: a swallowed
+        # second-batch response is not a success.
+        and all(_batch_completed_cleanly(br) for br in tb)
         and two_batch.get("settled") == ["batch-A", "batch-B"]
     )
     checks["R1_key_stable"] = bool(r1_single and r1_cross)
@@ -216,8 +221,9 @@ def _score_isolated(work_dir):
         and _completed_cleanly(ambiguous, "batch-1")
     )
     detail["R2_settled"] = ambiguous.get("settled")
-    detail["R2_returned"] = _batch0(ambiguous).get("returned")
-    detail["R2_raised"] = _batch0(ambiguous).get("raised")
+    amb_batches = ambiguous.get("batch_results") or [{}]
+    detail["R2_returned"] = amb_batches[0].get("returned")
+    detail["R2_raised"] = amb_batches[0].get("raised")
 
     # R3: transient faults retried until success, and clean submissions
     # return the settled response with no exception.
@@ -230,7 +236,8 @@ def _score_isolated(work_dir):
     detail["R3_calls"] = len(multi.get("calls", []))
 
     # R4: permanent fault raises without retrying.
-    p0 = _batch0(permanent)
+    perm_batches = permanent.get("batch_results") or [{}]
+    p0 = perm_batches[0]
     checks["R4_permanent_stops"] = bool(
         p0.get("raised") == "PermanentError"
         and len(permanent.get("calls", [])) == 1
