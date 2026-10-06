@@ -13,8 +13,10 @@ from gateway import GatewayClient, TransientError
 # Gateway/client retry layer.
 GATEWAY_MAX_RETRIES = 0
 
-# Worker-level retry budget for transient settlement submission failures.
-SETTLE_MAX_RETRIES = 3
+# Worker-owned retry layer: bounded retries for transient submission
+# failures. The gateway/client layer stays disabled so retry exists at
+# exactly one orchestration layer.
+WORKER_MAX_RETRIES = 3
 
 
 def make_client(gateway):
@@ -22,21 +24,19 @@ def make_client(gateway):
 
 
 def settle_batch(client, batch_id, payload, idempotency_key):
-    """Submit one settlement batch.
+    """Submit one settlement batch, retrying transient gateway failures.
 
-    Transient gateway failures are retried up to SETTLE_MAX_RETRIES times.
-    The same idempotency_key is reused on every attempt, so an ambiguous
-    failure (settlement committed, response lost) deduplicates instead of
-    settling twice. Permanent failures propagate immediately. The
-    client-side retry loop stays disabled (GATEWAY_MAX_RETRIES = 0) so
-    retries happen in exactly one layer.
+    The same idempotency key is reused on every attempt: if the gateway
+    committed the settlement but the response was lost, retrying with the
+    same key deduplicates instead of settling twice. Permanent failures
+    are not retried and propagate to the caller.
     """
     attempts = 0
     while True:
         try:
             return client.submit(batch_id, idempotency_key)
         except TransientError:
-            if attempts >= SETTLE_MAX_RETRIES:
-                raise
             attempts += 1
+            if attempts > WORKER_MAX_RETRIES:
+                raise
 ```

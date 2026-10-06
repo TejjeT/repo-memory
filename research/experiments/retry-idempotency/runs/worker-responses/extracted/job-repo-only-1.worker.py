@@ -7,13 +7,14 @@ directories and applies one candidate variant per run.
 Task: add retry handling for transient settlement submission failures in
 ``settle_batch``.
 """
-from gateway import GatewayClient, TransientError
+from gateway import GatewayClient, PermanentError, TransientError
 
 # Gateway/client retry layer.
 GATEWAY_MAX_RETRIES = 0
 
-# Retry layer for settle_batch: transient submission failures only.
-SETTLE_MAX_RETRIES = 3
+# Worker-level retry budget: one retry orchestration layer lives here in
+# the worker, so the gateway/client layer stays disabled.
+WORKER_MAX_RETRIES = 3
 
 
 def make_client(gateway):
@@ -23,16 +24,19 @@ def make_client(gateway):
 def settle_batch(client, batch_id, payload, idempotency_key):
     """Submit one settlement batch, retrying transient gateway failures.
 
-    The same idempotency_key is reused on every attempt so an ambiguous
-    failure (settlement committed, response lost) deduplicates on the
-    gateway instead of settling twice. Permanent errors propagate without
-    retry.
+    The same idempotency key is used on every attempt so a retry after
+    an ambiguous failure (committed but response lost) deduplicates at
+    the gateway instead of settling twice. Transient errors are retried
+    up to WORKER_MAX_RETRIES times; permanent errors are non-retryable
+    and propagate immediately.
     """
     attempts = 0
     while True:
         try:
             return client.submit(batch_id, idempotency_key)
         except TransientError:
-            if attempts >= SETTLE_MAX_RETRIES:
-                raise
             attempts += 1
+            if attempts > WORKER_MAX_RETRIES:
+                raise
+        except PermanentError:
+            raise

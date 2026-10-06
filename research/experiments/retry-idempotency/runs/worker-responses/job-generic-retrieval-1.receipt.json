@@ -7,8 +7,8 @@
   "model": "Muse Spark",
   "worker_protocol": "subagent-worker-v1",
   "brief_sha256": "26a432f690282b5912c078b7f735d903a5d80001726ecff6b9bdd8e6b60930e0",
-  "job_sha256": "9ac3417983a80febc2d5dac1b90d69677c2750c94786415716440f65744f2173",
-  "response_sha256": "b5e027f5c2ff9687e27a203431f3a203247544f9f1b534d7e326374de0733fe2",
-  "collected_at": "2026-10-04T20:42:28.399837+00:00",
+  "job_sha256": "63cc751f9af3be5be1f7d04c328c20cb440aacc9c0a8af7a7f63b325a198ed42",
+  "response_sha256": "0a4b50e4eb58c0231a1c89409c6e9cabc9ac76c51c8c6a47156beb7f71011cd4",
+  "collected_at": "2026-10-05T22:29:19.810073+00:00",
   "issued_posthoc": false
 }
