@@ -29,7 +29,7 @@
       "research/experiments/retry-idempotency/corpus/retry-policy.md": "2766e4fed02ad4daa92ce3900bf045d1dbeb455979c4c1e52032e3ff9360c27f",
       "examples/payments/idempotency-constraint.json": "a3607f7b22bb8775ccc6cfe060e7931684e096c6ff6cec8dcd3f834cad9019d6",
       "examples/payments/current-retry-policy.json": "e613adb8b5f291ad8ef573e3b373a8e926467d0b59929e57a0901e97ed78c1eb",
-      "research/experiments/retry-idempotency/evaluator/rubric.py": "63b64ecb3d147b577188402be637e6e3e42efa9fb3fb6dffe300c0289c7b95ab",
+      "research/experiments/retry-idempotency/evaluator/rubric.py": "ef0696a4ac6a5165c0661fc346279f984b26ad5928c8a98b936fb40eda2b14c3",
       "src/repo_memory/__init__.py": "cd0b59fd01b1c6b85945ad3dfdbfadd84da760bb3239550f92f1c302f8bf3a2e",
       "src/repo_memory/context.py": "7e9ba30f858e3291d8df36b4ca68ff83c98050fb77d5b875d6c7b230e96bffd8",
       "src/repo_memory/loader.py": "6d8842edd7b4cde3c27f51ffa04c73b58a71dad3846c9d92fe9bfc2020a76276",
@@ -37,9 +37,9 @@
       "src/repo_memory/policy.py": "f65e6796d47f8aff4ae4aa3ddc3c3fc3cf972fdf1f542750e8e5e69249b337f1",
       "src/repo_memory/serialization.py": "458ca5c89fd6aaaa8bb8c30f77ecbd78772945ce6450074a78d51c62e66c344a",
       "spec/engineering-assertion.schema.json": "583786eb00e47e026a20f121de13a1445b71d9c058db536c493ee5451fb0465e",
-      "research/experiments/retry-idempotency/run.py": "00e537b4f16c891381c8d4bc47bc330b28d9cf58d8d296645108d40bd7f8c1de"
+      "research/experiments/retry-idempotency/run.py": "4959df47a05240214fdbc06abae6acaf54823fabecd9aa7e10e3fb822f33082d"
     },
-    "git_commit": "2fcc8e6a0e8ee87d0c504956c60d937e5c397192",
+    "git_commit": "70baa747536939032448da3cff74f2a60397d1ed",
     "git_dirty": false,
     "runner": {
       "experiment": "retry-idempotency-worker-01",
