@@ -342,6 +342,23 @@ def load_job_for_scoring(
         return None, f"job_malformed: {type(exc).__name__}"
 
 
+# The delivery protocol each condition's job must satisfy. Both
+# retrieval arms receive the same shared ordinary documents; the memory
+# arm additionally receives the structured assertions. Withheld incident
+# identifiers must appear in no delivered prompt.
+EXPECTED_SUPPLEMENTAL_URIS = {
+    "repo-only": [],
+    "generic-retrieval": ["corpus/retry-policy.md", "corpus/idempotency-guide.md"],
+    "repo-memory": [
+        "corpus/retry-policy.md",
+        "corpus/idempotency-guide.md",
+        "ea:EA-002",
+        "ea:EA-006",
+    ],
+}
+WITHHELD_IDENTIFIERS = ("INC-412", "INC-463")
+
+
 def _load_job_for_scoring(
     jobs_dir: Path, name: str, condition: str, run: int
 ) -> tuple[dict | None, str]:
@@ -366,6 +383,15 @@ def _load_job_for_scoring(
     )
     if hashlib.sha256(prompt.encode()).hexdigest() != job["prompt_sha256"]:
         return None, "job_inconsistent"
+    # Delivered-context compliance: the job must carry exactly the
+    # supplemental documents its condition's protocol requires, and no
+    # withheld identifiers. A job that violates the delivery protocol
+    # is not a valid trial input, even if its hashes verify.
+    if job.get("supplemental_uris") != EXPECTED_SUPPLEMENTAL_URIS.get(condition):
+        return None, "job_context_violation: supplemental_uris"
+    for ident in WITHHELD_IDENTIFIERS:
+        if ident in job["prompt"]:
+            return None, "job_context_violation: withheld_identifier"
     return job, "ok"
 
 
@@ -447,9 +473,11 @@ def verify_receipt(
 ) -> str:
     """Verify the execution linkage for one run. Returns "ok",
     "receipt_missing", "receipt_mismatch" (tampered job, swapped
-    response, or misidentified run), or "receipt_metadata_mismatch"
+    response, or misidentified run), "receipt_metadata_mismatch"
     (the recorded execution metadata does not match this experiment's
-    protocol)."""
+    protocol), or "receipt_posthoc" (the linkage verifies but the
+    receipt was issued after the fact -- preserved as evidence, excluded
+    from capture-time-qualified outcomes)."""
     rpath = resp_dir / receipt_name(name)
     if not rpath.is_file():
         return "receipt_missing"
@@ -493,6 +521,8 @@ def verify_receipt(
         return "receipt_metadata_mismatch"
     if not isinstance(receipt.get("issued_posthoc"), bool):
         return "receipt_metadata_mismatch"
+    if receipt["issued_posthoc"]:
+        return "receipt_posthoc"
     return "ok"
 
 
@@ -637,10 +667,18 @@ def score_worker_responses(
                 "notes": [],
             }
             if receipt_status != "ok":
-                # An unverified run is not a valid outcome: a missing or
-                # mismatched receipt can never count as a pass, no matter
-                # what the response scores.
-                row["notes"].append(f"receipt_{receipt_status}")
+                # An unverified run is not a valid outcome: a missing,
+                # mismatched, or metadata-invalid receipt can never count
+                # as a pass, no matter what the response scores. A posthoc
+                # receipt is preserved as evidence but excluded from
+                # capture-time-qualified outcomes.
+                if receipt_status == "receipt_posthoc":
+                    row["notes"].append(
+                        "receipt_posthoc: linkage preserved, excluded from "
+                        "capture-time-qualified outcomes"
+                    )
+                else:
+                    row["notes"].append(f"receipt_{receipt_status}")
                 row["rubric"] = {f"R{i}": False for i in range(1, 6)}
                 row["rubric_pass"] = False
                 report["runs"].append(row)

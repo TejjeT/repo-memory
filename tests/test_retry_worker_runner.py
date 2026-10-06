@@ -262,6 +262,76 @@ def test_malformed_job_recorded_not_raised(tmp_path):
     assert note.startswith("job_malformed")
 
 
+def test_delivered_context_violation_scores_invalid(tmp_path):
+    """A job whose delivered context violates the protocol -- missing
+    shared documents or leaked withheld identifiers -- is not a valid
+    trial input, even when its hashes verify."""
+    jobs = tmp_path / "jobs"
+    prepare_worker_jobs(dest=jobs)
+    # Memory arm without the shared corpus documents.
+    bad = jobs / "job-repo-memory-0.json"
+    job = json.loads(bad.read_text())
+    job["supplemental_uris"] = ["ea:EA-002", "ea:EA-006"]
+    job["context_items"] = [c for c in job["context_items"] if c[0].startswith("ea:")]
+    job["prompt"] = worker_job_prompt(job["context_items"])
+    job["prompt_sha256"] = hashlib.sha256(job["prompt"].encode()).hexdigest()
+    bad.write_text(json.dumps(job))
+    result, note = load_job_for_scoring(jobs, "job-repo-memory-0", "repo-memory", 0)
+    assert result is None
+    assert note == "job_context_violation: supplemental_uris"
+
+
+def test_withheld_identifier_in_prompt_scores_invalid(tmp_path):
+    jobs = tmp_path / "jobs"
+    prepare_worker_jobs(dest=jobs)
+    bad = jobs / "job-repo-memory-1.json"
+    job = json.loads(bad.read_text())
+    job["prompt"] = job["prompt"] + "\nIncident INC-412 background.\n"
+    job["prompt_sha256"] = hashlib.sha256(job["prompt"].encode()).hexdigest()
+    # context_items unchanged so the rebuilt prompt won't match; patch it
+    # to keep hashes consistent and isolate the identifier check.
+    job["context_items"].append(["ea:leak", "Incident INC-412 background."])
+    job["prompt"] = worker_job_prompt(job["context_items"])
+    job["prompt_sha256"] = hashlib.sha256(job["prompt"].encode()).hexdigest()
+    bad.write_text(json.dumps(job))
+    result, note = load_job_for_scoring(jobs, "job-repo-memory-1", "repo-memory", 1)
+    assert result is None
+    assert note == "job_context_violation: withheld_identifier"
+
+
+def test_posthoc_receipt_excluded_from_capture_time_outcomes(tmp_path, capsys):
+    """A valid posthoc receipt is preserved as evidence but its run does
+    not qualify as a capture-time outcome."""
+    from run import ROOT  # noqa: E402
+
+    jobs = tmp_path / "jobs"
+    resp = tmp_path / "resp"
+    resp.mkdir()
+    prepare_worker_jobs(dest=jobs)
+    ref = (ROOT / "variants" / "reference-worker.py").read_text()
+    (resp / "job-repo-only-0.txt").write_text(ref)
+    write_receipt(resp, jobs, "job-repo-only-0", posthoc=True)
+    assert (
+        verify_receipt(resp, jobs, "job-repo-only-0", "repo-only", 0)
+        == "receipt_posthoc"
+    )
+    rc = score_worker_responses(
+        jobs_dir=jobs, resp_dir=resp, tag="test", out_dir=tmp_path
+    )
+    assert rc == 0
+    report = json.loads(next(tmp_path.glob("worker-test-*.json")).read_text())
+    row = next(
+        r for r in report["runs"]
+        if r["condition"] == "repo-only" and r["run"] == 0
+    )
+    assert row["receipt"] == "receipt_posthoc"
+    assert row["rubric_pass"] is False
+    assert any("excluded from capture-time" in n for n in row["notes"])
+    # The other eight runs have no responses; they fail on missing
+    # receipts, not on posthoc exclusion.
+    assert sum(1 for r in report["runs"] if r["receipt"] == "receipt_posthoc") == 1
+
+
 def test_extract_worker_py_prefers_first_fenced_block():
     raw = "Some chatter.\n```python\nCODE_A = 1\n```\nMore text.\n```python\nCODE_B = 2\n```\n"
     code, note = extract_worker_py(raw)
