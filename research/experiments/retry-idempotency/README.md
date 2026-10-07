@@ -104,12 +104,30 @@ failure. Every retryable scenario (clean, transient, ambiguous, multi)
 must return the gateway's settled response with no exception, and two
 distinct batches on one gateway must settle under their own caller keys.
 
-## Scope of this PR
+## Recorded worker trials
 
-Fixture, equivalent source corpus, rubric, evaluator, variants, and
-discrimination tests only. Measured worker execution (three conditions
-x three fresh trials, receipts, raw diffs, mechanical scoring) follows
-in the next PR, reusing the runner/receipt design from the Java batch.
+The fixture/evaluator from #21 is reused by `run.py` to prepare nine
+prompt-bound jobs, record response receipts, extract complete workers,
+and mechanically score three trials per condition. Run `python run.py --help`
+from this directory for preparation, receipt and scoring commands.
+
+`runs/worker-fresh-20261005-222944.json` records **3/3, 3/3, 3/3**:
+all arms passed all five checks. This task provides no evidence that
+repo-memory improves correctness over ordinary retrieval or repository
+context alone. Workers inherited an orchestrating conversation containing
+experiment history, so this batch is explicitly `blinded: false`.
+Unknown model/sampling/execution details remain unknown.
+
+The scorer validates the actual delivered URI sequence, nonempty document
+text, declared context lists and withheld incident identifiers. Invalid
+jobs, missing/mismatched receipts and posthoc receipts cannot count as
+capture-time successes. Receipts bind saved artifacts; they do not
+independently audit worker execution.
+
+`runs/exploratory-batch-01/` preserves the original 2/3, 3/3, 3/3 batch
+unchanged, including its documented context-delivery flaws. Original
+reports retain the input hashes and scorer version used at scoring time.
+Tightening validation does not require rewriting collection artifacts.
 
 ## Validity notes
 

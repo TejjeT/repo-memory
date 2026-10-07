@@ -357,6 +357,7 @@ EXPECTED_SUPPLEMENTAL_URIS = {
     ],
 }
 WITHHELD_IDENTIFIERS = ("INC-412", "INC-463")
+EXPECTED_REPO_URIS = ["fixture/worker.py", "fixture/gateway.py"]
 
 
 def _load_job_for_scoring(
@@ -402,6 +403,18 @@ def _load_job_for_scoring(
     for ident in WITHHELD_IDENTIFIERS:
         if ident in job["prompt"]:
             return None, "job_context_violation: withheld_identifier"
+    if job.get("repo_uris") != EXPECTED_REPO_URIS:
+        return None, "job_context_violation: repo_uris"
+    # Preserve the sequence: a dict hides duplicate or unexpected input.
+    # The fixed protocol delivers each fixture and supplement exactly once.
+    expected_context_uris = EXPECTED_REPO_URIS + (expected_uris or [])
+    if [u for u, _ in job["context_items"]] != expected_context_uris:
+        return None, "job_context_violation: context_items"
+    if any(
+        not isinstance(t, str) or not t.strip()
+        for _, t in job["context_items"]
+    ):
+        return None, "job_context_violation: empty_document"
     return job, "ok"
 
 
@@ -595,8 +608,8 @@ def score_worker_responses(
     Scoring reads the saved job files (the exact context each worker
     received); it never rebuilds context. Each produced worker.py is
     applied to an isolated fixture copy and exercised by the predeclared
-    rubric -- no LLM takes part in scoring. Blinding is explicit protocol
-    metadata: the orchestrating conversation held no experiment history.
+    rubric -- no LLM takes part in scoring. The recorded batch's inherited
+    orchestration context is disclosed in the report's blinding metadata.
     """
     jobs_dir = jobs_dir or ROOT / "runs" / "worker-jobs"
     resp_dir = resp_dir or ROOT / "runs" / "worker-responses"

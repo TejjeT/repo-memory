@@ -9,6 +9,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 EXP = Path(__file__).resolve().parent.parent / "research" / "experiments" / "retry-idempotency"
 sys.path.insert(0, str(EXP))
 
@@ -321,6 +323,63 @@ def test_missing_documents_despite_correct_labels_scores_invalid(tmp_path):
     result, note = load_job_for_scoring(jobs, "job-repo-memory-2", "repo-memory", 2)
     assert result is None
     assert note.startswith("job_context_violation: missing_document")
+
+
+@pytest.mark.parametrize("violation", [
+    "missing_supplements", "empty_supplement", "duplicate", "unexpected",
+    "missing_fixture", "empty_fixture", "wrong_repo_labels", "non_string_text",
+])
+def test_actual_delivery_violation_fails_whole_scorer(tmp_path, violation):
+    from run import ROOT
+
+    jobs = tmp_path / "jobs"
+    resp = tmp_path / "resp"
+    resp.mkdir()
+    prepare_worker_jobs(dest=jobs)
+    bad_name = "job-repo-memory-0"
+    path = jobs / f"{bad_name}.json"
+    job = json.loads(path.read_text())
+    original_labels = job["supplemental_uris"].copy()
+    if violation == "missing_supplements":
+        job["context_items"] = job["context_items"][:2]
+    elif violation == "empty_supplement":
+        job["context_items"][2][1] = "   "
+    elif violation == "duplicate":
+        job["context_items"].append(job["context_items"][2].copy())
+    elif violation == "unexpected":
+        job["context_items"].append(["extra/context.md", "Unplanned instruction"])
+    elif violation == "missing_fixture":
+        del job["context_items"][0]
+    elif violation == "empty_fixture":
+        job["context_items"][0][1] = "   "
+    elif violation == "wrong_repo_labels":
+        job["repo_uris"] = []
+    elif violation == "non_string_text":
+        job["context_items"][0][1] = 42
+    assert job["supplemental_uris"] == original_labels
+    job["prompt"] = worker_job_prompt(job["context_items"])
+    job["prompt_sha256"] = hashlib.sha256(job["prompt"].encode()).hexdigest()
+    path.write_text(json.dumps(job))
+    ref = (ROOT / "variants" / "reference-worker.py").read_text()
+    # Collection receipts bind both the incomplete job and a good control;
+    # rejection must come from delivery validation, not hash drift.
+    for name in (bad_name, "job-repo-memory-1"):
+        (resp / f"{name}.txt").write_text(ref)
+        write_receipt(resp, jobs, name)
+    assert verify_receipt(resp, jobs, bad_name, "repo-memory", 0) == "ok"
+    assert score_worker_responses(
+        jobs_dir=jobs, resp_dir=resp, tag="delivery", out_dir=tmp_path
+    ) == 0
+    report = json.loads(next(tmp_path.glob("worker-delivery-*.json")).read_text())
+    assert len(report["runs"]) == 9
+    bad = next(r for r in report["runs"] if r["job_name"] == bad_name)
+    assert bad["receipt"] == "ok"
+    assert bad["rubric_pass"] is False
+    assert any("job_context_violation" in n for n in bad["notes"])
+    control = next(
+        r for r in report["runs"] if r["job_name"] == "job-repo-memory-1"
+    )
+    assert control["rubric_pass"] is True
 
 
 def test_posthoc_receipt_excluded_from_capture_time_outcomes(tmp_path, capsys):
