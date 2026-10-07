@@ -23,8 +23,9 @@ a deployed identity or an external-provider security boundary.
 | `Caller` returned by `authenticate()` | Trusted | Carries directory-derived grants. Client claims are validated, never applied. |
 | Client-supplied caller id / grants / scope | Untrusted | Validated against the verified identity; mismatches and widening attempts raise `AuthorizationError`. |
 | In-process `EvidenceProvider` | Trusted | Receives unredacted candidates, as documented in `context.py`. |
-| External/untrusted provider | Untrusted | Receives only the redacted candidate view via `ExternalEvidenceProvider`. |
+| External/untrusted provider | Untrusted | Receives only the redacted candidate view. Redaction is applied by the assembler with the request caller's own hook -- a provider object can never carry one caller's permissions into another caller's request. |
 | Provider output | Untrusted | Cannot expand the authorized set: the assembler strips out-of-scope links, drops orphans, and enforces the evidence hook. |
+| Assertion `rationale` | Caller-safe | Withheld whenever any provenance entry is redacted for the caller -- free-text rationale may discuss restricted sources. The approved conclusion (`content`) stays readable by design. |
 
 ## The authenticated path
 
@@ -39,8 +40,8 @@ client claims (id/grants) ──► authenticate() validates ──► Caller (s
                                               │  provenance hooks, one id)   │
                                               └───────────────┬───────────────┘
                                                               │
-                                        ExternalEvidenceProvider (if external)
-                                         redact ──► record ──► collect
+                                    external_providers ──► redacted view ──► record ──► collect
+                                    (assembler's own hook; per-request binding)
 ```
 
 Entry points (`src/repo_memory/auth.py`):
@@ -53,11 +54,20 @@ Entry points (`src/repo_memory/auth.py`):
 - `assembler_for_session(...)` — one-call entry point: authenticate, then
   bind all hooks to that identity. No permissive fallback.
 
-`ExternalEvidenceProvider` (`src/repo_memory/context.py`) wraps an untrusted
-provider: it redacts provenance the caller may not inspect *before*
-`collect` runs, and records the exact outbound view on a
-`BoundaryTransport` for audit. The provenance hook is required — a missing
-hook fails fast rather than exposing unredacted data.
+`assembler_for_session(...)` — one-call entry point: authenticate, then
+bind all hooks to that identity. External providers are passed separately
+and redacted inside `assemble` with the verified caller's own hook.
+
+Redaction (`src/repo_memory/context.py`) is owned by the assembler, the only
+component that knows the request's caller:
+
+- `redacted_candidate_view()` builds the caller-safe view for external
+  providers: unauthorized provenance entries are withheld and rationale is
+  withheld with them.
+- `redact_assertion()` applies the same rule to responses.
+- `BoundaryTransport` records the exact outbound view for audit. The
+  provenance hook is required when external providers are configured -- a
+  missing hook fails fast rather than exposing unredacted data.
 
 ## What the demo shows
 

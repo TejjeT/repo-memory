@@ -31,7 +31,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Protocol
 
-from repo_memory.context import Caller, ContextAssembler, EvidenceProvider
+from repo_memory.context import (
+    BoundaryTransport,
+    Caller,
+    ContextAssembler,
+    EvidenceProvider,
+)
 
 
 class AuthenticationError(Exception):
@@ -125,15 +130,18 @@ def assembler_for_session(
     session: VerifiedSession | None,
     directory: CallerDirectory,
     providers: tuple[EvidenceProvider, ...] = (),
+    external_providers: tuple[EvidenceProvider, ...] = (),
     *,
     claimed_caller_id: str | None = None,
     claimed_grants: Iterable[str] = (),
+    boundary_transport: BoundaryTransport | None = None,
 ) -> ContextAssembler:
     """Build a caller-bound assembler for one authenticated request.
 
     This is the single entry point for authenticated paths: identity comes
     from the session, hooks bind to that same identity, and there is no
-    permissive fallback.
+    permissive fallback. External providers are redacted with the verified
+    caller's own hook inside ``assemble``.
     """
     caller = authenticate(
         session,
@@ -141,15 +149,12 @@ def assembler_for_session(
         claimed_caller_id=claimed_caller_id,
         claimed_grants=claimed_grants,
     )
-    return ContextAssembler.for_caller(caller, providers=providers)
-
-
-class BoundaryTransport(Protocol):
-    """Audit hook recording what crossed an external-provider boundary."""
-
-    def record(self, view: tuple[object, ...]) -> None:
-        """Record the exact candidate view handed to the provider."""
-        ...
+    return ContextAssembler.for_caller(
+        caller,
+        providers=providers,
+        external_providers=external_providers,
+        boundary_transport=boundary_transport,
+    )
 
 
 @dataclass

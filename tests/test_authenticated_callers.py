@@ -27,7 +27,7 @@ from repo_memory.context import (
     ContextRequest,
     Evidence,
     EvidenceProvider,
-    ExternalEvidenceProvider,
+    redact_assertion,
     redacted_candidate_view,
 )
 from repo_memory.models import EngineeringAssertion, Provenance, Scope
@@ -63,6 +63,7 @@ def make_session(subject: str = "alice") -> VerifiedSession:
 def make_assertion(
     assertion_id: str,
     provenance: tuple[Provenance, ...] = PUBLIC_SOURCE,
+    rationale: str | None = None,
 ) -> EngineeringAssertion:
     return EngineeringAssertion(
         id=assertion_id,
@@ -73,6 +74,7 @@ def make_assertion(
         importance="high",
         provenance=provenance,
         created_at=NOW,
+        rationale=rationale,
     )
 
 
@@ -177,11 +179,10 @@ def test_redacted_candidate_view_preserves_authority_redacts_details():
     assert view[1].provenance == PUBLIC_SOURCE
 
 
-def test_external_provider_requires_provenance_hook():
+def test_external_providers_require_provenance_hook():
+    assembler = ContextAssembler(external_providers=(_StubProvider(()),))
     with pytest.raises(TypeError):
-        ExternalEvidenceProvider(
-            provider=_StubProvider(()), authorize_provenance=None
-        )
+        assembler.assemble((make_assertion("EA-1"),), make_request())
 
 
 class _StubProvider(EvidenceProvider):
@@ -194,25 +195,62 @@ class _StubProvider(EvidenceProvider):
         return self.items
 
 
-def test_external_provider_records_redacted_view_and_sees_no_secrets():
+def test_external_provider_receives_redacted_view_and_sees_no_secrets():
     stub = _StubProvider(())
     transport = RecordingTransport()
-    boundary = ExternalEvidenceProvider(
-        stub,
-        authorize_provenance=lambda p: p.uri.startswith("doc://"),
-        transport=transport,
+    assembler = ContextAssembler.for_caller(
+        Caller(id="bob", grants=("doc://",)),
+        external_providers=(stub,),
+        boundary_transport=transport,
     )
-    candidates = (make_assertion("EA-1", RESTRICTED_SOURCE),)
-    boundary.collect(make_request(), candidates)
+    # Mixed provenance: readable (doc://) but the incident entry is withheld.
+    candidates = (
+        make_assertion(
+            "EA-1", PUBLIC_SOURCE + RESTRICTED_SOURCE, rationale="per incident 7"
+        ),
+    )
+    context = assembler.assemble(candidates, make_request())
 
     assert len(transport.sent_views) == 1
     (view,) = transport.sent_views
-    (entry,) = view[0].provenance
-    assert entry.uri == REDACTED_URI
-    assert "incident://restricted/7" not in repr(view)
-    assert "rev-9" not in repr(view)
-    # The wrapped provider saw the same redacted view.
+    uris = [entry.uri for entry in view[0].provenance]
+    assert uris == ["doc://handbook", REDACTED_URI]
+    text = repr(view)
+    assert "incident://restricted/7" not in text
+    assert "rev-9" not in text
+    # The provider saw the same redacted view the transport recorded.
     assert stub.seen[0] == view
+    # The response redacts the incident entry and withholds the rationale.
+    (assertion,) = context.assertions
+    assert [p.uri for p in assertion.provenance] == ["doc://handbook", REDACTED_URI]
+    assert assertion.rationale is None
+
+
+def test_rationale_survives_when_all_provenance_is_readable():
+    assembler = ContextAssembler.for_caller(
+        Caller(id="alice", grants=("doc://", "incident://"))
+    )
+    context = assembler.assemble(
+        (
+            make_assertion(
+                "EA-1",
+                PUBLIC_SOURCE + RESTRICTED_SOURCE,
+                rationale="per handbook and incident 7",
+            ),
+        ),
+        make_request(),
+    )
+    (assertion,) = context.assertions
+    assert [p.uri for p in assertion.provenance] == [
+        "doc://handbook",
+        "incident://restricted/7",
+    ]
+    assert assertion.rationale == "per handbook and incident 7"
+
+
+def test_redact_assertion_without_hook_preserves_all():
+    assertion = make_assertion("EA-1", RESTRICTED_SOURCE, rationale="r")
+    assert redact_assertion(assertion, None) is assertion
 
 
 def test_provider_output_cannot_expand_authorized_set():
@@ -259,20 +297,35 @@ def _two_caller_setup():
     return directory, assertions
 
 
-def _assemble_for(subject: str, directory, assertions, transport):
+def _assemble_for(subject: str, directory, assertions, transport, provider=None):
     session = make_session(subject)
-    grants = directory.grants_for(subject)
-    boundary = ExternalEvidenceProvider(
-        _StubProvider(()),
-        authorize_provenance=lambda p: any(
-            p.uri.startswith(g) for g in grants
-        ),
-        transport=transport,
-    )
     assembler = ContextAssembler.for_caller(
-        authenticate(session, directory), providers=(boundary,)
+        authenticate(session, directory),
+        external_providers=(provider if provider is not None else _StubProvider(()),),
+        boundary_transport=transport,
     )
     return assembler.assemble(assertions, make_request())
+
+
+def test_shared_provider_is_redacted_per_request_caller():
+    """The same provider object serving alice then bob is redacted with each
+    request's own hook -- alice's permissions cannot leak into bob's path."""
+    directory, assertions = _two_caller_setup()
+    provider = _StubProvider(())
+    alice_transport = RecordingTransport()
+    bob_transport = RecordingTransport()
+
+    _assemble_for("alice", directory, assertions, alice_transport, provider)
+    _assemble_for("bob", directory, assertions, bob_transport, provider)
+
+    (alice_view,) = alice_transport.sent_views
+    (bob_view,) = bob_transport.sent_views
+    # Alice's outbound view keeps the incident URI; bob's redacts it.
+    assert "incident://restricted/7" in repr(alice_view)
+    assert "incident://restricted/7" not in repr(bob_view)
+    # The provider observed exactly what each transport recorded.
+    assert provider.seen[0] == alice_view
+    assert provider.seen[1] == bob_view
 
 
 def test_two_callers_produce_documented_differing_results():

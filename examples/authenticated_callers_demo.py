@@ -27,7 +27,6 @@ from repo_memory.context import (
     ContextRequest,
     Evidence,
     EvidenceProvider,
-    ExternalEvidenceProvider,
     describe,
 )
 from repo_memory.models import EngineeringAssertion, Provenance, Scope
@@ -119,6 +118,17 @@ def make_assertions() -> tuple[EngineeringAssertion, ...]:
             created_at=NOW,
         ),
         EngineeringAssertion(
+            id="EA-MIXED",
+            type="constraint",
+            content="Canary deploys require the on-call sign-off.",
+            scope=Scope(organization="Acme"),
+            status="approved",
+            importance="medium",
+            provenance=PUBLIC_PROVENANCE + RESTRICTED_PROVENANCE,
+            created_at=NOW,
+            rationale="Handbook policy, tightened after incident 7 postmortem.",
+        ),
+        EngineeringAssertion(
             id="EA-SECRET",
             type="incident-derived-constraint",
             content="Freeze deploys during incident INC-7 review.",
@@ -144,21 +154,13 @@ def run_caller(subject: str) -> dict:
     session = VerifiedSession(subject=subject, authenticated_at=NOW, method="demo")
     transport = RecordingTransport()
     provider = FakeExternalProvider()
-    grants = DIRECTORY[subject]
+    # The assembler redacts with the verified caller's own hook -- the same
+    # provider object is safe to reuse across callers.
     assembler = assembler_for_session(
         session,
         directory,
-        providers=(
-            ExternalEvidenceProvider(
-                provider,
-                # Same grant check for_caller binds internally; the wrapper
-                # needs it up front to redact before the provider sees data.
-                authorize_provenance=lambda p: any(
-                    p.uri.startswith(g) for g in grants
-                ),
-                transport=transport,
-            ),
-        ),
+        external_providers=(provider,),
+        boundary_transport=transport,
     )
     context = assembler.assemble(make_assertions(), make_request())
     return {
@@ -170,12 +172,13 @@ def run_caller(subject: str) -> dict:
     }
 
 
-def check_no_leakage(result: dict, forbidden_uris: tuple[str, ...]) -> None:
-    """Assert no forbidden URI appears anywhere the caller could observe."""
+def check_no_leakage(result: dict, forbidden: tuple[str, ...]) -> None:
+    """Assert forbidden strings appear nowhere the caller could observe."""
     observed: list[str] = []
     for assertion in result["assertions"]:
         observed.append(assertion.id)
         observed.append(assertion.content)
+        observed.append(assertion.rationale or "")
         for entry in assertion.provenance:
             observed.append(entry.uri)
             observed.append(entry.revision or "")
@@ -186,8 +189,10 @@ def check_no_leakage(result: dict, forbidden_uris: tuple[str, ...]) -> None:
                 observed.append(entry.uri)
                 observed.append(entry.revision or "")
     text = "\n".join(observed)
-    for uri in forbidden_uris:
-        assert uri not in text, f"leakage: {uri} visible to {result['subject']}"
+    for forbidden_text in forbidden:
+        assert forbidden_text not in text, (
+            f"leakage: {forbidden_text!r} visible to {result['subject']}"
+        )
 
 
 def main() -> None:
@@ -209,20 +214,34 @@ def main() -> None:
     print("outbound views sent:", len(bob["outbound_views"]))
 
     # Documented differing results.
-    assert alice["response"]["assertions"] == ["EA-SECRET", "EA-PUBLIC"], alice["response"]
-    assert bob["response"]["assertions"] == ["EA-PUBLIC"], bob["response"]
+    assert alice["response"]["assertions"] == [
+        "EA-SECRET",
+        "EA-PUBLIC",
+        "EA-MIXED",
+    ], alice["response"]
+    assert bob["response"]["assertions"] == ["EA-PUBLIC", "EA-MIXED"], bob["response"]
 
-    # Bob's restricted provenance is redacted, not exposed.
-    (public,) = bob["assertions"]
-    assert public.id == "EA-PUBLIC"
-    assert [p.uri for p in public.provenance] == ["doc://handbook/deploy"]
+    # Bob's restricted provenance is redacted, not exposed; the mixed
+    # assertion's rationale (which discusses the incident) is withheld.
+    by_id = {a.id: a for a in bob["assertions"]}
+    assert [p.uri for p in by_id["EA-PUBLIC"].provenance] == ["doc://handbook/deploy"]
+    assert [p.uri for p in by_id["EA-MIXED"].provenance] == [
+        "doc://handbook/deploy",
+        "redacted",
+    ]
+    assert by_id["EA-MIXED"].rationale is None
+    # Alice keeps full provenance and the rationale.
+    alice_by_id = {a.id: a for a in alice["assertions"]}
+    assert alice_by_id["EA-MIXED"].rationale == (
+        "Handbook policy, tightened after incident 7 postmortem."
+    )
 
-    # No cross-caller leakage: the restricted incident URI, revision, and
-    # policy reference appear nowhere bob can observe -- not in his
-    # response, and not in what the external provider received for him.
+    # No cross-caller leakage: the restricted incident URI, revision, policy
+    # reference, and rationale text appear nowhere bob can observe -- not in
+    # his response, and not in what the external provider received for him.
     check_no_leakage(
         bob,
-        ("incident://restricted/7", "rev-9", "incident-access"),
+        ("incident://restricted/7", "rev-9", "incident-access", "postmortem"),
     )
 
     # The provider cannot expand either caller's authorized set: alice gets
