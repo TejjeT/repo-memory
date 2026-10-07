@@ -175,24 +175,73 @@ def redact_provenance(
     return tuple(safe)
 
 
+def redacted_candidate_view(
+    candidates: tuple[EngineeringAssertion, ...],
+    authorize_provenance: ProvenanceAuthorizationHook,
+) -> tuple[EngineeringAssertion, ...]:
+    """Return the caller-safe candidate view for untrusted/external providers.
+
+    Provenance details the caller may not inspect are withheld and rationale
+    that could discuss restricted sources is withheld with it (see
+    :func:`redact_assertion`). Deterministic authority is preserved --
+    redaction never removes or reorders candidates.
+    """
+    return tuple(
+        redact_assertion(assertion, authorize_provenance) for assertion in candidates
+    )
+
+
+def redact_assertion(
+    assertion: EngineeringAssertion,
+    authorize_provenance: ProvenanceAuthorizationHook | None,
+) -> EngineeringAssertion:
+    """Return the caller-safe assertion for a response.
+
+    Provenance the caller may not inspect is redacted. The rationale is
+    withheld as well when any provenance was redacted: free-text rationale
+    may discuss restricted sources, and there is no reliable way to separate
+    which parts came from which source, so fail closed. The approved
+    conclusion (``content``) stays readable by design -- it is the
+    deterministic authority, not the evidence.
+    """
+    if authorize_provenance is None:
+        return assertion
+    provenance = redact_provenance(assertion.provenance, authorize_provenance)
+    if any(entry.uri == REDACTED_URI for entry in provenance):
+        return replace(assertion, provenance=provenance, rationale=None)
+    return replace(assertion, provenance=provenance)
+
+
+class BoundaryTransport(Protocol):
+    """Audit hook recording what crossed an external-provider boundary."""
+
+    def record(self, view: tuple[EngineeringAssertion, ...]) -> None:
+        """Record the exact candidate view handed to external providers."""
+        ...
+
+
 @dataclass(frozen=True, slots=True)
 class ContextAssembler:
     """Combine trusted engineering memory with bounded retrieval assist."""
 
     providers: tuple[EvidenceProvider, ...] = ()
+    external_providers: tuple[EvidenceProvider, ...] = ()
     authorize: AuthorizationHook | None = None
     authorize_evidence: EvidenceAuthorizationHook | None = None
     authorize_provenance: ProvenanceAuthorizationHook | None = None
+    boundary_transport: BoundaryTransport | None = None
 
     @classmethod
     def for_caller(
         cls,
         caller: Caller,
         providers: tuple[EvidenceProvider, ...] = (),
+        external_providers: tuple[EvidenceProvider, ...] = (),
         *,
         authorize: AuthorizationHook | None = None,
         authorize_evidence: EvidenceAuthorizationHook | None = None,
         authorize_provenance: ProvenanceAuthorizationHook | None = None,
+        boundary_transport: BoundaryTransport | None = None,
     ) -> ContextAssembler:
         """Build an assembler with all hooks bound to one authenticated caller.
 
@@ -213,6 +262,7 @@ class ContextAssembler:
         """
         return cls(
             providers=providers,
+            external_providers=external_providers,
             authorize=authorize
             or (
                 lambda assertion: any(
@@ -223,6 +273,7 @@ class ContextAssembler:
             or (lambda evidence: caller.may_access(evidence.uri)),
             authorize_provenance=authorize_provenance
             or (lambda provenance: caller.may_access(provenance.uri)),
+            boundary_transport=boundary_transport,
         )
 
     def assemble(
@@ -240,21 +291,28 @@ class ContextAssembler:
         authorized_ids = {assertion.id for assertion in candidates}
 
         evidence: list[Evidence] = []
+        # Trusted in-process providers receive the unredacted candidates.
         for provider in self.providers:
-            for item in provider.collect(request, candidates):
-                # Strip links outside the safe set; drop orphaned items.
-                safe_links = tuple(
-                    link for link in item.relates_to if link in authorized_ids
+            evidence.extend(
+                self._collect_authorized(provider, request, candidates, authorized_ids)
+            )
+        # External providers receive only the redacted view, computed with
+        # this assembler's own provenance hook -- the hook is bound to the
+        # request's caller here, so a provider can never be reused across
+        # callers with another caller's permissions.
+        if self.external_providers:
+            if self.authorize_provenance is None:
+                raise TypeError(
+                    "external_providers require a provenance hook; refusing "
+                    "to expose unredacted candidates to an external provider"
                 )
-                if not safe_links:
-                    continue
-                item = replace(item, relates_to=safe_links)
-                # Source authorization boundary, before ranking/budgeting.
-                if self.authorize_evidence is not None and not self.authorize_evidence(
-                    item
-                ):
-                    continue
-                evidence.append(item)
+            view = redacted_candidate_view(candidates, self.authorize_provenance)
+            if self.boundary_transport is not None:
+                self.boundary_transport.record(view)
+            for provider in self.external_providers:
+                evidence.extend(
+                    self._collect_authorized(provider, request, view, authorized_ids)
+                )
 
         # Ranking is allowed here: it affects relevance, not authority.
         evidence.sort(
@@ -263,14 +321,10 @@ class ContextAssembler:
         )
         evidence = evidence[: max(request.evidence_budget, 0)]
 
-        # Provenance authorization is independent of assertion authorization.
+        # Provenance authorization is independent of assertion authorization;
+        # rationale is withheld when any provenance was redacted.
         safe_assertions = tuple(
-            replace(
-                assertion,
-                provenance=redact_provenance(
-                    assertion.provenance, self.authorize_provenance
-                ),
-            )
+            redact_assertion(assertion, self.authorize_provenance)
             for assertion in candidates
         )
         safe_evidence = tuple(
@@ -287,6 +341,36 @@ class ContextAssembler:
             repository=request.repository,
             conflicts=result.conflicts,
         )
+
+    def _collect_authorized(
+        self,
+        provider: EvidenceProvider,
+        request: ContextRequest,
+        candidates: tuple[EngineeringAssertion, ...],
+        authorized_ids: set[str],
+    ) -> list[Evidence]:
+        """Collect provider output, enforcing the authorization boundaries.
+
+        Links outside the safe set are stripped (orphans dropped) and the
+        evidence authorization hook is enforced, so provider output can
+        never expand the authorized candidate set.
+        """
+        items: list[Evidence] = []
+        for item in provider.collect(request, candidates):
+            # Strip links outside the safe set; drop orphaned items.
+            safe_links = tuple(
+                link for link in item.relates_to if link in authorized_ids
+            )
+            if not safe_links:
+                continue
+            item = replace(item, relates_to=safe_links)
+            # Source authorization boundary, before ranking/budgeting.
+            if self.authorize_evidence is not None and not self.authorize_evidence(
+                item
+            ):
+                continue
+            items.append(item)
+        return items
 
 
 def describe(context: AssembledContext) -> dict[str, Any]:
