@@ -175,6 +175,68 @@ def redact_provenance(
     return tuple(safe)
 
 
+def redacted_candidate_view(
+    candidates: tuple[EngineeringAssertion, ...],
+    authorize_provenance: ProvenanceAuthorizationHook,
+) -> tuple[EngineeringAssertion, ...]:
+    """Return candidates with caller-unauthorized provenance redacted.
+
+    For use before an untrusted or external provider sees the candidate set:
+    the provider gets the same authorized assertions, but provenance details
+    the caller may not inspect are withheld (URIs, revisions, and policy
+    references replaced by the redaction sentinel). Deterministic authority
+    is preserved -- redaction never removes or reorders candidates.
+    """
+    return tuple(
+        replace(
+            assertion,
+            provenance=redact_provenance(assertion.provenance, authorize_provenance),
+        )
+        for assertion in candidates
+    )
+
+
+class ExternalEvidenceProvider:
+    """Boundary adapter for untrusted/external evidence providers.
+
+    Satisfies the :class:`EvidenceProvider` protocol: ``collect`` redacts
+    the candidate view with the caller's provenance hook *before* delegating
+    to the wrapped provider, and records the exact view that crossed the
+    boundary on the transport for audit.
+
+    ``authorize_provenance`` is required -- an external boundary without a
+    provenance policy is a misconfiguration and fails fast. The wrapped
+    provider's output is still subject to the assembler's authorization
+    boundaries: it cannot expand the authorized candidate set.
+    """
+
+    def __init__(
+        self,
+        provider: EvidenceProvider,
+        authorize_provenance: ProvenanceAuthorizationHook,
+        transport: Any | None = None,
+    ) -> None:
+        if authorize_provenance is None:
+            raise TypeError(
+                "ExternalEvidenceProvider requires a provenance hook; "
+                "refusing to expose unredacted candidates to an external provider"
+            )
+        self._provider = provider
+        self._authorize_provenance = authorize_provenance
+        self._transport = transport
+
+    def collect(
+        self,
+        request: ContextRequest,
+        candidates: tuple[EngineeringAssertion, ...],
+    ) -> tuple[Evidence, ...]:
+        """Collect evidence over the redacted candidate view."""
+        view = redacted_candidate_view(candidates, self._authorize_provenance)
+        if self._transport is not None:
+            self._transport.record(view)
+        return self._provider.collect(request, view)
+
+
 @dataclass(frozen=True, slots=True)
 class ContextAssembler:
     """Combine trusted engineering memory with bounded retrieval assist."""
