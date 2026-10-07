@@ -1,0 +1,465 @@
+{
+  "experiment": "retry-idempotency-worker-01",
+  "task": "Add retry handling for transient settlement submission failures in settle_batch.",
+  "repository": "payment-worker",
+  "model": "Muse Spark",
+  "model_detail": "unknown (runtime does not expose a version string)",
+  "worker_protocol": "subagent-worker-v1",
+  "worker": {
+    "turns_per_run": 1,
+    "tool_policy": "read the assigned job file only; no browsing, no other tools",
+    "sampling_params": "unknown (runtime defaults; not exposed)",
+    "brief_sha256": "26a432f690282b5912c078b7f735d903a5d80001726ecff6b9bdd8e6b60930e0",
+    "execution_ids": "unknown (not recorded by the orchestrating chats)"
+  },
+  "agent": "worker",
+  "turns_per_run": 1,
+  "manifest": {
+    "input_hashes": {
+      "research/experiments/retry-idempotency/fixture/gateway.py": "980bc291e07dd8e8ec588cf1d05b191ba1d37ccf801d8ad55ceebd19a378d173",
+      "research/experiments/retry-idempotency/fixture/worker.py": "d261104253303acce05baec750d15cec77d0f1edea2304b617cca5c7e8d8cf22",
+      "research/experiments/retry-idempotency/corpus/SOURCES.md": "ea795c3dbffe4d9432299d91963482e097a5219d52e094bdbd34802a877faf94",
+      "research/experiments/retry-idempotency/corpus/idempotency-guide.md": "c4ef4a462b77d1dbdfefa833de58bd08b86d084a5dc4d0dce534dbb50a0dc8da",
+      "research/experiments/retry-idempotency/corpus/retry-policy.md": "2766e4fed02ad4daa92ce3900bf045d1dbeb455979c4c1e52032e3ff9360c27f",
+      "examples/payments/idempotency-constraint.json": "a3607f7b22bb8775ccc6cfe060e7931684e096c6ff6cec8dcd3f834cad9019d6",
+      "examples/payments/current-retry-policy.json": "e613adb8b5f291ad8ef573e3b373a8e926467d0b59929e57a0901e97ed78c1eb",
+      "research/experiments/retry-idempotency/evaluator/rubric.py": "ef0696a4ac6a5165c0661fc346279f984b26ad5928c8a98b936fb40eda2b14c3",
+      "src/repo_memory/__init__.py": "cd0b59fd01b1c6b85945ad3dfdbfadd84da760bb3239550f92f1c302f8bf3a2e",
+      "src/repo_memory/context.py": "7e9ba30f858e3291d8df36b4ca68ff83c98050fb77d5b875d6c7b230e96bffd8",
+      "src/repo_memory/loader.py": "6d8842edd7b4cde3c27f51ffa04c73b58a71dad3846c9d92fe9bfc2020a76276",
+      "src/repo_memory/models.py": "8c7b2786a9fd92cf058fb53b014e4895038007913c5fbc0d63c36063be5194ca",
+      "src/repo_memory/policy.py": "f65e6796d47f8aff4ae4aa3ddc3c3fc3cf972fdf1f542750e8e5e69249b337f1",
+      "src/repo_memory/serialization.py": "458ca5c89fd6aaaa8bb8c30f77ecbd78772945ce6450074a78d51c62e66c344a",
+      "spec/engineering-assertion.schema.json": "583786eb00e47e026a20f121de13a1445b71d9c058db536c493ee5451fb0465e",
+      "research/experiments/retry-idempotency/run.py": "00e537b4f16c891381c8d4bc47bc330b28d9cf58d8d296645108d40bd7f8c1de"
+    },
+    "git_commit": "90e133ac64718e45f33316deee1d78bc43fb893b",
+    "git_dirty": false,
+    "runner": {
+      "experiment": "retry-idempotency-worker-01",
+      "task": "Add retry handling for transient settlement submission failures in settle_batch.",
+      "repository": "payment-worker",
+      "conditions": [
+        "repo-only",
+        "generic-retrieval",
+        "repo-memory"
+      ],
+      "runs_per_condition": 3
+    }
+  },
+  "conditions": [
+    "repo-only",
+    "generic-retrieval",
+    "repo-memory"
+  ],
+  "runs_per_condition": 3,
+  "blinded": true,
+  "scoring": "mechanical: evaluator/rubric.py R1-R5 on the produced worker.py; no LLM in scoring",
+  "runs": [
+    {
+      "condition": "repo-only",
+      "run": 0,
+      "job_name": "job-repo-only-0",
+      "response_sha256": "7f44c81de66365591781ce1811cc153188760701ed865257f9fb4c560f015f17",
+      "job_sha256": "a1051624458a74dd20f19e5892c05a0f111946e62aef9dceb4b75b5850cd94cc",
+      "receipt": "ok",
+      "notes": [],
+      "extraction": "fenced-python",
+      "rubric": {
+        "R1_key_stable": true,
+        "R2_no_duplicate": true,
+        "R3_transient_retried": true,
+        "R4_permanent_stops": true,
+        "R5_single_retry_layer": false
+      },
+      "rubric_detail": {
+        "R1_single_keys": [
+          "key-1",
+          "key-1"
+        ],
+        "R1_cross_settled": [
+          "batch-A",
+          "batch-B"
+        ],
+        "R2_settled": [
+          "batch-1"
+        ],
+        "R2_returned": {
+          "status": "settled",
+          "batch_id": "batch-1"
+        },
+        "R2_raised": null,
+        "R3_calls": 3,
+        "R4": [
+          "PermanentError",
+          1
+        ],
+        "R5": [
+          3,
+          1
+        ]
+      },
+      "rubric_pass": false
+    },
+    {
+      "condition": "repo-only",
+      "run": 1,
+      "job_name": "job-repo-only-1",
+      "response_sha256": "ad9369dd62d0e4b2b3661079237ada4836accfe866667c8b01a7d44279d76bb9",
+      "job_sha256": "7b5ee845df158e61d3ec1b877ec3ca78f40b8b7369c9741a6b61283c8a1ad2cf",
+      "receipt": "ok",
+      "notes": [],
+      "extraction": "fenced-python",
+      "rubric": {
+        "R1_key_stable": true,
+        "R2_no_duplicate": true,
+        "R3_transient_retried": true,
+        "R4_permanent_stops": true,
+        "R5_single_retry_layer": true
+      },
+      "rubric_detail": {
+        "R1_single_keys": [
+          "key-1",
+          "key-1"
+        ],
+        "R1_cross_settled": [
+          "batch-A",
+          "batch-B"
+        ],
+        "R2_settled": [
+          "batch-1"
+        ],
+        "R2_returned": {
+          "status": "settled",
+          "batch_id": "batch-1"
+        },
+        "R2_raised": null,
+        "R3_calls": 3,
+        "R4": [
+          "PermanentError",
+          1
+        ],
+        "R5": [
+          0,
+          0
+        ]
+      },
+      "rubric_pass": true
+    },
+    {
+      "condition": "repo-only",
+      "run": 2,
+      "job_name": "job-repo-only-2",
+      "response_sha256": "25de472ab6666b6530db0ab89d79f8e0a3f210517004eb05667e9ef60d1778d7",
+      "job_sha256": "7990b4e975bde059207bd8ed7b6afa0fc593e300a3719b793515751b3e62478a",
+      "receipt": "ok",
+      "notes": [],
+      "extraction": "fenced-python",
+      "rubric": {
+        "R1_key_stable": true,
+        "R2_no_duplicate": true,
+        "R3_transient_retried": true,
+        "R4_permanent_stops": true,
+        "R5_single_retry_layer": true
+      },
+      "rubric_detail": {
+        "R1_single_keys": [
+          "key-1",
+          "key-1"
+        ],
+        "R1_cross_settled": [
+          "batch-A",
+          "batch-B"
+        ],
+        "R2_settled": [
+          "batch-1"
+        ],
+        "R2_returned": {
+          "status": "settled",
+          "batch_id": "batch-1"
+        },
+        "R2_raised": null,
+        "R3_calls": 3,
+        "R4": [
+          "PermanentError",
+          1
+        ],
+        "R5": [
+          0,
+          0
+        ]
+      },
+      "rubric_pass": true
+    },
+    {
+      "condition": "generic-retrieval",
+      "run": 0,
+      "job_name": "job-generic-retrieval-0",
+      "response_sha256": "6cbf908f8f066bafaadd79b2e28f587e6a8d050123a14d1d25d90496106451d2",
+      "job_sha256": "580c53cfabfaf8bd14b6d20a728ffef16075289ae10bc1c4db2da318d904208f",
+      "receipt": "ok",
+      "notes": [],
+      "extraction": "fenced-python",
+      "rubric": {
+        "R1_key_stable": true,
+        "R2_no_duplicate": true,
+        "R3_transient_retried": true,
+        "R4_permanent_stops": true,
+        "R5_single_retry_layer": true
+      },
+      "rubric_detail": {
+        "R1_single_keys": [
+          "key-1",
+          "key-1"
+        ],
+        "R1_cross_settled": [
+          "batch-A",
+          "batch-B"
+        ],
+        "R2_settled": [
+          "batch-1"
+        ],
+        "R2_returned": {
+          "status": "settled",
+          "batch_id": "batch-1"
+        },
+        "R2_raised": null,
+        "R3_calls": 3,
+        "R4": [
+          "PermanentError",
+          1
+        ],
+        "R5": [
+          0,
+          0
+        ]
+      },
+      "rubric_pass": true
+    },
+    {
+      "condition": "generic-retrieval",
+      "run": 1,
+      "job_name": "job-generic-retrieval-1",
+      "response_sha256": "b5e027f5c2ff9687e27a203431f3a203247544f9f1b534d7e326374de0733fe2",
+      "job_sha256": "9ac3417983a80febc2d5dac1b90d69677c2750c94786415716440f65744f2173",
+      "receipt": "ok",
+      "notes": [],
+      "extraction": "fenced-python",
+      "rubric": {
+        "R1_key_stable": true,
+        "R2_no_duplicate": true,
+        "R3_transient_retried": true,
+        "R4_permanent_stops": true,
+        "R5_single_retry_layer": true
+      },
+      "rubric_detail": {
+        "R1_single_keys": [
+          "key-1",
+          "key-1"
+        ],
+        "R1_cross_settled": [
+          "batch-A",
+          "batch-B"
+        ],
+        "R2_settled": [
+          "batch-1"
+        ],
+        "R2_returned": {
+          "status": "settled",
+          "batch_id": "batch-1"
+        },
+        "R2_raised": null,
+        "R3_calls": 3,
+        "R4": [
+          "PermanentError",
+          1
+        ],
+        "R5": [
+          0,
+          0
+        ]
+      },
+      "rubric_pass": true
+    },
+    {
+      "condition": "generic-retrieval",
+      "run": 2,
+      "job_name": "job-generic-retrieval-2",
+      "response_sha256": "28020c0b83ff3b279687e25f9fd11a22dbf0487b0dc6ca5957b1d6d30057447c",
+      "job_sha256": "91828e3a8057d2136360154a515dca9aca4005bc409c2af8da759410e251e459",
+      "receipt": "ok",
+      "notes": [],
+      "extraction": "fenced-python",
+      "rubric": {
+        "R1_key_stable": true,
+        "R2_no_duplicate": true,
+        "R3_transient_retried": true,
+        "R4_permanent_stops": true,
+        "R5_single_retry_layer": true
+      },
+      "rubric_detail": {
+        "R1_single_keys": [
+          "key-1",
+          "key-1"
+        ],
+        "R1_cross_settled": [
+          "batch-A",
+          "batch-B"
+        ],
+        "R2_settled": [
+          "batch-1"
+        ],
+        "R2_returned": {
+          "status": "settled",
+          "batch_id": "batch-1"
+        },
+        "R2_raised": null,
+        "R3_calls": 3,
+        "R4": [
+          "PermanentError",
+          1
+        ],
+        "R5": [
+          0,
+          0
+        ]
+      },
+      "rubric_pass": true
+    },
+    {
+      "condition": "repo-memory",
+      "run": 0,
+      "job_name": "job-repo-memory-0",
+      "response_sha256": "3af062e1af5fbdd2eec1f89c364e09027aa2bde4ea8a5ea5ca60a799384ae502",
+      "job_sha256": "7deb302dad1815a09b75526f0373d507804c22693cd13dd5be893c567f8c8ee3",
+      "receipt": "ok",
+      "notes": [],
+      "extraction": "fenced-python",
+      "rubric": {
+        "R1_key_stable": true,
+        "R2_no_duplicate": true,
+        "R3_transient_retried": true,
+        "R4_permanent_stops": true,
+        "R5_single_retry_layer": true
+      },
+      "rubric_detail": {
+        "R1_single_keys": [
+          "key-1",
+          "key-1"
+        ],
+        "R1_cross_settled": [
+          "batch-A",
+          "batch-B"
+        ],
+        "R2_settled": [
+          "batch-1"
+        ],
+        "R2_returned": {
+          "status": "settled",
+          "batch_id": "batch-1"
+        },
+        "R2_raised": null,
+        "R3_calls": 3,
+        "R4": [
+          "PermanentError",
+          1
+        ],
+        "R5": [
+          0,
+          0
+        ]
+      },
+      "rubric_pass": true
+    },
+    {
+      "condition": "repo-memory",
+      "run": 1,
+      "job_name": "job-repo-memory-1",
+      "response_sha256": "4bea34d32f8b1f4ae517fe92057b81d221550f45096f81cdef6071daca914252",
+      "job_sha256": "3d51596030a1bdcf795a926aedc86e428196e65a8e2f727bb3b73b1dd9fe52c9",
+      "receipt": "ok",
+      "notes": [],
+      "extraction": "fenced-python",
+      "rubric": {
+        "R1_key_stable": true,
+        "R2_no_duplicate": true,
+        "R3_transient_retried": true,
+        "R4_permanent_stops": true,
+        "R5_single_retry_layer": true
+      },
+      "rubric_detail": {
+        "R1_single_keys": [
+          "key-1",
+          "key-1"
+        ],
+        "R1_cross_settled": [
+          "batch-A",
+          "batch-B"
+        ],
+        "R2_settled": [
+          "batch-1"
+        ],
+        "R2_returned": {
+          "status": "settled",
+          "batch_id": "batch-1"
+        },
+        "R2_raised": null,
+        "R3_calls": 3,
+        "R4": [
+          "PermanentError",
+          1
+        ],
+        "R5": [
+          0,
+          0
+        ]
+      },
+      "rubric_pass": true
+    },
+    {
+      "condition": "repo-memory",
+      "run": 2,
+      "job_name": "job-repo-memory-2",
+      "response_sha256": "55db27034d4441d91f2a9da38718c1656cfaf5ba45e3c2f4611a6c0e32128fc8",
+      "job_sha256": "d87030fcfb5c5336bfcc18993d50ba8e0a2287c65bf0bf97755a316b58febd82",
+      "receipt": "ok",
+      "notes": [],
+      "extraction": "fenced-python",
+      "rubric": {
+        "R1_key_stable": true,
+        "R2_no_duplicate": true,
+        "R3_transient_retried": true,
+        "R4_permanent_stops": true,
+        "R5_single_retry_layer": true
+      },
+      "rubric_detail": {
+        "R1_single_keys": [
+          "key-1",
+          "key-1"
+        ],
+        "R1_cross_settled": [
+          "batch-A",
+          "batch-B"
+        ],
+        "R2_settled": [
+          "batch-1"
+        ],
+        "R2_returned": {
+          "status": "settled",
+          "batch_id": "batch-1"
+        },
+        "R2_raised": null,
+        "R3_calls": 3,
+        "R4": [
+          "PermanentError",
+          1
+        ],
+        "R5": [
+          0,
+          0
+        ]
+      },
+      "rubric_pass": true
+    }
+  ]
+}

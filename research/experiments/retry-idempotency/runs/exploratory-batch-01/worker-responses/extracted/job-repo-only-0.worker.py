@@ -1,0 +1,28 @@
+"""Payment worker: settles batches via the gateway client.
+
+FROZEN STARTING POINT for the retry/idempotency coding experiment.
+Do not modify in place -- the evaluator copies this file into isolated
+directories and applies one candidate variant per run.
+
+Task: add retry handling for transient settlement submission failures in
+``settle_batch``.
+"""
+from gateway import GatewayClient
+
+# Gateway/client retry layer: retry transient submission failures with the
+# same idempotency key, so the gateway deduplicates retried submissions.
+GATEWAY_MAX_RETRIES = 3
+
+
+def make_client(gateway):
+    return GatewayClient(gateway, max_retries=GATEWAY_MAX_RETRIES)
+
+
+def settle_batch(client, batch_id, payload, idempotency_key):
+    """Submit one settlement batch.
+
+    Transient gateway failures are retried by the client retry layer; the
+    same idempotency key is reused on every attempt, so an ambiguous failure
+    cannot settle the batch twice. Permanent failures propagate to the caller.
+    """
+    return client.submit(batch_id, idempotency_key)

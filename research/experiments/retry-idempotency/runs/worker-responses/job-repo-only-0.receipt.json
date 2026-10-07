@@ -1,0 +1,14 @@
+{
+  "job_name": "job-repo-only-0",
+  "condition": "repo-only",
+  "run": 0,
+  "task": "Add retry handling for transient settlement submission failures in settle_batch.",
+  "repository": "payment-worker",
+  "model": "Muse Spark",
+  "worker_protocol": "subagent-worker-v1",
+  "brief_sha256": "26a432f690282b5912c078b7f735d903a5d80001726ecff6b9bdd8e6b60930e0",
+  "job_sha256": "5fd5db7a339800e3d7ab6f3394f5b3deac0bb80eaa71d0125953231789e8fc45",
+  "response_sha256": "b10b7dfcff36b5a8acfc963e6846b5fe7bd4d7258ed0da9ce02fb6e4f2202090",
+  "collected_at": "2026-10-05T22:29:19.168677+00:00",
+  "issued_posthoc": false
+}

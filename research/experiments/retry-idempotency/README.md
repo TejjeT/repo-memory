@@ -55,7 +55,7 @@ subprocess (30s timeout guards against runaway retry loops):
 
 | Check | Scenario | Pass condition |
 |---|---|---|
-| R1 key_stable | transient, ok | same non-null key on every attempt |
+| R1 key_stable | transient, ok; two-batch (A, B) | same non-null key on every attempt; the submitted key is the caller-provided key (not regenerated or hardcoded); caller keys do not leak across batches; every batch completes cleanly (settled response returned, no exception) |
 | R2 no_duplicate | transient_after_settle, ok | batch settled exactly once |
 | R3 transient_retried | transient x2, ok | succeeds on the 3rd call |
 | R4 permanent_stops | permanent | PermanentError, exactly 1 call |
@@ -67,7 +67,9 @@ A candidate implementation is a complete `worker.py` replacement
 (what a worker trial produces). The evaluator:
 
 1. copies `fixture/gateway.py` + the candidate into a fresh temp dir,
-2. runs a fixed driver there per scenario (subprocess, JSON over stdout),
+2. runs a fixed driver there per scenario (subprocess; the driver writes
+   its scenario record to a dedicated `result.json`, candidate stdout is
+   captured separately and never parsed),
 3. scores R1..R5 as pure predicates over recorded gateway calls.
 
 No LLM reads the diff, judges style, or makes policy decisions. The
@@ -76,7 +78,7 @@ artifact, computed with `difflib`, not an input to scoring.
 
 ## Evaluator discrimination
 
-`variants/` holds a reference solution plus three known-invalid patches.
+`variants/` holds reference solutions plus seven known-invalid variants.
 The suite (`tests/test_retry_idempotency.py`) proves the evaluator
 tells them apart:
 
@@ -92,7 +94,9 @@ tells them apart:
 | invalid-hardcoded-key (literal "key-1", ignores caller key) | R1 fails (two-batch scenario) |
 | invalid-none-second-batch (returns None for batch-B) | R1 fails (per-batch completion) |
 
-Every invalid variant imports cleanly and settles the happy path --
+Every invalid variant imports cleanly; all but `invalid-raise-on-success`
+settle the happy path (`invalid-raise-on-success` intentionally raises
+after a successful submit, so it fails the happy path by design) --
 compilation and test success alone do not pass the rubric. The driver
 reports through `result.json`, never stdout, so candidate debug output
 cannot corrupt scoring; a missing/malformed result is a recorded harness
@@ -100,12 +104,30 @@ failure. Every retryable scenario (clean, transient, ambiguous, multi)
 must return the gateway's settled response with no exception, and two
 distinct batches on one gateway must settle under their own caller keys.
 
-## Scope of this PR
+## Recorded worker trials
 
-Fixture, equivalent source corpus, rubric, evaluator, variants, and
-discrimination tests only. Measured worker execution (three conditions
-x three fresh trials, receipts, raw diffs, mechanical scoring) follows
-in the next PR, reusing the runner/receipt design from the Java batch.
+The fixture/evaluator from #21 is reused by `run.py` to prepare nine
+prompt-bound jobs, record response receipts, extract complete workers,
+and mechanically score three trials per condition. Run `python run.py --help`
+from this directory for preparation, receipt and scoring commands.
+
+`runs/worker-fresh-20261005-222944.json` records **3/3, 3/3, 3/3**:
+all arms passed all five checks. This task provides no evidence that
+repo-memory improves correctness over ordinary retrieval or repository
+context alone. Workers inherited an orchestrating conversation containing
+experiment history, so this batch is explicitly `blinded: false`.
+Unknown model/sampling/execution details remain unknown.
+
+The scorer validates the actual delivered URI sequence, nonempty document
+text, declared context lists and withheld incident identifiers. Invalid
+jobs, missing/mismatched receipts and posthoc receipts cannot count as
+capture-time successes. Receipts bind saved artifacts; they do not
+independently audit worker execution.
+
+`runs/exploratory-batch-01/` preserves the original 2/3, 3/3, 3/3 batch
+unchanged, including its documented context-delivery flaws. Original
+reports retain the input hashes and scorer version used at scoring time.
+Tightening validation does not require rewriting collection artifacts.
 
 ## Validity notes
 
@@ -114,5 +136,9 @@ in the next PR, reusing the runner/receipt design from the Java batch.
 - Three trials per condition on one task cannot establish general
   superiority; equal or negative results are valid outcomes.
 - The starting `worker.py` exposes `GATEWAY_MAX_RETRIES` as config
-  surface but states no rationale -- the repository alone does not
-  explain either rule.
+  surface but states no rationale. Ordinary gateway API documentation
+  explains the idempotent behavior (same key deduplicates); what the
+  repository alone does not explain is the organization-specific
+  retry-ownership rationale -- the key must survive retry boundaries as
+  a standing rule, and retry must live at exactly one orchestration
+  layer.

@@ -1,0 +1,14 @@
+{
+  "job_name": "job-generic-retrieval-1",
+  "condition": "generic-retrieval",
+  "run": 1,
+  "task": "Add retry handling for transient settlement submission failures in settle_batch.",
+  "repository": "payment-worker",
+  "model": "Muse Spark",
+  "worker_protocol": "subagent-worker-v1",
+  "brief_sha256": "26a432f690282b5912c078b7f735d903a5d80001726ecff6b9bdd8e6b60930e0",
+  "job_sha256": "63cc751f9af3be5be1f7d04c328c20cb440aacc9c0a8af7a7f63b325a198ed42",
+  "response_sha256": "0a4b50e4eb58c0231a1c89409c6e9cabc9ac76c51c8c6a47156beb7f71011cd4",
+  "collected_at": "2026-10-05T22:29:19.810073+00:00",
+  "issued_posthoc": false
+}
