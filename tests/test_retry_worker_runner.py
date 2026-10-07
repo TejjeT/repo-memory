@@ -299,6 +299,30 @@ def test_withheld_identifier_in_prompt_scores_invalid(tmp_path):
     assert note == "job_context_violation: withheld_identifier"
 
 
+def test_missing_documents_despite_correct_labels_scores_invalid(tmp_path):
+    """Required-document labels without the actual documents must not
+    pass validation: the scorer checks delivered content, not labels."""
+    jobs = tmp_path / "jobs"
+    prepare_worker_jobs(dest=jobs)
+    bad = jobs / "job-repo-memory-2.json"
+    job = json.loads(bad.read_text())
+    # Keep the labels correct but drop the corpus documents from the
+    # delivered context (and empty one EA text).
+    job["context_items"] = [
+        [u, t] for u, t in job["context_items"]
+        if not u.startswith("corpus/")
+    ]
+    for item in job["context_items"]:
+        if item[0] == "ea:EA-002":
+            item[1] = "   "
+    job["prompt"] = worker_job_prompt(job["context_items"])
+    job["prompt_sha256"] = hashlib.sha256(job["prompt"].encode()).hexdigest()
+    bad.write_text(json.dumps(job))
+    result, note = load_job_for_scoring(jobs, "job-repo-memory-2", "repo-memory", 2)
+    assert result is None
+    assert note.startswith("job_context_violation: missing_document")
+
+
 def test_posthoc_receipt_excluded_from_capture_time_outcomes(tmp_path, capsys):
     """A valid posthoc receipt is preserved as evidence but its run does
     not qualify as a capture-time outcome."""

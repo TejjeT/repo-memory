@@ -387,8 +387,18 @@ def _load_job_for_scoring(
     # supplemental documents its condition's protocol requires, and no
     # withheld identifiers. A job that violates the delivery protocol
     # is not a valid trial input, even if its hashes verify.
-    if job.get("supplemental_uris") != EXPECTED_SUPPLEMENTAL_URIS.get(condition):
+    # Labels alone are not enough: each required document must actually
+    # be present in the delivered context items with substantive text.
+    expected_uris = EXPECTED_SUPPLEMENTAL_URIS.get(condition)
+    if job.get("supplemental_uris") != expected_uris:
         return None, "job_context_violation: supplemental_uris"
+    delivered = {
+        u: t for u, t in job["context_items"]
+        if isinstance(u, str) and isinstance(t, str)
+    }
+    for uri in expected_uris or []:
+        if not delivered.get(uri, "").strip():
+            return None, f"job_context_violation: missing_document:{uri}"
     for ident in WITHHELD_IDENTIFIERS:
         if ident in job["prompt"]:
             return None, "job_context_violation: withheld_identifier"
