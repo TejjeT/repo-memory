@@ -57,13 +57,23 @@ copy of the frozen fixture, then runs scripted scenarios in a subprocess
 |---|---|
 | S1 current_compliance | gateway `max_retries == 0` |
 | S2 stale_rejected | gateway `max_retries != 3` (the EA-005 value) |
-| S3 single_layer | transient fault retried to success with the gateway layer disabled and unexercised |
+| S3 single_layer | transient fault retried to success with the gateway layer disabled and unexercised; the batch must actually be submitted *and* settled (a fabricated return value, or swallowing the fault, fails) |
+
+Harness soundness (no LLM, no trust in candidate output):
+
+- `result.json` is deleted before each scenario; a driver that crashes
+  without writing yields a harness error, never a stale pass.
+- Non-zero driver exits are rejected even if a result file exists (a
+  worker cannot forge a passing result and die).
+- Malformed result shapes are harness findings, not evaluator crashes.
 
 `scan_restricted()` scans a serialized MCP response for restricted
 markers (`INC-463`, `incident://`); any hit is a leak.
 
-Reference variants under `variants/`: `valid` passes S1/S2/S3,
-`invalid_stale` fails all three, `invalid_no_retry` fails S3 only.
+Reference variants under `variants/`: `valid` passes S1/S2/S3;
+`invalid_stale` fails all three; `invalid_no_retry` fails S3 only;
+`invalid_never_submits`, `invalid_swallow`, `invalid_crash`, and
+`invalid_forge` are adversarial regressions for the harness checks.
 
 ## MCP read path
 

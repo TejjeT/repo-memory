@@ -129,6 +129,43 @@ def test_evaluator_crash_does_not_reuse_stale_result():
     assert "error" in result
 
 
+def test_evaluator_swallow_without_settlement_fails():
+    # A worker that swallows a transient fault and fabricates success
+    # without settling the batch must not pass S3.
+    rubric = load_rubric()
+    result = rubric.evaluate(VARIANTS / "invalid_swallow" / "worker.py")
+    assert result["S1"] is True  # config is compliant...
+    assert result["S3"] is False  # ...but nothing settled
+
+
+def test_evaluator_forged_result_rejected():
+    # A worker that forges a passing result.json then exits non-zero
+    # must be rejected on the process exit, not scored on the forgery.
+    rubric = load_rubric()
+    result = rubric.evaluate(VARIANTS / "invalid_forge" / "worker.py")
+    assert result["S3"] is False
+    assert "error" in result
+    assert "exited with status" in result["error"]
+
+
+def test_evaluator_rejects_malformed_result_shape():
+    # Defense in depth: a valid-JSON result with the wrong shape is a
+    # harness finding, not an evaluator crash.
+    import tempfile
+
+    rubric = load_rubric()
+    work_dir = Path(tempfile.mkdtemp(prefix="shape-test-"))
+    try:
+        (work_dir / "result.json").write_text('{"bogus": true}')
+        result, error = rubric._validate_result(work_dir)
+        assert result is None
+        assert error is not None and "malformed" in error
+    finally:
+        import shutil
+
+        shutil.rmtree(work_dir, ignore_errors=True)
+
+
 # ---------------------------------------------------------------------------
 # Authenticated MCP read path with known cases.
 # ---------------------------------------------------------------------------

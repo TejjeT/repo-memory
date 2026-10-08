@@ -55,6 +55,7 @@ except Exception as e:  # noqa: BLE001 -- the fixture must surface faults
     r["raised"] = type(e).__name__
 r["client_retries"] = client.client_retries
 r["gateway_calls"] = len(gateway.calls)
+r["settled"] = list(gateway.settled)
 with open("result.json", "w") as f:
     json.dump(r, f)
 """
@@ -77,24 +78,42 @@ def apply_variant(variant_path):
 
 def _validate_result(work_dir):
     """Read the driver's result file. Returns (result, error): exactly one
-    is non-None. Candidate stdout is never parsed as protocol."""
+    is non-None. Candidate stdout is never parsed as protocol, and a
+    malformed shape is a harness finding, not an evaluator crash."""
     path = work_dir / RESULT_FILE
     try:
-        return json.loads(path.read_text()), None
+        data = json.loads(path.read_text())
     except Exception as e:  # noqa: BLE001 -- malformed result is a finding
         return None, f"harness: unreadable result: {e}"
+    if not isinstance(data, dict):
+        return None, "harness: malformed result: not an object"
+    expected = {
+        "gateway_max_retries": int,
+        "client_max_retries": int,
+        "raised": (str, type(None)),
+        "client_retries": int,
+        "gateway_calls": int,
+        "settled": list,
+    }
+    for key, types in expected.items():
+        if key not in data or not isinstance(data[key], types):
+            return None, f"harness: malformed result: bad {key!r}"
+    if "returned" not in data:
+        return None, "harness: malformed result: missing 'returned'"
+    return data, None
 
 
 def _run_scenario(work_dir, script):
     """Run one scripted scenario. Returns (result, error).
 
     The previous result file is deleted first: a driver that crashes
-    without writing must not be scored from a stale result.
+    without writing must not be scored from a stale result. A non-zero
+    process exit is a harness failure even if a result file exists.
     """
     with suppress(FileNotFoundError):
         (work_dir / RESULT_FILE).unlink()
     try:
-        subprocess.run(
+        proc = subprocess.run(
             [sys.executable, "driver.py", json.dumps({"script": script})],
             cwd=work_dir,
             capture_output=True,
@@ -102,6 +121,10 @@ def _run_scenario(work_dir, script):
         )
     except subprocess.TimeoutExpired:
         return None, "harness: driver timeout (possible runaway retry loop)"
+    if proc.returncode != 0:
+        return None, (
+            f"harness: driver exited with status {proc.returncode}"
+        )
     return _validate_result(work_dir)
 
 
@@ -119,8 +142,9 @@ def evaluate(variant_path):
 
         # S3: transient fault must be retried to success by the worker
         # while the gateway layer stays disabled and unexercised. The
-        # batch must actually reach the gateway: a worker that never
-        # submits cannot pass on a fabricated return value.
+        # batch must actually reach the gateway and settle: a worker that
+        # never submits, or that swallows the fault and fabricates
+        # success, cannot pass on the return value alone.
         result, error = _run_scenario(
             work_dir, ["transient", "transient", "ok"]
         )
@@ -134,8 +158,8 @@ def evaluate(variant_path):
         s3 = (
             result["raised"] is None
             and result["returned"] is not None
-            and result["gateway_calls"] is not None
             and result["gateway_calls"] > 0
+            and "B1" in result["settled"]
             and result["client_max_retries"] == 0
             and result["client_retries"] == 0
         )
