@@ -54,7 +54,7 @@ try:
 except Exception as e:  # noqa: BLE001 -- the fixture must surface faults
     r["raised"] = type(e).__name__
 r["client_retries"] = client.client_retries
-r["gateway_calls"] = len(gateway.calls)
+r["gateway_calls"] = list(gateway.calls)
 r["settled"] = list(gateway.settled)
 with open("result.json", "w") as f:
     json.dump(r, f)
@@ -92,7 +92,7 @@ def _validate_result(work_dir):
         "client_max_retries": int,
         "raised": (str, type(None)),
         "client_retries": int,
-        "gateway_calls": int,
+        "gateway_calls": list,
         "settled": list,
     }
     for key, types in expected.items():
@@ -100,6 +100,15 @@ def _validate_result(work_dir):
             return None, f"harness: malformed result: bad {key!r}"
     if "returned" not in data:
         return None, "harness: malformed result: missing 'returned'"
+    if any(
+        not isinstance(call, list)
+        or len(call) != 2
+        or any(not isinstance(value, (str, type(None))) for value in call)
+        for call in data["gateway_calls"]
+    ):
+        return None, "harness: malformed result: bad gateway call trace"
+    if any(not isinstance(batch, str) for batch in data["settled"]):
+        return None, "harness: malformed result: bad settlement trace"
     return data, None
 
 
@@ -157,9 +166,9 @@ def evaluate(variant_path):
             }
         s3 = (
             result["raised"] is None
-            and result["returned"] is not None
-            and result["gateway_calls"] > 0
-            and "B1" in result["settled"]
+            and result["returned"] == {"status": "settled", "batch_id": "B1"}
+            and result["gateway_calls"] == [["B1", "key-1"]] * 3
+            and result["settled"] == ["B1"]
             and result["client_max_retries"] == 0
             and result["client_retries"] == 0
         )

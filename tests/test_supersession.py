@@ -13,6 +13,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from repo_memory.auth import VerifiedSession
 from repo_memory.models import EngineeringAssertion, Provenance, Scope
 from repo_memory.tools import handle_tool_call
@@ -164,6 +166,32 @@ def test_evaluator_rejects_malformed_result_shape():
         import shutil
 
         shutil.rmtree(work_dir, ignore_errors=True)
+
+
+@pytest.mark.parametrize(
+    "replacement",
+    [
+        'client.submit(batch_id, idempotency_key)\n'
+        '            return {"status": "failed", "batch_id": "WRONG"}',
+        'return client.submit(batch_id, str(attempts))',
+        'return client.submit("OTHER" if attempts < 2 else batch_id, idempotency_key)',
+        'client.submit(batch_id, idempotency_key)\n'
+        '            return client.submit(batch_id, "extra-key")',
+    ],
+    ids=["wrong-response", "changed-key", "changed-batch", "extra-settlement"],
+)
+def test_evaluator_rejects_broken_submission_contract(tmp_path, replacement):
+    # All these workers reach a successful gateway response. They still
+    # violate the original request or return contract and must fail S3.
+    worker = (VARIANTS / "valid" / "worker.py").read_text()
+    worker = worker.replace(
+        "return client.submit(batch_id, idempotency_key)", replacement,
+    )
+    variant = tmp_path / "worker.py"
+    variant.write_text(worker)
+    assert load_rubric().evaluate(variant) == {
+        "S1": True, "S2": True, "S3": False,
+    }
 
 
 # ---------------------------------------------------------------------------
