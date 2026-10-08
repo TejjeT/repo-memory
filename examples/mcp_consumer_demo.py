@@ -92,6 +92,18 @@ async def main() -> None:
         # The restricted incident rule reaches only alice.
         assert "EA-INC-7" in alice_ids and "EA-INC-7" not in bob_ids
 
+        # Relationship links are caller-safe: alice sees the
+        # EA-ORG-LOGGING -> EA-INC-7 conflict link; bob's is withheld.
+        alice_logging = next(
+            a for a in alice["assertions"] if a["id"] == "EA-ORG-LOGGING"
+        )
+        bob_logging = next(
+            a for a in bob["assertions"] if a["id"] == "EA-ORG-LOGGING"
+        )
+        assert alice_logging["conflicts_with"] == ["EA-INC-7"]
+        assert bob_logging["conflicts_with"] == []
+        print("link filtering over stdio: alice sees link, bob does not")
+
         # memory_get: permitted fetch with caller-safe provenance.
         fetched = await call_tool(
             session,

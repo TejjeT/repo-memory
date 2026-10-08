@@ -82,6 +82,9 @@ def demo_corpus() -> tuple[EngineeringAssertion, ...]:
             ),
             created_at=NOW,
             rationale="Adopted org-wide to make cross-service tracing possible.",
+            # Link to a restricted assertion: exercises caller-safe
+            # relationship filtering over the stdio transport.
+            conflicts_with=("EA-INC-7",),
         ),
         EngineeringAssertion(
             id="EA-PAY-RETRY",

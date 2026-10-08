@@ -18,7 +18,7 @@ not read it).
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import fields
+from dataclasses import fields, replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -40,7 +40,7 @@ from repo_memory.context import (
     redact_assertion,
 )
 from repo_memory.models import EngineeringAssertion, Provenance, Scope
-from repo_memory.policy import ResolutionContext
+from repo_memory.policy import AuthorizationHook, ResolutionContext
 from repo_memory.serialization import assertion_to_dict
 
 _SCOPE_FIELDS = frozenset(f.name for f in fields(Scope))
@@ -70,6 +70,42 @@ def parse_scope(raw: dict[str, Any]) -> Scope:
         for key, value in raw.items()
     }
     return Scope(**values)
+
+
+#: Assertion fields holding IDs of related assertions. All are filtered to
+#: caller-readable targets before serialization so denied assertion IDs are
+#: never exposed through relationship fields.
+_LINK_FIELDS = ("overrides", "supersedes", "superseded_by", "conflicts_with")
+
+
+def filter_relationship_links(
+    assertion: EngineeringAssertion,
+    authorize: AuthorizationHook | None,
+    by_id: dict[str, EngineeringAssertion],
+) -> EngineeringAssertion:
+    """Withhold relationship links to assertions the caller may not read.
+
+    Lifecycle status is retained, but any ID in the relationship fields that
+    resolves to a denied (or unknown) assertion is removed -- denied
+    assertion existence is never revealed through ``overrides``,
+    ``supersedes``, ``superseded_by`` or ``conflicts_with``.
+    """
+    if authorize is None:
+        return assertion
+
+    def readable(ref_id: str) -> bool:
+        target = by_id.get(ref_id)
+        return target is not None and authorize(target)
+
+    filtered = {
+        field: tuple(ref for ref in getattr(assertion, field) if readable(ref))
+        for field in _LINK_FIELDS
+    }
+    if all(
+        filtered[field] == getattr(assertion, field) for field in _LINK_FIELDS
+    ):
+        return assertion
+    return replace(assertion, **filtered)
 
 
 def _provenance_to_dict(provenance: Provenance) -> dict[str, Any]:
@@ -151,9 +187,17 @@ def memory_search(
         repository=repository,
         evidence_budget=evidence_budget,
     )
-    context = assembler.assemble(tuple(assertions), request)
+    corpus = tuple(assertions)
+    by_id = {assertion.id: assertion for assertion in corpus}
+    context = assembler.assemble(corpus, request)
+    # Relationship links are filtered to caller-readable targets so denied
+    # assertion IDs never leak through superseded_by / conflicts_with / etc.
+    safe_assertions = tuple(
+        filter_relationship_links(a, assembler.authorize, by_id)
+        for a in context.assertions
+    )
     return {
-        "assertions": [serialize_assertion(a) for a in context.assertions],
+        "assertions": [serialize_assertion(a) for a in safe_assertions],
         "evidence": [serialize_evidence(e) for e in context.evidence],
         "conflicts": [list(pair) for pair in context.conflicts],
     }
@@ -169,10 +213,11 @@ def memory_get(
 
     The caller must be authorized to read the assertion; otherwise the
     response is indistinguishable from a missing ID, hiding unauthorized
-    assertion existence. Lifecycle state is returned truthfully in the
-    payload (``status``, ``superseded_by``) rather than filtering: this is a
-    direct fetch, and authorization -- not lifecycle -- is the security
-    boundary.
+    assertion existence. Lifecycle status is retained in the payload
+    (``status``), but relationship links (``superseded_by``,
+    ``conflicts_with``, ``overrides``, ``supersedes``) are filtered to
+    caller-readable targets: this is a direct fetch, and authorization --
+    not lifecycle -- is the security boundary.
     """
     if not assertion_id or not assertion_id.strip():
         raise ToolError(
@@ -180,7 +225,8 @@ def memory_get(
         )
     caller = authenticate(session, directory)
     assembler = ContextAssembler.for_caller(caller)
-    matches = [a for a in assertions if a.id == assertion_id]
+    corpus = tuple(assertions)
+    matches = [a for a in corpus if a.id == assertion_id]
     if not matches:
         raise ToolError(
             "not_found", "assertion not found or not accessible"
@@ -191,7 +237,11 @@ def memory_get(
         raise ToolError(
             "not_found", "assertion not found or not accessible"
         )
-    safe = redact_assertion(assertion, assembler.authorize_provenance)
+    # Lifecycle status is retained, but relationship links to denied
+    # assertions are withheld.
+    by_id = {a.id: a for a in corpus}
+    safe = filter_relationship_links(assertion, assembler.authorize, by_id)
+    safe = redact_assertion(safe, assembler.authorize_provenance)
     return {"assertion": serialize_assertion(safe)}
 
 

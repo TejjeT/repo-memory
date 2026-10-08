@@ -54,6 +54,7 @@ def make_assertion(
     assertion_id: str,
     provenance: tuple[Provenance, ...] = PUBLIC_SOURCE,
     scope: Scope | None = None,
+    **links: tuple[str, ...],
 ) -> EngineeringAssertion:
     return EngineeringAssertion(
         id=assertion_id,
@@ -65,6 +66,7 @@ def make_assertion(
         provenance=provenance,
         created_at=NOW,
         rationale=f"rationale for {assertion_id}",
+        **links,
     )
 
 
@@ -147,7 +149,58 @@ def test_memory_get_respects_read_not_just_discovery():
     assert "incident" not in str(result)
 
 
-def test_parse_scope_rejects_unknown_keys():
+def test_memory_search_withholds_denied_links_but_keeps_status():
+    linked = (
+        make_assertion(
+            "EA-PUBLIC",
+            PUBLIC_SOURCE,
+            superseded_by=("EA-DENIED",),
+            conflicts_with=("EA-DENIED",),
+        ),
+        make_assertion("EA-DENIED", RESTRICTED_SOURCE),
+    )
+    bob = memory_search(make_session("bob"), DIRECTORY, linked, "deploy", SCOPE)
+    (public,) = bob["assertions"]
+    assert public["id"] == "EA-PUBLIC"
+    # Lifecycle status retained; denied linked IDs withheld.
+    assert public["status"] == "approved"
+    assert public["superseded_by"] == []
+    assert public["conflicts_with"] == []
+    assert "EA-DENIED" not in str(bob)
+
+
+def test_memory_search_preserves_readable_links():
+    linked = (
+        make_assertion(
+            "EA-PUBLIC",
+            PUBLIC_SOURCE,
+            conflicts_with=("EA-PUBLIC-2",),
+            overrides=("EA-PUBLIC-2",),
+        ),
+        make_assertion("EA-PUBLIC-2", PUBLIC_SOURCE),
+    )
+    bob = memory_search(make_session("bob"), DIRECTORY, linked, "deploy", SCOPE)
+    by_id = {a["id"]: a for a in bob["assertions"]}
+    assert by_id["EA-PUBLIC"]["conflicts_with"] == ["EA-PUBLIC-2"]
+    assert by_id["EA-PUBLIC"]["overrides"] == ["EA-PUBLIC-2"]
+
+
+def test_memory_get_withholds_denied_links():
+    linked = (
+        make_assertion(
+            "EA-PUBLIC",
+            PUBLIC_SOURCE,
+            superseded_by=("EA-DENIED",),
+            overrides=("EA-DENIED",),
+        ),
+        make_assertion("EA-DENIED", RESTRICTED_SOURCE),
+    )
+    result = memory_get(make_session("bob"), DIRECTORY, linked, "EA-PUBLIC")
+    assertion = result["assertion"]
+    assert assertion["status"] == "approved"
+    assert assertion["superseded_by"] == []
+    assert assertion["overrides"] == []
+    assert "EA-DENIED" not in str(result)
     with pytest.raises(ToolError):
         parse_scope({"organization": "Acme", "bogus": "x"})
     scope = parse_scope({"organization": "Acme", "repository": "billing-api"})
@@ -219,6 +272,130 @@ def test_handle_tool_call_bad_token_fails_closed_as_error():
         assertions=CORPUS,
     )
     assert payload["error"]["code"] == "unauthenticated"
+
+
+def test_dispatcher_search_withholds_denied_links_all_fields():
+    linked = (
+        make_assertion(
+            "EA-PUBLIC",
+            PUBLIC_SOURCE,
+            overrides=("EA-DENIED",),
+            supersedes=("EA-DENIED",),
+            superseded_by=("EA-DENIED",),
+            conflicts_with=("EA-DENIED",),
+        ),
+        make_assertion("EA-DENIED", RESTRICTED_SOURCE),
+    )
+    payload = handle_tool_call(
+        "memory_search",
+        {
+            "task": "deploy",
+            "scope": {"organization": "Acme"},
+            "session_token": "bob-token",
+        },
+        resolve_session=_resolve,
+        directory=DIRECTORY,
+        assertions=linked,
+    )
+    assert "error" not in payload
+    (public,) = payload["assertions"]
+    assert public["overrides"] == []
+    assert public["supersedes"] == []
+    assert public["superseded_by"] == []
+    assert public["conflicts_with"] == []
+    assert "EA-DENIED" not in str(payload)
+
+
+def test_dispatcher_get_withholds_denied_links_all_fields():
+    linked = (
+        make_assertion(
+            "EA-PUBLIC",
+            PUBLIC_SOURCE,
+            overrides=("EA-DENIED",),
+            supersedes=("EA-DENIED",),
+            superseded_by=("EA-DENIED",),
+            conflicts_with=("EA-DENIED",),
+        ),
+        make_assertion("EA-DENIED", RESTRICTED_SOURCE),
+    )
+    payload = handle_tool_call(
+        "memory_get",
+        {"assertion_id": "EA-PUBLIC", "session_token": "bob-token"},
+        resolve_session=_resolve,
+        directory=DIRECTORY,
+        assertions=linked,
+    )
+    assert "error" not in payload
+    assertion = payload["assertion"]
+    assert assertion["overrides"] == []
+    assert assertion["supersedes"] == []
+    assert assertion["superseded_by"] == []
+    assert assertion["conflicts_with"] == []
+    assert "EA-DENIED" not in str(payload)
+
+
+def test_dispatcher_preserves_readable_inactive_link_target():
+    # EA-OLD is superseded (inactive) but readable by bob; the historical
+    # link from EA-PUBLIC stays useful for direct reads.
+    linked = (
+        make_assertion("EA-PUBLIC", PUBLIC_SOURCE, supersedes=("EA-OLD",)),
+        make_assertion("EA-OLD", PUBLIC_SOURCE, superseded_by=("EA-PUBLIC",)),
+    )
+    payload = handle_tool_call(
+        "memory_search",
+        {
+            "task": "deploy",
+            "scope": {"organization": "Acme"},
+            "session_token": "bob-token",
+        },
+        resolve_session=_resolve,
+        directory=DIRECTORY,
+        assertions=linked,
+    )
+    (public,) = payload["assertions"]
+    assert public["supersedes"] == ["EA-OLD"]
+    # And the inactive target itself remains directly readable.
+    get_payload = handle_tool_call(
+        "memory_get",
+        {"assertion_id": "EA-OLD", "session_token": "bob-token"},
+        resolve_session=_resolve,
+        directory=DIRECTORY,
+        assertions=linked,
+    )
+    assert get_payload["assertion"]["id"] == "EA-OLD"
+    assert get_payload["assertion"]["status"] == "approved"
+
+
+def test_dispatcher_preserves_readable_out_of_scope_link_target():
+    # EA-OTHER is authorized but outside the searched scope; the link is
+    # still shown because readability -- not scope -- governs links.
+    linked = (
+        make_assertion(
+            "EA-PUBLIC",
+            PUBLIC_SOURCE,
+            conflicts_with=("EA-OTHER",),
+        ),
+        make_assertion(
+            "EA-OTHER",
+            PUBLIC_SOURCE,
+            scope=Scope(organization="Acme", repository="other-repo"),
+        ),
+    )
+    payload = handle_tool_call(
+        "memory_search",
+        {
+            "task": "deploy",
+            "scope": {"organization": "Acme", "repository": "billing-api"},
+            "session_token": "bob-token",
+        },
+        resolve_session=_resolve,
+        directory=DIRECTORY,
+        assertions=linked,
+    )
+    ids = [a["id"] for a in payload["assertions"]]
+    assert "EA-OTHER" not in ids  # out of scope, correctly absent
+    (public,) = [a for a in payload["assertions"] if a["id"] == "EA-PUBLIC"]
+    assert public["conflicts_with"] == ["EA-OTHER"]
 
 
 def test_handle_tool_call_unknown_tool():
