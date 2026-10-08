@@ -1,0 +1,189 @@
+{
+  "captured_at": "2026-10-08T11:44:27.353488+00:00",
+  "calls": [
+    {
+      "tool": "memory_search",
+      "request": {
+        "task": "Bring the settlement retry configuration into compliance with current policy (see fixture/worker.py).",
+        "scope": {
+          "organization": "Acme",
+          "domain": "Payments",
+          "system": "Settlement Platform"
+        },
+        "session_token": "agent-token"
+      },
+      "response": {
+        "assertions": [
+          {
+            "id": "EA-006",
+            "type": "incident-derived-constraint",
+            "content": "Retry must exist at exactly one orchestration layer for settlement submission; gateway and client retries must not both be enabled.",
+            "scope": {
+              "organization": "Acme",
+              "domain": "Payments",
+              "system": "Settlement Platform",
+              "repository": null,
+              "component": null,
+              "branch": null,
+              "pull_request": null
+            },
+            "status": "approved",
+            "importance": "critical",
+            "provenance": [
+              {
+                "type": "incident",
+                "uri": "redacted",
+                "revision": null,
+                "access_policy_ref": null,
+                "last_validated_at": null,
+                "redacted": true
+              },
+              {
+                "type": "document",
+                "uri": "doc://acme/adr/0041",
+                "revision": null,
+                "access_policy_ref": null,
+                "last_validated_at": null,
+                "redacted": false
+              }
+            ],
+            "created_at": "2026-06-12T00:00:00Z",
+            "rationale": null,
+            "applies_to": [],
+            "confidence": null,
+            "owner": null,
+            "effective_from": null,
+            "review_after": null,
+            "expires_at": null,
+            "overrides": [],
+            "supersedes": [
+              "EA-005"
+            ],
+            "superseded_by": [],
+            "conflicts_with": []
+          }
+        ],
+        "evidence": [],
+        "conflicts": []
+      },
+      "provenance_scan": {
+        "leaks_found": [],
+        "clean": true
+      }
+    },
+    {
+      "tool": "memory_get",
+      "request": {
+        "assertion_id": "EA-005",
+        "session_token": "agent-token"
+      },
+      "response": {
+        "assertion": {
+          "id": "EA-005",
+          "type": "constraint",
+          "content": "Gateway retries may be configured up to three attempts.",
+          "scope": {
+            "organization": "Acme",
+            "domain": "Payments",
+            "system": "Settlement Platform",
+            "repository": null,
+            "component": null,
+            "branch": null,
+            "pull_request": null
+          },
+          "status": "superseded",
+          "importance": "high",
+          "provenance": [
+            {
+              "type": "document",
+              "uri": "doc://acme/adr/0029",
+              "revision": null,
+              "access_policy_ref": null,
+              "last_validated_at": null,
+              "redacted": false
+            }
+          ],
+          "created_at": "2025-08-01T00:00:00Z",
+          "rationale": null,
+          "applies_to": [],
+          "confidence": null,
+          "owner": null,
+          "effective_from": null,
+          "review_after": null,
+          "expires_at": null,
+          "overrides": [],
+          "supersedes": [],
+          "superseded_by": [
+            "EA-006"
+          ],
+          "conflicts_with": []
+        }
+      },
+      "provenance_scan": {
+        "leaks_found": [],
+        "clean": true
+      }
+    },
+    {
+      "tool": "memory_get",
+      "request": {
+        "assertion_id": "EA-006",
+        "session_token": "agent-token"
+      },
+      "response": {
+        "assertion": {
+          "id": "EA-006",
+          "type": "incident-derived-constraint",
+          "content": "Retry must exist at exactly one orchestration layer for settlement submission; gateway and client retries must not both be enabled.",
+          "scope": {
+            "organization": "Acme",
+            "domain": "Payments",
+            "system": "Settlement Platform",
+            "repository": null,
+            "component": null,
+            "branch": null,
+            "pull_request": null
+          },
+          "status": "approved",
+          "importance": "critical",
+          "provenance": [
+            {
+              "type": "incident",
+              "uri": "redacted",
+              "revision": null,
+              "access_policy_ref": null,
+              "last_validated_at": null,
+              "redacted": true
+            },
+            {
+              "type": "document",
+              "uri": "doc://acme/adr/0041",
+              "revision": null,
+              "access_policy_ref": null,
+              "last_validated_at": null,
+              "redacted": false
+            }
+          ],
+          "created_at": "2026-06-12T00:00:00Z",
+          "rationale": null,
+          "applies_to": [],
+          "confidence": null,
+          "owner": null,
+          "effective_from": null,
+          "review_after": null,
+          "expires_at": null,
+          "overrides": [],
+          "supersedes": [
+            "EA-005"
+          ],
+          "superseded_by": [],
+          "conflicts_with": []
+        }
+      },
+      "provenance_scan": {
+        "leaks_found": [],
+        "clean": true
+      }
+    }
+  ]
+}
