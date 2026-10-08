@@ -15,7 +15,10 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8,<9",
-  "ruff>=0.7,<1"
+  "ruff>=0.7,<1",
+  # Needed by the MCP reference server (mcp_server/) and its stdio tests.
+  # Core runtime dependencies stay free of MCP SDKs.
+  "mcp>=2,<3",
 ]
 openviking = [
   "openviking-sdk>=0.1.12,<0.2"
