@@ -1,0 +1,8 @@
+{
+  "job_name": "generic-retrieval-r1",
+  "experiment": "supersession-worker-01",
+  "captured_at": "2026-10-08T11:41:05.244748+00:00",
+  "response_sha256": "721cc3b2c28fb1f3a4b93e31e026adcc4654eb58ec9607746603f6ee299cecae",
+  "response_bytes": 1211,
+  "response_path": "runs/worker-responses/generic-retrieval-r1"
+}

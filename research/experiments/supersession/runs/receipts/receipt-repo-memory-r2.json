@@ -1,0 +1,8 @@
+{
+  "job_name": "repo-memory-r2",
+  "experiment": "supersession-worker-01",
+  "captured_at": "2026-10-08T11:41:05.997595+00:00",
+  "response_sha256": "24f277ff24e619e3107d465fd92dc55be2cba6763f6e6c2211d7b89210625606",
+  "response_bytes": 1217,
+  "response_path": "runs/worker-responses/repo-memory-r2"
+}
