@@ -45,6 +45,7 @@ r = {
     "returned": None,
     "raised": None,
     "client_retries": None,
+    "gateway_calls": None,
 }
 try:
     r["returned"] = worker.settle_batch(
@@ -53,6 +54,7 @@ try:
 except Exception as e:  # noqa: BLE001 -- the fixture must surface faults
     r["raised"] = type(e).__name__
 r["client_retries"] = client.client_retries
+r["gateway_calls"] = len(gateway.calls)
 with open("result.json", "w") as f:
     json.dump(r, f)
 """
@@ -84,7 +86,13 @@ def _validate_result(work_dir):
 
 
 def _run_scenario(work_dir, script):
-    """Run one scripted scenario. Returns (result, error)."""
+    """Run one scripted scenario. Returns (result, error).
+
+    The previous result file is deleted first: a driver that crashes
+    without writing must not be scored from a stale result.
+    """
+    with suppress(FileNotFoundError):
+        (work_dir / RESULT_FILE).unlink()
     try:
         subprocess.run(
             [sys.executable, "driver.py", json.dumps({"script": script})],
@@ -110,7 +118,9 @@ def evaluate(variant_path):
         s2 = gateway_retries != STALE_GATEWAY_RETRIES
 
         # S3: transient fault must be retried to success by the worker
-        # while the gateway layer stays disabled and unexercised.
+        # while the gateway layer stays disabled and unexercised. The
+        # batch must actually reach the gateway: a worker that never
+        # submits cannot pass on a fabricated return value.
         result, error = _run_scenario(
             work_dir, ["transient", "transient", "ok"]
         )
@@ -124,6 +134,8 @@ def evaluate(variant_path):
         s3 = (
             result["raised"] is None
             and result["returned"] is not None
+            and result["gateway_calls"] is not None
+            and result["gateway_calls"] > 0
             and result["client_max_retries"] == 0
             and result["client_retries"] == 0
         )

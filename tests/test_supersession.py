@@ -111,6 +111,24 @@ def test_evaluator_no_retry_fails_single_layer():
     assert result["S3"] is False  # zero layers: transient not retried
 
 
+def test_evaluator_never_submits_fails():
+    # A worker that fabricates success without touching the gateway must
+    # not pass S3 on the return value alone.
+    rubric = load_rubric()
+    result = rubric.evaluate(VARIANTS / "invalid_never_submits" / "worker.py")
+    assert result["S3"] is False
+
+
+def test_evaluator_crash_does_not_reuse_stale_result():
+    # A worker that kills the driver on a transient fault leaves no
+    # result file; the evaluator must report a harness error rather
+    # than scoring the previous scenario's result.
+    rubric = load_rubric()
+    result = rubric.evaluate(VARIANTS / "invalid_crash" / "worker.py")
+    assert result["S3"] is False
+    assert "error" in result
+
+
 # ---------------------------------------------------------------------------
 # Authenticated MCP read path with known cases.
 # ---------------------------------------------------------------------------
