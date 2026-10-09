@@ -498,7 +498,10 @@ def score_worker_responses(
 
 def main(argv: list[str]) -> int:
     if len(argv) < 2:
-        print("usage: run.py prepare-workers | record-receipt <resp_dir> <job-name> | score-workers")
+        print(
+            "usage: run.py prepare-workers | "
+            "record-receipt <resp_dir> <job-name> | score-workers"
+        )
         return 2
     cmd = argv[1]
     if cmd == "prepare-workers":
