@@ -1,9 +1,10 @@
 {
   "job_name": "generic-retrieval-r2",
   "experiment": "supersession-worker-01",
-  "captured_at": "2026-10-10T03:31:40.621534+00:00",
+  "captured_at": "2026-10-10T03:34:57.675735+00:00",
   "response_sha256": "d1acd49f44b98db950a9a10956bd5b031ffd43cb9d1c4593bd2d6cd10b492e80",
   "response_bytes": 1093,
   "response_path": "runs/worker-responses/generic-retrieval-r2",
-  "prompt_sha256": "c22eaf2505beb53026efccfbe61a406d827478cf6d6cbf864d650c0ce7b30b04"
+  "prompt_sha256": "c22eaf2505beb53026efccfbe61a406d827478cf6d6cbf864d650c0ce7b30b04",
+  "binding_type": "posthoc"
 }

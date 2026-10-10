@@ -1,9 +1,10 @@
 {
   "job_name": "repo-only-r1",
   "experiment": "supersession-worker-01",
-  "captured_at": "2026-10-10T03:31:40.619039+00:00",
+  "captured_at": "2026-10-10T03:34:57.656299+00:00",
   "response_sha256": "d8dee272f56cd347c1064a58ae469c4d50d99386ea2ff0a6b172cfb03412a9fc",
   "response_bytes": 1229,
   "response_path": "runs/worker-responses/repo-only-r1",
-  "prompt_sha256": "23d32971b0eaa5b03f8896a9a938dd8101dd496d8e4f329233ce5c099eb566bd"
+  "prompt_sha256": "23d32971b0eaa5b03f8896a9a938dd8101dd496d8e4f329233ce5c099eb566bd",
+  "binding_type": "posthoc"
 }

@@ -399,10 +399,15 @@ def write_receipt(
             f"receipt already exists for {job_name}; refusing to overwrite "
             f"(pass force=True with a reason for a documented re-issue)"
         )
+    binding_type = "capture-time"
     if path.exists() and force:
         if not reason:
             raise ValueError("forced receipt replacement requires a reason")
-        # Audit trail: append-only log of the replacement.
+        # Retroactively added bindings are posthoc attestations, not
+        # capture-time evidence. Label them as such.
+        binding_type = "posthoc"
+        # Audit trail: append-only log of the replacement, preserving
+        # the full history (not just the latest).
         old_receipt = json.loads(path.read_text())
         audit_path = dest / "audit.log"
         with open(audit_path, "a") as f:
@@ -412,7 +417,9 @@ def write_receipt(
                 "replaced_at": datetime.now(UTC).isoformat(),
                 "old_response_sha256": old_receipt.get("response_sha256"),
                 "old_prompt_sha256": old_receipt.get("prompt_sha256"),
+                "old_binding_type": old_receipt.get("binding_type"),
                 "new_prompt_sha256": prompt_sha256,
+                "new_binding_type": binding_type,
                 "reason": reason,
             }) + "\n")
     captured_at = datetime.now(UTC).isoformat()
@@ -424,6 +431,7 @@ def write_receipt(
         "response_bytes": len(response_text.encode()),
         "response_path": str(resp_dir),
         "prompt_sha256": prompt_sha256,
+        "binding_type": binding_type,
     }
     path.write_text(json.dumps(receipt, indent=2))
     return path
@@ -451,13 +459,16 @@ def verify_receipt(
         return False, "receipt is not an object"
 
     # Structural validation: required fields must exist with right types.
+    # prompt_sha256 is required (non-null): a null binding cannot prove
+    # the prompt is unchanged and fails closed.
     required = {
         "job_name": str,
         "experiment": str,
         "captured_at": str,
         "response_sha256": str,
         "response_bytes": int,
-        "prompt_sha256": (str, type(None)),
+        "prompt_sha256": str,
+        "binding_type": str,
     }
     for field, ftype in required.items():
         if field not in receipt:
@@ -477,28 +488,31 @@ def verify_receipt(
 
     # Prompt binding: the receipt is bound to the prompt hash at capture
     # time. If the job's prompt changed since, the receipt is stale and
-    # the trial cannot pass on the old response.
+    # the trial cannot pass on the old response. A null binding fails
+    # closed: it cannot prove the prompt is unchanged.
     jobs_dir = ROOT / "runs" / "worker-jobs"
     job_path = jobs_dir / f"{job_name}.json"
+    receipt_prompt_hash = receipt.get("prompt_sha256")
+    if receipt_prompt_hash is None:
+        return False, "receipt has null prompt binding: cannot verify prompt unchanged"
     if job_path.exists():
         try:
             current_prompt_hash = json.loads(job_path.read_text()).get("prompt_sha256")
         except Exception:
             current_prompt_hash = None
-        receipt_prompt_hash = receipt.get("prompt_sha256")
-        if receipt_prompt_hash and current_prompt_hash:
-            if receipt_prompt_hash != current_prompt_hash:
-                return False, (
-                    f"receipt prompt binding broken: job prompt changed since "
-                    f"receipt issued (receipt {receipt_prompt_hash[:12]} vs "
-                    f"job {current_prompt_hash[:12]})"
-                )
-        elif receipt_prompt_hash is None and current_prompt_hash is not None:
-            # Old receipt without binding; job has a hash. Treat as stale
-            # only if we can prove the prompt changed -- we can't, so warn
-            # via the message but don't fail (backwards compatibility for
-            # receipts issued before binding was added).
-            pass
+        if current_prompt_hash and receipt_prompt_hash != current_prompt_hash:
+            return False, (
+                f"receipt prompt binding broken: job prompt changed since "
+                f"receipt issued (receipt {receipt_prompt_hash[:12]} vs "
+                f"job {current_prompt_hash[:12]})"
+            )
+    # Binding type must be declared: capture-time or posthoc.
+    binding_type = receipt.get("binding_type")
+    if binding_type not in ("capture-time", "posthoc"):
+        return False, (
+            f"receipt binding_type must be 'capture-time' or 'posthoc', "
+            f"got {binding_type!r}"
+        )
 
     # Hash format validation: must be 64 hex chars (SHA-256).
     h = receipt["response_sha256"]
@@ -543,6 +557,19 @@ def extract_worker_py(raw: str) -> tuple[str, str]:
     if m:
         return m.group(1), "fenced"
     return raw, "raw"
+
+
+def required_manifest_keys() -> set[str]:
+    """The set of source paths that must appear in every job manifest's
+    input_hashes. A manifest missing any of these is incomplete and
+    fails closed -- a one-file manifest must not pass.
+    """
+    files = [p for p in sorted(FIXTURE.glob("*.py")) if p.is_file()]
+    files += [p for p in sorted(CORPUS.glob("*.md")) if p.is_file()]
+    files += [p for p in sorted(EVALUATOR.glob("*.py")) if p.is_file()]
+    files += [p for p in sorted(SRC.glob("*.py")) if p.is_file()]
+    files += [Path(__file__).resolve()]
+    return {str(p.relative_to(REPO_ROOT)) for p in files}
 
 
 def verify_job_inputs(jobs_dir: Path | None = None) -> tuple[bool, str, dict]:
@@ -592,8 +619,9 @@ def verify_job_inputs(jobs_dir: Path | None = None) -> tuple[bool, str, dict]:
             if recorded != actual:
                 hash_mismatches.append(f"{name}: prompt hash drift")
             # Level 2: frozen-source hashes from THIS job's manifest.
-            # Every job must carry a non-empty manifest; an empty or
-            # missing manifest bypasses source validation and fails closed.
+            # Every job must carry a complete manifest: missing manifest,
+            # empty input_hashes, or a manifest omitting required sources
+            # all fail closed. A one-file manifest must not pass.
             manifest = job.get("manifest")
             if not isinstance(manifest, dict):
                 hash_mismatches.append(f"{name}: missing manifest")
@@ -601,6 +629,14 @@ def verify_job_inputs(jobs_dir: Path | None = None) -> tuple[bool, str, dict]:
             recorded_hashes = manifest.get("input_hashes")
             if not isinstance(recorded_hashes, dict) or not recorded_hashes:
                 hash_mismatches.append(f"{name}: empty manifest input_hashes")
+                continue
+            required_keys = required_manifest_keys()
+            missing_keys = required_keys - set(recorded_hashes.keys())
+            if missing_keys:
+                hash_mismatches.append(
+                    f"{name}: manifest omits required sources: "
+                    f"{', '.join(sorted(missing_keys))}"
+                )
                 continue
             for rel_path, recorded_hash in recorded_hashes.items():
                 full_path = REPO_ROOT / rel_path
