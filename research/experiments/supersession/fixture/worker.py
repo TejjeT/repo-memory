@@ -5,14 +5,13 @@ Do not modify in place -- the evaluator copies this file into isolated
 directories and applies one candidate variant per run.
 
 Task: bring the settlement retry configuration into compliance with
-current policy. The gateway retry layer is currently enabled at 3
-attempts (stale guidance); the worker implements its own retry loop.
+current policy. The gateway retry layer is currently configured at 3
+attempts; the worker implements its own retry loop.
 """
 
 from gateway import GatewayClient, TransientError
 
-# Gateway/client retry layer. Currently 3 (stale EA-005 guidance:
-# "Gateway retries may be configured up to three attempts").
+# Gateway/client retry layer. Currently 3.
 GATEWAY_MAX_RETRIES = 3
 
 

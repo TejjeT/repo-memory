@@ -1,4 +1,4 @@
 language: python
 version: 3.12.3
 gateway.py: sha256:980bc291e07dd8e8ec588cf1d05b191ba1d37ccf801d8ad55ceebd19a378d173
-worker.py: sha256:9d63e114308d580d69d9488f8c530d6b1cdc861e7cd99c826cb92b6704705c4d
+worker.py: sha256:cd5bac62041cfdb1a40dc70d3d0065e91213d4bea0bbaf1e8606ae3df202d815
