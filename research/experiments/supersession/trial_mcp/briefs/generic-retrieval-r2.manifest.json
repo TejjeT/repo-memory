@@ -1,0 +1,8 @@
+{
+  "job_name": "generic-retrieval-r2",
+  "experiment": "supersession-mcp-transport-01",
+  "condition": "generic-retrieval",
+  "run": 2,
+  "brief_sha256": "991cc5d5dce5df0b55d52521c2cad778efa512100b95bd4ead0424b2c08ae2db",
+  "created_at": "2026-10-10T03:50:53.525498+00:00"
+}

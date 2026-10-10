@@ -1,0 +1,8 @@
+{
+  "job_name": "repo-only-r2",
+  "experiment": "supersession-mcp-transport-01",
+  "condition": "repo-only",
+  "run": 2,
+  "brief_sha256": "5ff9b082d259238177d3d4267439b24f2a4e6756d1bcfcf4e5185a30a31d1a76",
+  "created_at": "2026-10-10T03:50:53.523602+00:00"
+}

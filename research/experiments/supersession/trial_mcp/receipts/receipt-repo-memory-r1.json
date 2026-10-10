@@ -1,0 +1,9 @@
+{
+  "job_name": "repo-memory-r1",
+  "experiment": "supersession-mcp-transport-01",
+  "captured_at": "2026-10-10T03:55:17.576903+00:00",
+  "brief_sha256": "b368b07b08d611638c8e9e591877886daab61cf8533e2baa9b457c214335dd1d",
+  "response_sha256": "eb10a107d678ec95331781fa28b215ddb394895c8ae862375ad8709a22b145c9",
+  "response_bytes": 785,
+  "binding_type": "capture-time"
+}
