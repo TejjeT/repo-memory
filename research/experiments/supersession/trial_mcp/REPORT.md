@@ -22,10 +22,12 @@ report.
 
 ## Method
 
-**Isolation:** Each trial ran in a fresh side chat created via
-`chat.create` with `context_mode="fresh"`. Workers received only the
-trial brief; no experiment history, prior results, or methodology notes
-were present in their context.
+**Isolation (operator-reported):** Each trial ran in a fresh side chat
+created via `chat.create` with `context_mode="fresh"`. Workers received
+only the trial brief; no experiment history, prior results, or
+methodology notes were present in their context. No machine-verifiable
+record of the chat contents is attached; this claim rests on the
+operator's procedure.
 
 **MCP transport (repo-memory only):** Workers were instructed to save
 `mcp_client.py` and invoke it via subprocess. The client uses the MCP
@@ -35,9 +37,12 @@ The trial server exposes `memory_search` and `memory_get` with
 EA-005 (superseded) and EA-006 (current); the `trial-agent` token grants
 `doc://` only.
 
-**Collection-time receipts:** Eight receipts were issued immediately on
-response collection in `trial_mcp/receipts/`. Each binds the brief
-SHA-256 to the response SHA-256 with `binding_type: "capture-time"`.
+**Collection-time receipts (operator-reported):** Eight receipts were
+issued immediately on response collection in `trial_mcp/receipts/`.
+Each binds the brief SHA-256 to the response SHA-256 with
+`binding_type: "capture-time"`. The "immediate" timing is operator
+procedure, not a machine-verified timestamp delta; receipt
+`captured_at` values are the verifiable record.
 
 ## Evidence and qualifications
 

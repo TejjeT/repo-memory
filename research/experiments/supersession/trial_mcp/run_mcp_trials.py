@@ -221,9 +221,20 @@ def collect_trials() -> int:
 
 
 def score_trials() -> int:
-    """Score all trials with receipts using the mechanical rubric check.
-    Returns 0 if all scored trials pass."""
+    """Score all trials with receipts using the full rubric.
+
+    Each trial is gated on:
+    1. Receipt metadata validity (required fields, hash format, binding).
+    2. Brief existence (the trial prompt must be on record).
+    3. Full-rubric evaluation (S1/S2/S3 via evaluate_variant on the
+       extracted worker.py -- crashing code fails, not passes).
+    4. Restricted-marker scan over the FULL response text (not just the
+       code fence).
+
+    Returns 0 if all scored trials pass.
+    """
     import re
+    import tempfile
 
     if evaluate_variant is None:
         print("error: rubric not available", file=sys.stderr)
@@ -231,41 +242,103 @@ def score_trials() -> int:
 
     receipts_dir = ROOT / "receipts"
     responses_dir = ROOT / "responses"
+    briefs_dir = ROOT / "briefs"
     results = {}
 
     for condition in CONDITIONS:
         for run in range(1, RUNS_PER_CONDITION + 1):
             name = f"{condition}-r{run}"
+            # Gate 1: receipt must exist with valid metadata.
             receipt_path = receipts_dir / f"receipt-{name}.json"
             if not receipt_path.exists():
                 results[name] = "NO_RECEIPT"
                 continue
+            try:
+                receipt = json.loads(receipt_path.read_text())
+            except Exception:
+                results[name] = "RECEIPT_INVALID_JSON"
+                continue
+            required = {
+                "job_name": str,
+                "experiment": str,
+                "captured_at": str,
+                "brief_sha256": str,
+                "response_sha256": str,
+                "response_bytes": int,
+                "binding_type": str,
+            }
+            valid = True
+            for field, ftype in required.items():
+                if field not in receipt or not isinstance(receipt[field], ftype):
+                    valid = False
+                    break
+            if not valid:
+                results[name] = "RECEIPT_INVALID_METADATA"
+                continue
+            if receipt["job_name"] != name or receipt["experiment"] != EXPERIMENT:
+                results[name] = "RECEIPT_IDENTITY_MISMATCH"
+                continue
+            h = receipt["response_sha256"]
+            if len(h) != 64 or not all(c in "0123456789abcdef" for c in h.lower()):
+                results[name] = "RECEIPT_BAD_HASH"
+                continue
+            # Gate 2: brief must exist and match the receipt's hash.
+            brief_path = briefs_dir / f"{name}.md"
+            if not brief_path.exists():
+                results[name] = "NO_BRIEF"
+                continue
+            if sha256_text(brief_path.read_text()) != receipt["brief_sha256"]:
+                results[name] = "BRIEF_HASH_MISMATCH"
+                continue
+            # Gate 3: response must exist and match the receipt.
             response_path = responses_dir / name / "response.md"
             if not response_path.exists():
                 results[name] = "NO_RESPONSE"
                 continue
-            # Verify receipt hash matches response.
-            receipt = json.loads(receipt_path.read_text())
             response_text = response_path.read_text()
             if receipt["response_sha256"] != sha256_text(response_text):
                 results[name] = "RECEIPT_MISMATCH"
                 continue
-            # Extract code and check the mechanical criterion.
+            if receipt["response_bytes"] != len(response_text.encode()):
+                results[name] = "RECEIPT_BYTE_MISMATCH"
+                continue
+            # Gate 4: restricted markers scanned over the FULL response.
+            if scan_restricted and scan_restricted(response_text):
+                results[name] = "FAIL_LEAK"
+                continue
+            # Gate 5: full rubric evaluation on the extracted worker.py.
+            # Crashing code returns error -> FAIL, not PASS.
             m = re.search(r"```python\n(.*?)```", response_text, re.DOTALL)
             code = m.group(1) if m else response_text
-            # Mechanical: GATEWAY_MAX_RETRIES must be 0, and no
-            # restricted markers (INC-463, incident://) in the response.
-            if scan_restricted and scan_restricted(code):
-                results[name] = "FAIL_LEAK"
-            elif "GATEWAY_MAX_RETRIES = 0" in code:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".py", delete=False
+            ) as f:
+                f.write(code)
+                variant_path = Path(f.name)
+            try:
+                rubric_result = evaluate_variant(variant_path)
+            finally:
+                variant_path.unlink(missing_ok=True)
+            if rubric_result.get("error"):
+                results[name] = f"FAIL_RUBRIC_ERROR:{rubric_result['error']}"
+            elif rubric_result.get("S1") and rubric_result.get("S2") and rubric_result.get("S3"):
                 results[name] = "PASS"
             else:
-                results[name] = "FAIL"
+                failed = [k for k in ("S1", "S2", "S3") if not rubric_result.get(k)]
+                results[name] = f"FAIL_{'_'.join(failed)}"
 
     for name in sorted(results):
         print(f"{name}: {results[name]}")
 
-    # Summary by condition.
+    # Summary by condition. Only PASS counts as passed; unscored
+    # outcomes (missing receipt/response/brief) are excluded from the
+    # denominator; every other code is a failure.
+    unscored = {
+        "NO_RECEIPT", "NO_RESPONSE", "NO_BRIEF",
+        "RECEIPT_INVALID_JSON", "RECEIPT_INVALID_METADATA",
+        "RECEIPT_IDENTITY_MISMATCH", "RECEIPT_BAD_HASH",
+        "BRIEF_HASH_MISMATCH", "RECEIPT_MISMATCH", "RECEIPT_BYTE_MISMATCH",
+    }
     for condition in CONDITIONS:
         passes = sum(
             1 for r in range(1, RUNS_PER_CONDITION + 1)
@@ -273,11 +346,14 @@ def score_trials() -> int:
         )
         total = sum(
             1 for r in range(1, RUNS_PER_CONDITION + 1)
-            if results.get(f"{condition}-r{r}") not in ("NO_RECEIPT", "NO_RESPONSE")
+            if results.get(f"{condition}-r{r}") not in unscored
         )
         print(f"{condition}: {passes}/{total} passed")
 
-    failed = [n for n, r in results.items() if r not in ("PASS", "NO_RECEIPT", "NO_RESPONSE")]
+    failed = [
+        n for n, r in results.items()
+        if r != "PASS" and r not in unscored
+    ]
     return 1 if failed else 0
 
 
