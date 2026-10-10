@@ -1,0 +1,10 @@
+{
+  "job_name": "repo-only-r3",
+  "experiment": "supersession-worker-01",
+  "captured_at": "2026-10-10T03:34:57.664440+00:00",
+  "response_sha256": "7b2cffce456d90f012acce6bec41ce14312536dc57289a49dfe6c24a1b71a50f",
+  "response_bytes": 1206,
+  "response_path": "runs/worker-responses/repo-only-r3",
+  "prompt_sha256": "23d32971b0eaa5b03f8896a9a938dd8101dd496d8e4f329233ce5c099eb566bd",
+  "binding_type": "posthoc"
+}

@@ -1,0 +1,278 @@
+{
+  "experiment": "supersession-worker-01",
+  "evidence_type": "replay",
+  "original_report": "runs/report.original.json",
+  "evidence_note": "Scores replay saved responses with the current evaluator. Posthoc receipt bindings attest to saved artifacts, not original prompt delivery. Workers shared experiment history; the fixture's stale-guidance cue may explain the tie. MCP context was checked through an in-process dispatcher replay, not collection-time transport receipts.",
+  "generated_at": "2026-10-10T03:46:44.359883+00:00",
+  "manifest": {
+    "input_hashes": {
+      "research/experiments/supersession/fixture/gateway.py": "980bc291e07dd8e8ec588cf1d05b191ba1d37ccf801d8ad55ceebd19a378d173",
+      "research/experiments/supersession/fixture/worker.py": "9d63e114308d580d69d9488f8c530d6b1cdc861e7cd99c826cb92b6704705c4d",
+      "research/experiments/supersession/corpus/SOURCES.md": "2288f74ca3c0326337cb972e8eac8a0fe373adf68278b9488f5b772a4d3f2782",
+      "research/experiments/supersession/corpus/retry-policy-current.md": "d3824f23e1bcd44ec07f509cb2c44b288ca3971597c2494a5bc28952487fd50c",
+      "research/experiments/supersession/corpus/retry-policy-history.md": "f4598d922bd4842a36d6b9706fbbb0e9378ab95cc6abebb72cbde9daa04b83b8",
+      "research/experiments/supersession/evaluator/rubric.py": "66f97d87d1d28654bb1110100207650f93001d62212fba0bc0802c456e231b2c",
+      "src/repo_memory/__init__.py": "cd0b59fd01b1c6b85945ad3dfdbfadd84da760bb3239550f92f1c302f8bf3a2e",
+      "src/repo_memory/auth.py": "d0c112cc58b47367760c6de5616389ca73e62886ebeae02c65bba86959d7a6db",
+      "src/repo_memory/context.py": "8b887c4a7c3d671ae75f193d229b98a7bb58d0324698bb864641377c62e1fc09",
+      "src/repo_memory/loader.py": "6d8842edd7b4cde3c27f51ffa04c73b58a71dad3846c9d92fe9bfc2020a76276",
+      "src/repo_memory/models.py": "8c7b2786a9fd92cf058fb53b014e4895038007913c5fbc0d63c36063be5194ca",
+      "src/repo_memory/policy.py": "f65e6796d47f8aff4ae4aa3ddc3c3fc3cf972fdf1f542750e8e5e69249b337f1",
+      "src/repo_memory/serialization.py": "458ca5c89fd6aaaa8bb8c30f77ecbd78772945ce6450074a78d51c62e66c344a",
+      "src/repo_memory/tools.py": "d4e8377c99047da7958a35d2f104b0392332c44a6cf82f41d1e228117f6298a8",
+      "research/experiments/supersession/run.py": "0231e8e9c0e8fbc362b4a3c904a5e478008e5a7f392fb7eead39ee9b12b8b581"
+    },
+    "git_commit": "76dfcbdd03bad02364cf17c1b621012651a47fda",
+    "git_dirty": true,
+    "runner": {
+      "experiment": "supersession-worker-01",
+      "task": "Bring the settlement retry configuration into compliance with current policy (see fixture/worker.py).",
+      "repository": "payment-worker",
+      "conditions": [
+        "repo-only",
+        "generic-retrieval",
+        "repo-memory"
+      ],
+      "runs_per_condition": 3,
+      "blinded": false,
+      "blinding_note": "Workers are subagents spawned from the orchestrating chat, which contains experiment history. Each worker receives a job-file-only brief and is instructed to read only that file. Strict blinding (fresh side chats with no history) was not used; record as a limitation.",
+      "worker_model": "Muse Spark",
+      "worker_model_detail": "unknown (runtime does not expose a version string)",
+      "worker_protocol": "subagent-worker-v1",
+      "worker_turns": 1,
+      "worker_tool_policy": "read the assigned job file only; no browsing, no other tools",
+      "worker_sampling_params": "unknown (runtime defaults; not exposed)"
+    }
+  },
+  "input_verification": {
+    "ok": true,
+    "message": "all job files present and prompt hashes verify; warnings: research/experiments/supersession/evaluator/rubric.py: changed since job generation; research/experiments/supersession/run.py: changed since job generation",
+    "details": {
+      "missing": [],
+      "hash_mismatches": [],
+      "source_mismatches": [],
+      "source_warnings": [
+        "research/experiments/supersession/evaluator/rubric.py: changed since job generation",
+        "research/experiments/supersession/run.py: changed since job generation"
+      ]
+    }
+  },
+  "results": {
+    "repo-only-r1": {
+      "job_name": "repo-only-r1",
+      "condition": "repo-only",
+      "run": 1,
+      "receipt": {
+        "ok": true,
+        "message": "ok",
+        "binding_type": "posthoc"
+      },
+      "leak_scan": {
+        "context_leaks": [],
+        "response_leaks": [],
+        "clean": true
+      },
+      "extract_method": "fenced",
+      "scores": {
+        "S1": true,
+        "S2": true,
+        "S3": true
+      },
+      "pass": true
+    },
+    "repo-only-r2": {
+      "job_name": "repo-only-r2",
+      "condition": "repo-only",
+      "run": 2,
+      "receipt": {
+        "ok": true,
+        "message": "ok",
+        "binding_type": "posthoc"
+      },
+      "leak_scan": {
+        "context_leaks": [],
+        "response_leaks": [],
+        "clean": true
+      },
+      "extract_method": "fenced",
+      "scores": {
+        "S1": true,
+        "S2": true,
+        "S3": true
+      },
+      "pass": true
+    },
+    "repo-only-r3": {
+      "job_name": "repo-only-r3",
+      "condition": "repo-only",
+      "run": 3,
+      "receipt": {
+        "ok": true,
+        "message": "ok",
+        "binding_type": "posthoc"
+      },
+      "leak_scan": {
+        "context_leaks": [],
+        "response_leaks": [],
+        "clean": true
+      },
+      "extract_method": "fenced",
+      "scores": {
+        "S1": true,
+        "S2": true,
+        "S3": true
+      },
+      "pass": true
+    },
+    "generic-retrieval-r1": {
+      "job_name": "generic-retrieval-r1",
+      "condition": "generic-retrieval",
+      "run": 1,
+      "receipt": {
+        "ok": true,
+        "message": "ok",
+        "binding_type": "posthoc"
+      },
+      "leak_scan": {
+        "context_leaks": [],
+        "response_leaks": [],
+        "clean": true
+      },
+      "extract_method": "fenced",
+      "scores": {
+        "S1": true,
+        "S2": true,
+        "S3": true
+      },
+      "pass": true
+    },
+    "generic-retrieval-r2": {
+      "job_name": "generic-retrieval-r2",
+      "condition": "generic-retrieval",
+      "run": 2,
+      "receipt": {
+        "ok": true,
+        "message": "ok",
+        "binding_type": "posthoc"
+      },
+      "leak_scan": {
+        "context_leaks": [],
+        "response_leaks": [],
+        "clean": true
+      },
+      "extract_method": "fenced",
+      "scores": {
+        "S1": true,
+        "S2": true,
+        "S3": true
+      },
+      "pass": true
+    },
+    "generic-retrieval-r3": {
+      "job_name": "generic-retrieval-r3",
+      "condition": "generic-retrieval",
+      "run": 3,
+      "receipt": {
+        "ok": true,
+        "message": "ok",
+        "binding_type": "posthoc"
+      },
+      "leak_scan": {
+        "context_leaks": [],
+        "response_leaks": [],
+        "clean": true
+      },
+      "extract_method": "fenced",
+      "scores": {
+        "S1": true,
+        "S2": true,
+        "S3": true
+      },
+      "pass": true
+    },
+    "repo-memory-r1": {
+      "job_name": "repo-memory-r1",
+      "condition": "repo-memory",
+      "run": 1,
+      "receipt": {
+        "ok": true,
+        "message": "ok",
+        "binding_type": "posthoc"
+      },
+      "leak_scan": {
+        "context_leaks": [],
+        "response_leaks": [],
+        "clean": true
+      },
+      "extract_method": "fenced",
+      "scores": {
+        "S1": true,
+        "S2": true,
+        "S3": true
+      },
+      "pass": true
+    },
+    "repo-memory-r2": {
+      "job_name": "repo-memory-r2",
+      "condition": "repo-memory",
+      "run": 2,
+      "receipt": {
+        "ok": true,
+        "message": "ok",
+        "binding_type": "posthoc"
+      },
+      "leak_scan": {
+        "context_leaks": [],
+        "response_leaks": [],
+        "clean": true
+      },
+      "extract_method": "fenced",
+      "scores": {
+        "S1": true,
+        "S2": true,
+        "S3": true
+      },
+      "pass": true
+    },
+    "repo-memory-r3": {
+      "job_name": "repo-memory-r3",
+      "condition": "repo-memory",
+      "run": 3,
+      "receipt": {
+        "ok": true,
+        "message": "ok",
+        "binding_type": "posthoc"
+      },
+      "leak_scan": {
+        "context_leaks": [],
+        "response_leaks": [],
+        "clean": true
+      },
+      "extract_method": "fenced",
+      "scores": {
+        "S1": true,
+        "S2": true,
+        "S3": true
+      },
+      "pass": true
+    }
+  },
+  "summary": {
+    "repo-only": {
+      "trials": 3,
+      "passed": 3,
+      "rate": "3/3"
+    },
+    "generic-retrieval": {
+      "trials": 3,
+      "passed": 3,
+      "rate": "3/3"
+    },
+    "repo-memory": {
+      "trials": 3,
+      "passed": 3,
+      "rate": "3/3"
+    }
+  },
+  "interpretation": "Mechanical scores only. Three trials per condition on one task do not establish general superiority in either direction. Ties and negative outcomes are valid."
+}

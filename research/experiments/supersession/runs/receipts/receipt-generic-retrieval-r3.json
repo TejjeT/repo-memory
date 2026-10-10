@@ -1,0 +1,10 @@
+{
+  "job_name": "generic-retrieval-r3",
+  "experiment": "supersession-worker-01",
+  "captured_at": "2026-10-10T03:34:57.682543+00:00",
+  "response_sha256": "64a30d9be9d45749922def51832d64f25001c3ee02a1d881949bf85135712a19",
+  "response_bytes": 1095,
+  "response_path": "runs/worker-responses/generic-retrieval-r3",
+  "prompt_sha256": "c22eaf2505beb53026efccfbe61a406d827478cf6d6cbf864d650c0ce7b30b04",
+  "binding_type": "posthoc"
+}

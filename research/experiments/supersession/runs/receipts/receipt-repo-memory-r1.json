@@ -1,0 +1,10 @@
+{
+  "job_name": "repo-memory-r1",
+  "experiment": "supersession-worker-01",
+  "captured_at": "2026-10-10T03:34:57.685662+00:00",
+  "response_sha256": "d16a8717896e45f13e0a31b89b8bd79b1935aa4d48bfdfe2c420cff744630902",
+  "response_bytes": 1269,
+  "response_path": "runs/worker-responses/repo-memory-r1",
+  "prompt_sha256": "da7fc76013f1be8de7ea8b7cb1e288cc46aa2472612b056332e94a4f28c860c4",
+  "binding_type": "posthoc"
+}
