@@ -9,11 +9,11 @@
 All eight completed trials passed; repo-memory had one incomplete trial.
 No MCP advantage demonstrated.
 
-| Condition | Assigned | Completed | Passed |
-|-----------|----------|-----------|--------|
-| repo-only | 3 | 3 | 3/3 |
-| generic-retrieval | 3 | 3 | 3/3 |
-| repo-memory | 3 | 2 | 2/2 |
+| Condition | Assigned | Completed | Passed / assigned | Passed / completed |
+|-----------|----------|-----------|-------------------|--------------------|
+| repo-only | 3 | 3 | 3/3 | 3/3 |
+| generic-retrieval | 3 | 3 | 3/3 | 3/3 |
+| repo-memory | 3 | 2 | 2/3 | 2/2 |
 
 repo-memory-r2 did not complete: the worker analyzed the experiment
 instead of performing the task, despite a direct nudge. This incomplete
@@ -59,9 +59,13 @@ procedure, not a machine-verified timestamp delta; receipt
   references in the repo-memory responses support MCP use (EA-006 does
   not appear in the fixture) but do not establish which calls each
   worker made. Per-worker isolated log paths are needed for the next run.
-- **Scoring:** Mechanical check for `GATEWAY_MAX_RETRIES = 0`
-  (single retry layer, worker-owned). All eight completed responses
-  satisfy this. Run `python run_mcp_trials.py score` to reproduce.
+- **Scoring:** The full S1/S2/S3 rubric runs each extracted worker against
+  the fixture. Receipt identity, timestamps, binding type, byte counts,
+  brief manifests and hashes are validated first; full briefs and raw
+  responses are scanned for restricted provenance. All eight completed
+  responses pass. Run `python run_mcp_trials.py score` to reproduce.
+  The command reports assigned denominators and fails on invalid evidence;
+  the documented absent repo-memory-r2 remains an explicit incomplete trial.
 
 ## Interpretation
 

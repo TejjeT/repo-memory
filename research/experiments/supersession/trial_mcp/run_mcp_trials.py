@@ -251,12 +251,18 @@ def score_trials() -> int:
             # Gate 1: receipt must exist with valid metadata.
             receipt_path = receipts_dir / f"receipt-{name}.json"
             if not receipt_path.exists():
-                results[name] = "NO_RECEIPT"
+                results[name] = (
+                    "MISSING_RECEIPT" if (responses_dir / name / "response.md").exists()
+                    else "NO_RECEIPT"
+                )
                 continue
             try:
                 receipt = json.loads(receipt_path.read_text())
             except Exception:
                 results[name] = "RECEIPT_INVALID_JSON"
+                continue
+            if not isinstance(receipt, dict):
+                results[name] = "RECEIPT_INVALID_METADATA"
                 continue
             required = {
                 "job_name": str,
@@ -278,6 +284,17 @@ def score_trials() -> int:
             if receipt["job_name"] != name or receipt["experiment"] != EXPERIMENT:
                 results[name] = "RECEIPT_IDENTITY_MISMATCH"
                 continue
+            try:
+                datetime.fromisoformat(receipt["captured_at"])
+            except ValueError:
+                results[name] = "RECEIPT_INVALID_TIMESTAMP"
+                continue
+            if receipt["binding_type"] not in ("capture-time", "posthoc"):
+                results[name] = "RECEIPT_INVALID_BINDING"
+                continue
+            if type(receipt["response_bytes"]) is not int or receipt["response_bytes"] < 0:
+                results[name] = "RECEIPT_INVALID_METADATA"
+                continue
             h = receipt["response_sha256"]
             if len(h) != 64 or not all(c in "0123456789abcdef" for c in h.lower()):
                 results[name] = "RECEIPT_BAD_HASH"
@@ -287,8 +304,26 @@ def score_trials() -> int:
             if not brief_path.exists():
                 results[name] = "NO_BRIEF"
                 continue
-            if sha256_text(brief_path.read_text()) != receipt["brief_sha256"]:
+            brief_text = brief_path.read_text()
+            if sha256_text(brief_text) != receipt["brief_sha256"]:
                 results[name] = "BRIEF_HASH_MISMATCH"
+                continue
+            try:
+                manifest = json.loads(
+                    (briefs_dir / f"{name}.manifest.json").read_text()
+                )
+                expected = {
+                    "job_name": name, "experiment": EXPERIMENT,
+                    "condition": condition, "run": run,
+                    "brief_sha256": receipt["brief_sha256"],
+                }
+                valid_manifest = isinstance(manifest, dict) and all(
+                    manifest.get(key) == value for key, value in expected.items()
+                )
+            except (OSError, ValueError):
+                valid_manifest = False
+            if not valid_manifest:
+                results[name] = "BRIEF_MANIFEST_INVALID"
                 continue
             # Gate 3: response must exist and match the receipt.
             response_path = responses_dir / name / "response.md"
@@ -303,7 +338,9 @@ def score_trials() -> int:
                 results[name] = "RECEIPT_BYTE_MISMATCH"
                 continue
             # Gate 4: restricted markers scanned over the FULL response.
-            if scan_restricted and scan_restricted(response_text):
+            if scan_restricted and (
+                scan_restricted(response_text) or scan_restricted(brief_text)
+            ):
                 results[name] = "FAIL_LEAK"
                 continue
             # Gate 5: full rubric evaluation on the extracted worker.py.
@@ -330,29 +367,19 @@ def score_trials() -> int:
     for name in sorted(results):
         print(f"{name}: {results[name]}")
 
-    # Summary by condition. Only PASS counts as passed; unscored
-    # outcomes (missing receipt/response/brief) are excluded from the
-    # denominator; every other code is a failure.
-    unscored = {
-        "NO_RECEIPT", "NO_RESPONSE", "NO_BRIEF",
-        "RECEIPT_INVALID_JSON", "RECEIPT_INVALID_METADATA",
-        "RECEIPT_IDENTITY_MISMATCH", "RECEIPT_BAD_HASH",
-        "BRIEF_HASH_MISMATCH", "RECEIPT_MISMATCH", "RECEIPT_BYTE_MISMATCH",
-    }
+    # The assigned denominator includes every trial. Integrity failures
+    # must fail the command rather than disappear as unscored successes.
+    known_incomplete = {"repo-memory-r2"}
     for condition in CONDITIONS:
         passes = sum(
             1 for r in range(1, RUNS_PER_CONDITION + 1)
             if results.get(f"{condition}-r{r}") == "PASS"
         )
-        total = sum(
-            1 for r in range(1, RUNS_PER_CONDITION + 1)
-            if results.get(f"{condition}-r{r}") not in unscored
-        )
-        print(f"{condition}: {passes}/{total} passed")
+        print(f"{condition}: {passes}/{RUNS_PER_CONDITION} assigned trials passed")
 
     failed = [
         n for n, r in results.items()
-        if r != "PASS" and r not in unscored
+        if r != "PASS" and not (n in known_incomplete and r == "NO_RECEIPT")
     ]
     return 1 if failed else 0
 
