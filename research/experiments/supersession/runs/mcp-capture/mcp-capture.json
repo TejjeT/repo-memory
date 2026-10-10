@@ -185,5 +185,7 @@
         "clean": true
       }
     }
-  ]
+  ],
+  "evidence_type": "posthoc_replay",
+  "evidence_note": "Captured AFTER the worker trials (2026-10-08) by re-invoking handle_tool_call with the same parameters used during job generation. This does NOT prove which MCP calls occurred during the trials; the contemporaneous evidence is the MCP responses embedded in the job files under runs/worker-jobs/ (which contain the exact delivered context). This replay verifies the dispatcher still produces clean output."
 }

@@ -367,13 +367,26 @@ def receipt_name(name: str) -> str:
 
 
 def write_receipt(
-    resp_dir: Path, job_name: str, response_text: str, dest: Path | None = None
+    resp_dir: Path, job_name: str, response_text: str, dest: Path | None = None,
+    force: bool = False,
 ) -> Path:
     """Issue a capture-time receipt for one worker response. The receipt
     hashes the exact response bytes and records when it was captured;
-    it is the tamper-evident link between collection and scoring."""
+    it is the tamper-evident link between collection and scoring.
+
+    Receipts are immutable: if a receipt already exists for this job,
+    it is NOT overwritten unless force=True is passed explicitly (e.g.
+    for a documented re-issue). This prevents a changed response from
+    silently getting a replacement receipt that passes verification.
+    """
     dest = dest or (ROOT / "runs" / "receipts")
     dest.mkdir(parents=True, exist_ok=True)
+    path = dest / receipt_name(job_name)
+    if path.exists() and not force:
+        raise FileExistsError(
+            f"receipt already exists for {job_name}; refusing to overwrite "
+            f"(pass force=True for a documented re-issue)"
+        )
     captured_at = datetime.now(UTC).isoformat()
     receipt = {
         "job_name": job_name,
@@ -383,7 +396,6 @@ def write_receipt(
         "response_bytes": len(response_text.encode()),
         "response_path": str(resp_dir),
     }
-    path = dest / receipt_name(job_name)
     path.write_text(json.dumps(receipt, indent=2))
     return path
 
@@ -423,23 +435,94 @@ def extract_worker_py(raw: str) -> tuple[str, str]:
     return raw, "raw"
 
 
+def verify_job_inputs(jobs_dir: Path | None = None) -> tuple[bool, str, dict]:
+    """Verify that all job files exist and their recorded input hashes
+    match the current files. Returns (ok, message, details).
+
+    This is the evidence-integrity gate: scoring must not produce a
+    passing report when the inputs it claims to have used are missing
+    or have changed.
+    """
+    jobs_dir = jobs_dir or (ROOT / "runs" / "worker-jobs")
+    missing = []
+    hash_mismatches = []
+    for condition in CONDITIONS:
+        for run in range(1, RUNS_PER_CONDITION + 1):
+            name = f"{condition}-r{run}"
+            job_path = jobs_dir / f"{name}.json"
+            if not job_path.exists():
+                missing.append(name)
+                continue
+            # Verify the job's recorded prompt hash matches its prompt.
+            try:
+                job = json.loads(job_path.read_text())
+                prompt = job.get("prompt", "")
+                recorded = job.get("prompt_sha256", "")
+                actual = sha256_text(prompt)
+                if recorded != actual:
+                    hash_mismatches.append(f"{name}: prompt hash drift")
+            except Exception as e:
+                hash_mismatches.append(f"{name}: unreadable ({e})")
+    details = {"missing": missing, "hash_mismatches": hash_mismatches}
+    if missing:
+        return False, f"missing job files: {', '.join(missing)}", details
+    if hash_mismatches:
+        return False, f"job integrity failures: {'; '.join(hash_mismatches)}", details
+    return True, "all job files present and prompt hashes verify", details
+
+
+def scan_trial_for_leaks(job_path: Path, response_text: str) -> dict:
+    """Scan a trial's delivered context and worker response for
+    restricted markers. Returns {context_leaks, response_leaks, clean}.
+
+    A worker that cites a restricted incident identifier in its
+    response must not count as passing, even if the code scores well.
+    """
+    from rubric import scan_restricted
+
+    job = json.loads(job_path.read_text())
+    context_leaks = scan_restricted(job.get("prompt", ""))
+    response_leaks = scan_restricted(response_text)
+    return {
+        "context_leaks": context_leaks,
+        "response_leaks": response_leaks,
+        "clean": len(context_leaks) == 0 and len(response_leaks) == 0,
+    }
+
+
 def score_worker_responses(
     resp_root: Path | None = None, dest: Path | None = None
 ) -> dict:
     """Mechanically score every collected worker response. Returns the
-    report dict and writes it to runs/report.json."""
+    report dict and writes it to runs/report.json.
+
+    Evidence gates (fail closed):
+    - All job files must exist with verifying prompt hashes.
+    - Receipts must verify (no hash drift).
+    - Worker responses must be free of restricted markers.
+    """
     resp_root = resp_root or (ROOT / "runs" / "worker-responses")
+    jobs_dir = ROOT / "runs" / "worker-jobs"
     manifest = input_manifest()
+
+    # Gate 1: job inputs must exist and verify.
+    jobs_ok, jobs_msg, jobs_details = verify_job_inputs(jobs_dir)
+    if not jobs_ok:
+        raise FileNotFoundError(f"cannot score: {jobs_msg}")
+
     results: dict[str, dict] = {}
     for condition in CONDITIONS:
         for run in range(1, RUNS_PER_CONDITION + 1):
             name = f"{condition}-r{run}"
             resp_dir = resp_root / name
+            job_path = jobs_dir / f"{name}.json"
             entry: dict = {"job_name": name, "condition": condition, "run": run}
             ok, msg = verify_receipt(resp_dir, name)
             entry["receipt"] = {"ok": ok, "message": msg}
             if not ok:
                 entry["scores"] = None
+                entry["leak_scan"] = None
+                entry["pass"] = False
                 results[name] = entry
                 continue
             candidates = sorted(
@@ -448,6 +531,11 @@ def score_worker_responses(
                 if p.is_file() and p.suffix in (".md", ".txt", ".py")
             ) or sorted(p for p in resp_dir.iterdir() if p.is_file())
             raw = candidates[0].read_text()
+
+            # Gate 2: leak scan on delivered context and response.
+            leak_scan = scan_trial_for_leaks(job_path, raw)
+            entry["leak_scan"] = leak_scan
+
             code, method = extract_worker_py(raw)
             entry["extract_method"] = method
             tmp = ROOT / "runs" / ".tmp-variants"
@@ -459,12 +547,13 @@ def score_worker_responses(
             finally:
                 variant_path.unlink(missing_ok=True)
             entry["scores"] = scores
-            # S1+S2+S3 all true => pass.
+            # S1+S2+S3 all true AND no leaks => pass.
             entry["pass"] = (
                 isinstance(scores, dict)
                 and scores.get("S1") is True
                 and scores.get("S2") is True
                 and scores.get("S3") is True
+                and leak_scan["clean"] is True
             )
             results[name] = entry
 
@@ -483,6 +572,11 @@ def score_worker_responses(
         "experiment": EXPERIMENT,
         "generated_at": datetime.now(UTC).isoformat(),
         "manifest": manifest,
+        "input_verification": {
+            "ok": jobs_ok,
+            "message": jobs_msg,
+            "details": jobs_details,
+        },
         "results": results,
         "summary": summary,
         "interpretation": (
