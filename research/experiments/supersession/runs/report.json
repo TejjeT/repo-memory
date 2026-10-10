@@ -1,6 +1,6 @@
 {
   "experiment": "supersession-worker-01",
-  "generated_at": "2026-10-10T02:54:44.376834+00:00",
+  "generated_at": "2026-10-10T03:31:44.071569+00:00",
   "manifest": {
     "input_hashes": {
       "research/experiments/supersession/fixture/gateway.py": "980bc291e07dd8e8ec588cf1d05b191ba1d37ccf801d8ad55ceebd19a378d173",
@@ -17,9 +17,9 @@
       "src/repo_memory/policy.py": "f65e6796d47f8aff4ae4aa3ddc3c3fc3cf972fdf1f542750e8e5e69249b337f1",
       "src/repo_memory/serialization.py": "458ca5c89fd6aaaa8bb8c30f77ecbd78772945ce6450074a78d51c62e66c344a",
       "src/repo_memory/tools.py": "d4e8377c99047da7958a35d2f104b0392332c44a6cf82f41d1e228117f6298a8",
-      "research/experiments/supersession/run.py": "1a1ca02a587ef63c486145f5c53d2e709b286773d6d3cd784377ca270324cb15"
+      "research/experiments/supersession/run.py": "636efb3806a462eb1739c8fd06b76fd398d85628addeefd1b92fbffaf753a7a0"
     },
-    "git_commit": "d4b3c284f4a771edcdc336252bcb6fb63b222dc7",
+    "git_commit": "95e81109ad951d68b1f49fb6cf963dc8796451ee",
     "git_dirty": true,
     "runner": {
       "experiment": "supersession-worker-01",
@@ -43,10 +43,15 @@
   },
   "input_verification": {
     "ok": true,
-    "message": "all job files present and prompt hashes verify",
+    "message": "all job files present and prompt hashes verify; warnings: research/experiments/supersession/evaluator/rubric.py: changed since job generation; research/experiments/supersession/run.py: changed since job generation",
     "details": {
       "missing": [],
-      "hash_mismatches": []
+      "hash_mismatches": [],
+      "source_mismatches": [],
+      "source_warnings": [
+        "research/experiments/supersession/evaluator/rubric.py: changed since job generation",
+        "research/experiments/supersession/run.py: changed since job generation"
+      ]
     }
   },
   "results": {

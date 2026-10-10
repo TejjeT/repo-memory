@@ -1,8 +1,9 @@
 {
   "job_name": "repo-memory-r3",
   "experiment": "supersession-worker-01",
-  "captured_at": "2026-10-08T11:41:06.189794+00:00",
+  "captured_at": "2026-10-10T03:31:40.623656+00:00",
   "response_sha256": "0fdd9d0b0a3c07ff17637d39de98409e375d63452afd52099c743efdc1ed237d",
   "response_bytes": 996,
-  "response_path": "runs/worker-responses/repo-memory-r3"
+  "response_path": "runs/worker-responses/repo-memory-r3",
+  "prompt_sha256": "da7fc76013f1be8de7ea8b7cb1e288cc46aa2472612b056332e94a4f28c860c4"
 }

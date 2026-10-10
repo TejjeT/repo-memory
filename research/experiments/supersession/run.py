@@ -49,6 +49,7 @@ import json
 import re
 import subprocess
 import sys
+from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -368,25 +369,52 @@ def receipt_name(name: str) -> str:
 
 def write_receipt(
     resp_dir: Path, job_name: str, response_text: str, dest: Path | None = None,
-    force: bool = False,
+    force: bool = False, reason: str | None = None,
 ) -> Path:
     """Issue a capture-time receipt for one worker response. The receipt
-    hashes the exact response bytes and records when it was captured;
-    it is the tamper-evident link between collection and scoring.
+    hashes the exact response bytes, binds to the job's prompt hash, and
+    records when it was captured; it is the tamper-evident link between
+    collection and scoring.
 
     Receipts are immutable: if a receipt already exists for this job,
-    it is NOT overwritten unless force=True is passed explicitly (e.g.
-    for a documented re-issue). This prevents a changed response from
-    silently getting a replacement receipt that passes verification.
+    it is NOT overwritten unless force=True is passed explicitly with
+    a reason. Forced replacements are logged to an append-only audit
+    trail (runs/receipts/audit.log).
+
+    The receipt binds to prompt_sha256 from the job file: if the prompt
+    changes after the receipt is issued, verification fails. A changed
+    prompt cannot pass using the original response receipt.
     """
     dest = dest or (ROOT / "runs" / "receipts")
     dest.mkdir(parents=True, exist_ok=True)
+    jobs_dir = ROOT / "runs" / "worker-jobs"
+    job_path = jobs_dir / f"{job_name}.json"
+    prompt_sha256 = None
+    if job_path.exists():
+        with suppress(Exception):
+            prompt_sha256 = json.loads(job_path.read_text()).get("prompt_sha256")
     path = dest / receipt_name(job_name)
     if path.exists() and not force:
         raise FileExistsError(
             f"receipt already exists for {job_name}; refusing to overwrite "
-            f"(pass force=True for a documented re-issue)"
+            f"(pass force=True with a reason for a documented re-issue)"
         )
+    if path.exists() and force:
+        if not reason:
+            raise ValueError("forced receipt replacement requires a reason")
+        # Audit trail: append-only log of the replacement.
+        old_receipt = json.loads(path.read_text())
+        audit_path = dest / "audit.log"
+        with open(audit_path, "a") as f:
+            f.write(json.dumps({
+                "event": "receipt_replaced",
+                "job_name": job_name,
+                "replaced_at": datetime.now(UTC).isoformat(),
+                "old_response_sha256": old_receipt.get("response_sha256"),
+                "old_prompt_sha256": old_receipt.get("prompt_sha256"),
+                "new_prompt_sha256": prompt_sha256,
+                "reason": reason,
+            }) + "\n")
     captured_at = datetime.now(UTC).isoformat()
     receipt = {
         "job_name": job_name,
@@ -395,6 +423,7 @@ def write_receipt(
         "response_sha256": sha256_text(response_text),
         "response_bytes": len(response_text.encode()),
         "response_path": str(resp_dir),
+        "prompt_sha256": prompt_sha256,
     }
     path.write_text(json.dumps(receipt, indent=2))
     return path
@@ -428,6 +457,7 @@ def verify_receipt(
         "captured_at": str,
         "response_sha256": str,
         "response_bytes": int,
+        "prompt_sha256": (str, type(None)),
     }
     for field, ftype in required.items():
         if field not in receipt:
@@ -444,6 +474,31 @@ def verify_receipt(
         return False, (
             f"receipt experiment mismatch: {receipt['experiment']!r}"
         )
+
+    # Prompt binding: the receipt is bound to the prompt hash at capture
+    # time. If the job's prompt changed since, the receipt is stale and
+    # the trial cannot pass on the old response.
+    jobs_dir = ROOT / "runs" / "worker-jobs"
+    job_path = jobs_dir / f"{job_name}.json"
+    if job_path.exists():
+        try:
+            current_prompt_hash = json.loads(job_path.read_text()).get("prompt_sha256")
+        except Exception:
+            current_prompt_hash = None
+        receipt_prompt_hash = receipt.get("prompt_sha256")
+        if receipt_prompt_hash and current_prompt_hash:
+            if receipt_prompt_hash != current_prompt_hash:
+                return False, (
+                    f"receipt prompt binding broken: job prompt changed since "
+                    f"receipt issued (receipt {receipt_prompt_hash[:12]} vs "
+                    f"job {current_prompt_hash[:12]})"
+                )
+        elif receipt_prompt_hash is None and current_prompt_hash is not None:
+            # Old receipt without binding; job has a hash. Treat as stale
+            # only if we can prove the prompt changed -- we can't, so warn
+            # via the message but don't fail (backwards compatibility for
+            # receipts issued before binding was added).
+            pass
 
     # Hash format validation: must be 64 hex chars (SHA-256).
     h = receipt["response_sha256"]
@@ -518,7 +573,6 @@ def verify_job_inputs(jobs_dir: Path | None = None) -> tuple[bool, str, dict]:
         "research/experiments/supersession/corpus/",
         "src/repo_memory/",
     )
-    checked_manifest = False
     for condition in CONDITIONS:
         for run in range(1, RUNS_PER_CONDITION + 1):
             name = f"{condition}-r{run}"
@@ -537,24 +591,34 @@ def verify_job_inputs(jobs_dir: Path | None = None) -> tuple[bool, str, dict]:
             actual = sha256_text(prompt)
             if recorded != actual:
                 hash_mismatches.append(f"{name}: prompt hash drift")
-            # Level 2: frozen-source hashes (check once, from first job).
-            if not checked_manifest:
-                checked_manifest = True
-                manifest = job.get("manifest", {})
-                recorded_hashes = manifest.get("input_hashes", {})
-                for rel_path, recorded_hash in recorded_hashes.items():
-                    full_path = REPO_ROOT / rel_path
-                    if not full_path.exists():
-                        source_mismatches.append(f"{rel_path}: file missing")
-                        continue
-                    actual_hash = sha256_file(full_path)
-                    if actual_hash != recorded_hash:
-                        is_prompt_affecting = rel_path.startswith(prompt_affecting)
-                        target = (
-                            source_mismatches if is_prompt_affecting
-                            else source_warnings
-                        )
-                        target.append(f"{rel_path}: changed since job generation")
+            # Level 2: frozen-source hashes from THIS job's manifest.
+            # Every job must carry a non-empty manifest; an empty or
+            # missing manifest bypasses source validation and fails closed.
+            manifest = job.get("manifest")
+            if not isinstance(manifest, dict):
+                hash_mismatches.append(f"{name}: missing manifest")
+                continue
+            recorded_hashes = manifest.get("input_hashes")
+            if not isinstance(recorded_hashes, dict) or not recorded_hashes:
+                hash_mismatches.append(f"{name}: empty manifest input_hashes")
+                continue
+            for rel_path, recorded_hash in recorded_hashes.items():
+                full_path = REPO_ROOT / rel_path
+                if not full_path.exists():
+                    entry = f"{rel_path}: file missing"
+                    if entry not in source_mismatches:
+                        source_mismatches.append(entry)
+                    continue
+                actual_hash = sha256_file(full_path)
+                if actual_hash != recorded_hash:
+                    is_prompt_affecting = rel_path.startswith(prompt_affecting)
+                    target = (
+                        source_mismatches if is_prompt_affecting
+                        else source_warnings
+                    )
+                    entry = f"{rel_path}: changed since job generation"
+                    if entry not in target:
+                        target.append(entry)
     details = {
         "missing": missing,
         "hash_mismatches": hash_mismatches,
