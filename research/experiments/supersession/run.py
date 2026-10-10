@@ -404,12 +404,58 @@ def verify_receipt(
     resp_dir: Path, job_name: str, dest: Path | None = None
 ) -> tuple[bool, str]:
     """Re-hash the stored response and compare with the receipt. Returns
-    (ok, message)."""
+    (ok, message).
+
+    Validates receipt metadata strictly: a receipt with missing fields,
+    wrong job_name, malformed hash, or byte-count mismatch fails even
+    if the hash happens to match.
+    """
     dest = dest or (ROOT / "runs" / "receipts")
     receipt_path = dest / receipt_name(job_name)
     if not receipt_path.exists():
         return False, "missing receipt"
-    receipt = json.loads(receipt_path.read_text())
+    try:
+        receipt = json.loads(receipt_path.read_text())
+    except Exception as e:
+        return False, f"receipt unreadable: {e}"
+    if not isinstance(receipt, dict):
+        return False, "receipt is not an object"
+
+    # Structural validation: required fields must exist with right types.
+    required = {
+        "job_name": str,
+        "experiment": str,
+        "captured_at": str,
+        "response_sha256": str,
+        "response_bytes": int,
+    }
+    for field, ftype in required.items():
+        if field not in receipt:
+            return False, f"receipt missing field: {field}"
+        if not isinstance(receipt[field], ftype):
+            return False, f"receipt field {field} has wrong type"
+
+    # Identity validation: receipt must name this job and experiment.
+    if receipt["job_name"] != job_name:
+        return False, (
+            f"receipt job_name mismatch: {receipt['job_name']!r} != {job_name!r}"
+        )
+    if receipt["experiment"] != EXPERIMENT:
+        return False, (
+            f"receipt experiment mismatch: {receipt['experiment']!r}"
+        )
+
+    # Hash format validation: must be 64 hex chars (SHA-256).
+    h = receipt["response_sha256"]
+    if len(h) != 64 or not all(c in "0123456789abcdef" for c in h.lower()):
+        return False, "receipt response_sha256 is not a valid SHA-256 hex digest"
+
+    # Timestamp validation: must parse as ISO-8601.
+    try:
+        datetime.fromisoformat(receipt["captured_at"])
+    except Exception:
+        return False, "receipt captured_at is not a valid ISO-8601 timestamp"
+
     # Find the response file in resp_dir (first .md or .txt or raw file).
     candidates = sorted(
         p for p in resp_dir.iterdir() if p.is_file() and p.suffix in (".md", ".txt", ".py")
@@ -419,9 +465,18 @@ def verify_receipt(
         candidates = sorted(p for p in resp_dir.iterdir() if p.is_file())
     if not candidates:
         return False, "no response file"
+
+    # Byte-count validation: must match actual file size.
     text = candidates[0].read_text()
+    actual_bytes = len(text.encode())
+    if receipt["response_bytes"] != actual_bytes:
+        return False, (
+            f"receipt byte-count mismatch: {receipt['response_bytes']} != {actual_bytes}"
+        )
+
+    # Hash validation: must match actual content.
     actual = sha256_text(text)
-    if actual != receipt["response_sha256"]:
+    if actual != receipt["response_sha256"].lower():
         return False, f"hash drift: receipt {receipt['response_sha256'][:12]} vs {actual[:12]}"
     return True, "ok"
 
@@ -442,10 +497,28 @@ def verify_job_inputs(jobs_dir: Path | None = None) -> tuple[bool, str, dict]:
     This is the evidence-integrity gate: scoring must not produce a
     passing report when the inputs it claims to have used are missing
     or have changed.
+
+    Two levels of checking:
+    1. Internal: each job's prompt_sha256 must match its prompt (catches
+       edits where the hash wasn't updated).
+    2. Frozen-source: the manifest's input_hashes must match the actual
+       files for prompt-affecting sources (fixture, corpus, src/). A
+       mismatch here means the delivered context may differ from what
+       was recorded -- fail closed. Non-prompt files (evaluator, runner)
+       are reported as warnings; they affect scoring, not what workers saw.
     """
     jobs_dir = jobs_dir or (ROOT / "runs" / "worker-jobs")
     missing = []
     hash_mismatches = []
+    source_mismatches = []  # prompt-affecting files that changed
+    source_warnings = []  # non-prompt files that changed
+    # Paths whose content is embedded in (or generates) the delivered prompt.
+    prompt_affecting = (
+        "research/experiments/supersession/fixture/",
+        "research/experiments/supersession/corpus/",
+        "src/repo_memory/",
+    )
+    checked_manifest = False
     for condition in CONDITIONS:
         for run in range(1, RUNS_PER_CONDITION + 1):
             name = f"{condition}-r{run}"
@@ -453,22 +526,55 @@ def verify_job_inputs(jobs_dir: Path | None = None) -> tuple[bool, str, dict]:
             if not job_path.exists():
                 missing.append(name)
                 continue
-            # Verify the job's recorded prompt hash matches its prompt.
             try:
                 job = json.loads(job_path.read_text())
-                prompt = job.get("prompt", "")
-                recorded = job.get("prompt_sha256", "")
-                actual = sha256_text(prompt)
-                if recorded != actual:
-                    hash_mismatches.append(f"{name}: prompt hash drift")
             except Exception as e:
                 hash_mismatches.append(f"{name}: unreadable ({e})")
-    details = {"missing": missing, "hash_mismatches": hash_mismatches}
+                continue
+            # Level 1: internal prompt hash consistency.
+            prompt = job.get("prompt", "")
+            recorded = job.get("prompt_sha256", "")
+            actual = sha256_text(prompt)
+            if recorded != actual:
+                hash_mismatches.append(f"{name}: prompt hash drift")
+            # Level 2: frozen-source hashes (check once, from first job).
+            if not checked_manifest:
+                checked_manifest = True
+                manifest = job.get("manifest", {})
+                recorded_hashes = manifest.get("input_hashes", {})
+                for rel_path, recorded_hash in recorded_hashes.items():
+                    full_path = REPO_ROOT / rel_path
+                    if not full_path.exists():
+                        source_mismatches.append(f"{rel_path}: file missing")
+                        continue
+                    actual_hash = sha256_file(full_path)
+                    if actual_hash != recorded_hash:
+                        is_prompt_affecting = rel_path.startswith(prompt_affecting)
+                        target = (
+                            source_mismatches if is_prompt_affecting
+                            else source_warnings
+                        )
+                        target.append(f"{rel_path}: changed since job generation")
+    details = {
+        "missing": missing,
+        "hash_mismatches": hash_mismatches,
+        "source_mismatches": source_mismatches,
+        "source_warnings": source_warnings,
+    }
     if missing:
         return False, f"missing job files: {', '.join(missing)}", details
     if hash_mismatches:
         return False, f"job integrity failures: {'; '.join(hash_mismatches)}", details
-    return True, "all job files present and prompt hashes verify", details
+    if source_mismatches:
+        return (
+            False,
+            f"frozen sources changed: {'; '.join(source_mismatches)}",
+            details,
+        )
+    msg = "all job files present and prompt hashes verify"
+    if source_warnings:
+        msg += f"; warnings: {'; '.join(source_warnings)}"
+    return True, msg, details
 
 
 def scan_trial_for_leaks(job_path: Path, response_text: str) -> dict:
