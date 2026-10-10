@@ -41,10 +41,14 @@ SHA-256 to the response SHA-256 with `binding_type: "capture-time"`.
 
 ## Evidence and qualifications
 
-- **Transport log** (`trial_mcp/mcp-transport.log`): 8 entries
-  (4 request/response pairs) showing live `memory_search` and
-  `memory_get` calls returning EA-006. This proves MCP transport was
-  used during the trial window.
+- **Transport log** (`trial_mcp/mcp-transport.log`): 12 entries
+  (6 request/response pairs) showing live `memory_search` and
+  `memory_get` calls returning EA-006.
+- **Timing:** 4 pairs (03:53:48–03:54:10 UTC) occurred before response
+  collection (receipts issued 03:55:17 UTC) and are attributable to the
+  trial window. 2 pairs (03:57:20–03:57:28 UTC) occurred after all
+  receipts were issued and cannot be attributed to worker task
+  performance; they are excluded from trial-window claims.
 - **Attribution caveat:** All workers shared `/tmp/mcp-transport.log`,
   so individual calls cannot be attributed to specific workers. EA-006
   references in the repo-memory responses support MCP use (EA-006 does
@@ -52,7 +56,7 @@ SHA-256 to the response SHA-256 with `binding_type: "capture-time"`.
   worker made. Per-worker isolated log paths are needed for the next run.
 - **Scoring:** Mechanical check for `GATEWAY_MAX_RETRIES = 0`
   (single retry layer, worker-owned). All eight completed responses
-  satisfy this.
+  satisfy this. Run `python run_mcp_trials.py score` to reproduce.
 
 ## Interpretation
 

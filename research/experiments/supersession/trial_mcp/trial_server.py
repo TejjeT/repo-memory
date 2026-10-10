@@ -18,7 +18,7 @@ from mcp.server.mcpserver import MCPServer
 
 from repo_memory.auth import VerifiedSession
 from repo_memory.models import EngineeringAssertion, Provenance, Scope
-from repo_memory.tools import TOOL_DEFINITIONS, handle_tool_call
+from repo_memory.tools import handle_tool_call
 
 mcp = MCPServer("repo-memory-trial")
 
