@@ -418,6 +418,8 @@ def write_receipt(
                 "old_response_sha256": old_receipt.get("response_sha256"),
                 "old_prompt_sha256": old_receipt.get("prompt_sha256"),
                 "old_binding_type": old_receipt.get("binding_type"),
+                "old_receipt": old_receipt,
+                "new_response_sha256": sha256_text(response_text),
                 "new_prompt_sha256": prompt_sha256,
                 "new_binding_type": binding_type,
                 "reason": reason,
@@ -493,19 +495,17 @@ def verify_receipt(
     jobs_dir = ROOT / "runs" / "worker-jobs"
     job_path = jobs_dir / f"{job_name}.json"
     receipt_prompt_hash = receipt.get("prompt_sha256")
-    if receipt_prompt_hash is None:
-        return False, "receipt has null prompt binding: cannot verify prompt unchanged"
-    if job_path.exists():
-        try:
-            current_prompt_hash = json.loads(job_path.read_text()).get("prompt_sha256")
-        except Exception:
-            current_prompt_hash = None
-        if current_prompt_hash and receipt_prompt_hash != current_prompt_hash:
-            return False, (
-                f"receipt prompt binding broken: job prompt changed since "
-                f"receipt issued (receipt {receipt_prompt_hash[:12]} vs "
-                f"job {current_prompt_hash[:12]})"
-            )
+    if not re.fullmatch(r"[0-9a-f]{64}", receipt_prompt_hash):
+        return False, "receipt prompt binding is not a valid SHA-256 digest"
+    try:
+        job = json.loads(job_path.read_text())
+        current_prompt_hash = sha256_text(job["prompt"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return False, "receipt job is missing or unreadable"
+    if job.get("prompt_sha256") != current_prompt_hash:
+        return False, "job prompt hash drift"
+    if receipt_prompt_hash != current_prompt_hash:
+        return False, "receipt prompt binding broken: job prompt changed since receipt issued"
     # Binding type must be declared: capture-time or posthoc.
     binding_type = receipt.get("binding_type")
     if binding_type not in ("capture-time", "posthoc"):
@@ -612,8 +612,21 @@ def verify_job_inputs(jobs_dir: Path | None = None) -> tuple[bool, str, dict]:
             except Exception as e:
                 hash_mismatches.append(f"{name}: unreadable ({e})")
                 continue
+            if not isinstance(job, dict):
+                hash_mismatches.append(f"{name}: job is not an object")
+                continue
+            expected = {
+                "job_name": name, "experiment": EXPERIMENT,
+                "condition": condition, "run": run, "task": TASK,
+            }
+            if any(job.get(key) != value for key, value in expected.items()):
+                hash_mismatches.append(f"{name}: job identity mismatch")
+                continue
             # Level 1: internal prompt hash consistency.
             prompt = job.get("prompt", "")
+            if not isinstance(prompt, str):
+                hash_mismatches.append(f"{name}: prompt is not text")
+                continue
             recorded = job.get("prompt_sha256", "")
             actual = sha256_text(prompt)
             if recorded != actual:
@@ -725,6 +738,11 @@ def score_worker_responses(
             entry: dict = {"job_name": name, "condition": condition, "run": run}
             ok, msg = verify_receipt(resp_dir, name)
             entry["receipt"] = {"ok": ok, "message": msg}
+            if ok:
+                receipt = json.loads(
+                    (ROOT / "runs" / "receipts" / receipt_name(name)).read_text()
+                )
+                entry["receipt"]["binding_type"] = receipt["binding_type"]
             if not ok:
                 entry["scores"] = None
                 entry["leak_scan"] = None
@@ -776,6 +794,15 @@ def score_worker_responses(
 
     report = {
         "experiment": EXPERIMENT,
+        "evidence_type": "replay",
+        "original_report": "runs/report.original.json",
+        "evidence_note": (
+            "Scores replay saved responses with the current evaluator. Posthoc receipt "
+            "bindings attest to saved artifacts, not original prompt delivery. Workers "
+            "shared experiment history; the fixture's stale-guidance cue may explain "
+            "the tie. MCP context was checked through an in-process dispatcher replay, "
+            "not collection-time transport receipts."
+        ),
         "generated_at": datetime.now(UTC).isoformat(),
         "manifest": manifest,
         "input_verification": {

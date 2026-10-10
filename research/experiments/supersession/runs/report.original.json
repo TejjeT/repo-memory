@@ -1,9 +1,6 @@
 {
   "experiment": "supersession-worker-01",
-  "evidence_type": "replay",
-  "original_report": "runs/report.original.json",
-  "evidence_note": "Scores replay saved responses with the current evaluator. Posthoc receipt bindings attest to saved artifacts, not original prompt delivery. Workers shared experiment history; the fixture's stale-guidance cue may explain the tie. MCP context was checked through an in-process dispatcher replay, not collection-time transport receipts.",
-  "generated_at": "2026-10-10T03:46:44.359883+00:00",
+  "generated_at": "2026-10-08T11:41:08.065279+00:00",
   "manifest": {
     "input_hashes": {
       "research/experiments/supersession/fixture/gateway.py": "980bc291e07dd8e8ec588cf1d05b191ba1d37ccf801d8ad55ceebd19a378d173",
@@ -11,7 +8,7 @@
       "research/experiments/supersession/corpus/SOURCES.md": "2288f74ca3c0326337cb972e8eac8a0fe373adf68278b9488f5b772a4d3f2782",
       "research/experiments/supersession/corpus/retry-policy-current.md": "d3824f23e1bcd44ec07f509cb2c44b288ca3971597c2494a5bc28952487fd50c",
       "research/experiments/supersession/corpus/retry-policy-history.md": "f4598d922bd4842a36d6b9706fbbb0e9378ab95cc6abebb72cbde9daa04b83b8",
-      "research/experiments/supersession/evaluator/rubric.py": "66f97d87d1d28654bb1110100207650f93001d62212fba0bc0802c456e231b2c",
+      "research/experiments/supersession/evaluator/rubric.py": "0342e92cd02a6cb65dc0552d88921daf5613e40104dc3bccc28ed5ace8ee07a1",
       "src/repo_memory/__init__.py": "cd0b59fd01b1c6b85945ad3dfdbfadd84da760bb3239550f92f1c302f8bf3a2e",
       "src/repo_memory/auth.py": "d0c112cc58b47367760c6de5616389ca73e62886ebeae02c65bba86959d7a6db",
       "src/repo_memory/context.py": "8b887c4a7c3d671ae75f193d229b98a7bb58d0324698bb864641377c62e1fc09",
@@ -20,9 +17,9 @@
       "src/repo_memory/policy.py": "f65e6796d47f8aff4ae4aa3ddc3c3fc3cf972fdf1f542750e8e5e69249b337f1",
       "src/repo_memory/serialization.py": "458ca5c89fd6aaaa8bb8c30f77ecbd78772945ce6450074a78d51c62e66c344a",
       "src/repo_memory/tools.py": "d4e8377c99047da7958a35d2f104b0392332c44a6cf82f41d1e228117f6298a8",
-      "research/experiments/supersession/run.py": "0231e8e9c0e8fbc362b4a3c904a5e478008e5a7f392fb7eead39ee9b12b8b581"
+      "research/experiments/supersession/run.py": "a51425e0ad6054fbe13823b7df7f176de1e653668ad7345c3ef29904b38ed958"
     },
-    "git_commit": "76dfcbdd03bad02364cf17c1b621012651a47fda",
+    "git_commit": "631524af894ec410a8dc84400b24c49380265821",
     "git_dirty": true,
     "runner": {
       "experiment": "supersession-worker-01",
@@ -44,19 +41,6 @@
       "worker_sampling_params": "unknown (runtime defaults; not exposed)"
     }
   },
-  "input_verification": {
-    "ok": true,
-    "message": "all job files present and prompt hashes verify; warnings: research/experiments/supersession/evaluator/rubric.py: changed since job generation; research/experiments/supersession/run.py: changed since job generation",
-    "details": {
-      "missing": [],
-      "hash_mismatches": [],
-      "source_mismatches": [],
-      "source_warnings": [
-        "research/experiments/supersession/evaluator/rubric.py: changed since job generation",
-        "research/experiments/supersession/run.py: changed since job generation"
-      ]
-    }
-  },
   "results": {
     "repo-only-r1": {
       "job_name": "repo-only-r1",
@@ -64,13 +48,7 @@
       "run": 1,
       "receipt": {
         "ok": true,
-        "message": "ok",
-        "binding_type": "posthoc"
-      },
-      "leak_scan": {
-        "context_leaks": [],
-        "response_leaks": [],
-        "clean": true
+        "message": "ok"
       },
       "extract_method": "fenced",
       "scores": {
@@ -86,13 +64,7 @@
       "run": 2,
       "receipt": {
         "ok": true,
-        "message": "ok",
-        "binding_type": "posthoc"
-      },
-      "leak_scan": {
-        "context_leaks": [],
-        "response_leaks": [],
-        "clean": true
+        "message": "ok"
       },
       "extract_method": "fenced",
       "scores": {
@@ -108,13 +80,7 @@
       "run": 3,
       "receipt": {
         "ok": true,
-        "message": "ok",
-        "binding_type": "posthoc"
-      },
-      "leak_scan": {
-        "context_leaks": [],
-        "response_leaks": [],
-        "clean": true
+        "message": "ok"
       },
       "extract_method": "fenced",
       "scores": {
@@ -130,13 +96,7 @@
       "run": 1,
       "receipt": {
         "ok": true,
-        "message": "ok",
-        "binding_type": "posthoc"
-      },
-      "leak_scan": {
-        "context_leaks": [],
-        "response_leaks": [],
-        "clean": true
+        "message": "ok"
       },
       "extract_method": "fenced",
       "scores": {
@@ -152,13 +112,7 @@
       "run": 2,
       "receipt": {
         "ok": true,
-        "message": "ok",
-        "binding_type": "posthoc"
-      },
-      "leak_scan": {
-        "context_leaks": [],
-        "response_leaks": [],
-        "clean": true
+        "message": "ok"
       },
       "extract_method": "fenced",
       "scores": {
@@ -174,13 +128,7 @@
       "run": 3,
       "receipt": {
         "ok": true,
-        "message": "ok",
-        "binding_type": "posthoc"
-      },
-      "leak_scan": {
-        "context_leaks": [],
-        "response_leaks": [],
-        "clean": true
+        "message": "ok"
       },
       "extract_method": "fenced",
       "scores": {
@@ -196,13 +144,7 @@
       "run": 1,
       "receipt": {
         "ok": true,
-        "message": "ok",
-        "binding_type": "posthoc"
-      },
-      "leak_scan": {
-        "context_leaks": [],
-        "response_leaks": [],
-        "clean": true
+        "message": "ok"
       },
       "extract_method": "fenced",
       "scores": {
@@ -218,13 +160,7 @@
       "run": 2,
       "receipt": {
         "ok": true,
-        "message": "ok",
-        "binding_type": "posthoc"
-      },
-      "leak_scan": {
-        "context_leaks": [],
-        "response_leaks": [],
-        "clean": true
+        "message": "ok"
       },
       "extract_method": "fenced",
       "scores": {
@@ -240,13 +176,7 @@
       "run": 3,
       "receipt": {
         "ok": true,
-        "message": "ok",
-        "binding_type": "posthoc"
-      },
-      "leak_scan": {
-        "context_leaks": [],
-        "response_leaks": [],
-        "clean": true
+        "message": "ok"
       },
       "extract_method": "fenced",
       "scores": {
