@@ -1,0 +1,8 @@
+{
+  "job_name": "repo-memory-r3",
+  "experiment": "supersession-mcp-transport-01",
+  "condition": "repo-memory",
+  "run": 3,
+  "brief_sha256": "792fb6a1a9d971a5797586168ade292e8ffdc4c78dd80db1b3d89a51b4932ed3",
+  "created_at": "2026-10-10T03:50:53.526244+00:00"
+}

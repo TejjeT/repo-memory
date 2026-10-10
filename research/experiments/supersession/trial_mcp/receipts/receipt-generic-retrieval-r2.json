@@ -1,0 +1,9 @@
+{
+  "job_name": "generic-retrieval-r2",
+  "experiment": "supersession-mcp-transport-01",
+  "captured_at": "2026-10-10T03:55:17.569395+00:00",
+  "brief_sha256": "991cc5d5dce5df0b55d52521c2cad778efa512100b95bd4ead0424b2c08ae2db",
+  "response_sha256": "f0645a1f1ed1ba42a76e5c1f38c1f90dd7382a67176a632104d24f500fdabe98",
+  "response_bytes": 1223,
+  "binding_type": "capture-time"
+}
