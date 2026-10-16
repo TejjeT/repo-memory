@@ -26,12 +26,11 @@ This module is backend-neutral: it defines protocols, not providers.
 Provider implementations (OpenViking search, OpenSearch, pgvector, ...)
 belong under ``adapters/``.
 
-Provider trust boundary: ``EvidenceProvider.collect`` receives the resolved
-safe candidates with their *unredacted* provenance, because a provider needs
-source details to scope retrieval. Providers are therefore trusted
-in-process components. An untrusted or external provider must be wrapped in
-an adapter that redacts what it may see *before* ``collect`` runs -- the
-assembler never hands untrusted code unredacted provenance.
+Provider trust boundary: trusted ``providers`` receive the resolved candidates
+with their original relationships and provenance. ``external_providers``
+receive a projection with caller-readable relationship IDs and redacted
+provenance/rationale before both audit recording and ``collect``. This
+projection never changes deterministic policy resolution.
 """
 
 from __future__ import annotations
@@ -175,16 +174,45 @@ def redact_provenance(
     return tuple(safe)
 
 
+#: Relationship IDs are authorized separately from candidate eligibility:
+#: readable historical/out-of-scope targets may still be linked.
+_LINK_FIELDS = ("overrides", "supersedes", "superseded_by", "conflicts_with")
+
+
+def filter_relationship_links(
+    assertion: EngineeringAssertion,
+    authorize: AuthorizationHook | None,
+    by_id: dict[str, EngineeringAssertion],
+) -> EngineeringAssertion:
+    """Withhold links to denied or unknown assertions before exposure.
+
+    Use the complete corpus, not just resolved candidates: authorization,
+    rather than lifecycle or search scope, determines target readability.
+    An omitted hook permits known targets but cannot authorize unknown IDs.
+    """
+    def readable(ref_id: str) -> bool:
+        target = by_id.get(ref_id)
+        return target is not None and (authorize is None or authorize(target))
+
+    filtered = {
+        field: tuple(ref for ref in getattr(assertion, field) if readable(ref))
+        for field in _LINK_FIELDS
+    }
+    if all(filtered[field] == getattr(assertion, field) for field in _LINK_FIELDS):
+        return assertion
+    return replace(assertion, **filtered)
+
+
 def redacted_candidate_view(
     candidates: tuple[EngineeringAssertion, ...],
     authorize_provenance: ProvenanceAuthorizationHook,
 ) -> tuple[EngineeringAssertion, ...]:
-    """Return the caller-safe candidate view for untrusted/external providers.
+    """Redact candidate provenance for untrusted/external providers.
 
     Provenance details the caller may not inspect are withheld and rationale
     that could discuss restricted sources is withheld with it (see
-    :func:`redact_assertion`). Deterministic authority is preserved --
-    redaction never removes or reorders candidates.
+    :func:`redact_assertion`). The assembler filters relationship IDs before
+    calling this helper. Redaction never removes or reorders candidates.
     """
     return tuple(
         redact_assertion(assertion, authorize_provenance) for assertion in candidates
@@ -306,7 +334,15 @@ class ContextAssembler:
                     "external_providers require a provenance hook; refusing "
                     "to expose unredacted candidates to an external provider"
                 )
-            view = redacted_candidate_view(candidates, self.authorize_provenance)
+            # Filter against the full corpus after policy resolution. Using
+            # only active candidates would erase readable historical links;
+            # doing this before resolution could change policy semantics.
+            by_id = {assertion.id: assertion for assertion in assertions}
+            linked_view = tuple(
+                filter_relationship_links(assertion, self.authorize, by_id)
+                for assertion in candidates
+            )
+            view = redacted_candidate_view(linked_view, self.authorize_provenance)
             if self.boundary_transport is not None:
                 self.boundary_transport.record(view)
             for provider in self.external_providers:

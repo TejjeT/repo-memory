@@ -18,7 +18,7 @@ not read it).
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import fields, replace
+from dataclasses import fields
 from datetime import UTC, datetime
 from typing import Any
 
@@ -37,10 +37,11 @@ from repo_memory.context import (
     Evidence,
     EvidenceProvider,
     RepositoryMetadata,
+    filter_relationship_links,
     redact_assertion,
 )
 from repo_memory.models import EngineeringAssertion, Provenance, Scope
-from repo_memory.policy import AuthorizationHook, ResolutionContext
+from repo_memory.policy import ResolutionContext
 from repo_memory.serialization import assertion_to_dict
 
 _SCOPE_FIELDS = frozenset(f.name for f in fields(Scope))
@@ -70,42 +71,6 @@ def parse_scope(raw: dict[str, Any]) -> Scope:
         for key, value in raw.items()
     }
     return Scope(**values)
-
-
-#: Assertion fields holding IDs of related assertions. All are filtered to
-#: caller-readable targets before serialization so denied assertion IDs are
-#: never exposed through relationship fields.
-_LINK_FIELDS = ("overrides", "supersedes", "superseded_by", "conflicts_with")
-
-
-def filter_relationship_links(
-    assertion: EngineeringAssertion,
-    authorize: AuthorizationHook | None,
-    by_id: dict[str, EngineeringAssertion],
-) -> EngineeringAssertion:
-    """Withhold relationship links to assertions the caller may not read.
-
-    Lifecycle status is retained, but any ID in the relationship fields that
-    resolves to a denied (or unknown) assertion is removed -- denied
-    assertion existence is never revealed through ``overrides``,
-    ``supersedes``, ``superseded_by`` or ``conflicts_with``.
-    """
-    if authorize is None:
-        return assertion
-
-    def readable(ref_id: str) -> bool:
-        target = by_id.get(ref_id)
-        return target is not None and authorize(target)
-
-    filtered = {
-        field: tuple(ref for ref in getattr(assertion, field) if readable(ref))
-        for field in _LINK_FIELDS
-    }
-    if all(
-        filtered[field] == getattr(assertion, field) for field in _LINK_FIELDS
-    ):
-        return assertion
-    return replace(assertion, **filtered)
 
 
 def _provenance_to_dict(provenance: Provenance) -> dict[str, Any]:

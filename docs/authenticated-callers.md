@@ -61,10 +61,16 @@ and redacted inside `assemble` with the verified caller's own hook.
 Redaction (`src/repo_memory/context.py`) is owned by the assembler, the only
 component that knows the request's caller:
 
-- `redacted_candidate_view()` builds the caller-safe view for external
-  providers: unauthorized provenance entries are withheld and rationale is
-  withheld with them.
-- `redact_assertion()` applies the same rule to responses.
+- Before recording or calling external providers, `assemble()` filters
+  `overrides`, `supersedes`, `superseded_by`, and `conflicts_with` using the
+  caller's authorization over the complete corpus. Denied and unknown IDs
+  are removed; readable historical/out-of-scope targets remain linked.
+  Policy resolution and trusted-provider inputs retain the original data.
+- `redacted_candidate_view()` then withholds unauthorized provenance entries
+  and the associated rationale. This relationship/provenance projection is
+  the exact view given to both the audit sink and external providers.
+- Response tools reuse `filter_relationship_links()` and `redact_assertion()`
+  before serialization.
 - `BoundaryTransport` records the exact outbound view for audit. The
   provenance hook is required when external providers are configured -- a
   missing hook fails fast rather than exposing unredacted data.
