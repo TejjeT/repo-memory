@@ -1,0 +1,24 @@
+{
+  "trial_id": "97f86513-709c-458c-98fd-abcd4eb97a0e",
+  "execution_id": "d8623cba-05ec-457b-ad1a-1ac2fdc473f4",
+  "binding_type": "collection-hook",
+  "started_at": "2026-10-16T13:37:05.743996+00:00",
+  "captured_at": "2026-10-16T13:37:35.620074+00:00",
+  "elapsed_seconds": 29.87607363999996,
+  "status": "completed",
+  "manifest_sha256": "83af842d63fa8ba06e1e879072150d9310aaf34fc44f26ea14d324a5fc651e7e",
+  "job_sha256": "741328bf11b1d48591a1133cd78e21141fec83b37a227ec82884e9790bcb667b",
+  "files": {
+    "worker.stdin": "39f5f1a90128940b82fb4bcdb816faee133e5187699c68b1b4c22410e11818d5",
+    "worker.stdout": "ca35dd5a8486e10467954a6d489758fc6aa3b7a2d09f333a8a7fa2b536b637e6",
+    "worker.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "mcp.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transport.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "invocation.json": "4ddfd368a5aa5b6d4177e7c14c59b80a0bd169a042bf44f79a84224df96034e8",
+    "response.json": "4c732d9c6c3a8ca06887f3786f8c46fe93f3547622d4af86cded93c0486edc7c",
+    "agent.json": "6e5b9995b970860b64922db9c10667d9aa3533d0e919a2e6d2d996aa7e9ff558",
+    "bridge.jsonl": "fb4148fc9d04b62b258e98b11451029d9c3df83afc407f610feec60df526f82f"
+  },
+  "tool_calls": 0,
+  "returncode": 0
+}

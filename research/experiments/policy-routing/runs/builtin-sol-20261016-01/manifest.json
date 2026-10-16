@@ -1,0 +1,108 @@
+{
+  "experiment": "policy-routing-v1",
+  "created_at": "2026-10-16T13:32:50.070388+00:00",
+  "files": {
+    "snapshot/experiment/assertions.json": "378e579880cc9c1a5199454518592432cb3c6e2c29f2cd23ed82cd371b4cd394",
+    "snapshot/experiment/bridge.py": "91d799eed8de0484723a766fde6d36c37ff48c928278c1ae7b84fd808f8ec316",
+    "snapshot/experiment/corpus.md": "7dccbca04cc8ccad8edcd3f093e36784c262ccda81db2c50235a8992f3c415de",
+    "snapshot/experiment/fixture/engine.py": "86550e33500290c048afe436002d2d1ee7a6f2cea33cea0e33276ff252a42bd4",
+    "snapshot/experiment/fixture/gateway.py": "980bc291e07dd8e8ec588cf1d05b191ba1d37ccf801d8ad55ceebd19a378d173",
+    "snapshot/experiment/fixture/policy.py": "21b8f480e27cf25455d11e59e4b65c377424a9c06720258d0d287310aa4cb961",
+    "snapshot/experiment/rubric.py": "3a15801f269a2dd2990c0dd3be5c3e1aa9d12aa43de19fc4ebafc466a6af637a",
+    "snapshot/experiment/run.py": "40c1a71e54f598cd6c999219a7ad739bc768d199fbf60a0410d203d0a7c54dd5",
+    "snapshot/experiment/server.py": "583f2aad5b82440cb592befe38d40bf85f4dfe07b8ebdc1a408284b5be6b0212",
+    "snapshot/experiment/task.md": "d69a2b27559d2b2b157373bd71a0d80aab7aa70231f3edb7837a9ec658838ae1",
+    "snapshot/spec/engineering-assertion.schema.json": "583786eb00e47e026a20f121de13a1445b71d9c058db536c493ee5451fb0465e",
+    "snapshot/src/repo_memory/__init__.py": "cd0b59fd01b1c6b85945ad3dfdbfadd84da760bb3239550f92f1c302f8bf3a2e",
+    "snapshot/src/repo_memory/adapters/__init__.py": "6013e861a4f09b45af83410d46c887e859f1d7f82152a263b0437aa016dd5b89",
+    "snapshot/src/repo_memory/adapters/openviking.py": "0ef140294bff3faa179c29bf71b7fb33087c536657cd5f18ca2a5ab78b944d72",
+    "snapshot/src/repo_memory/auth.py": "d0c112cc58b47367760c6de5616389ca73e62886ebeae02c65bba86959d7a6db",
+    "snapshot/src/repo_memory/context.py": "f8497ecd2419f5cf3dc96c0c2be57184183c948e4429dbf080b78f65eea2bfcf",
+    "snapshot/src/repo_memory/loader.py": "6d8842edd7b4cde3c27f51ffa04c73b58a71dad3846c9d92fe9bfc2020a76276",
+    "snapshot/src/repo_memory/models.py": "8c7b2786a9fd92cf058fb53b014e4895038007913c5fbc0d63c36063be5194ca",
+    "snapshot/src/repo_memory/policy.py": "f65e6796d47f8aff4ae4aa3ddc3c3fc3cf972fdf1f542750e8e5e69249b337f1",
+    "snapshot/src/repo_memory/serialization.py": "458ca5c89fd6aaaa8bb8c30f77ecbd78772945ce6450074a78d51c62e66c344a",
+    "snapshot/src/repo_memory/tools.py": "7632622a94660a51dfd5ba17ea2e5370223d676a7a56edc754fa0f1e525069d1"
+  },
+  "jobs": {
+    "repo-only-r1": {
+      "condition": "repo-only",
+      "trial_id": "d80c2b96-ec56-4e0f-83ba-961324bec2dd",
+      "job_sha256": "09c3c6635356909871ff3ea5ab316f865dcfde15a4e3acfd83f558c845c39890"
+    },
+    "repo-only-r2": {
+      "condition": "repo-only",
+      "trial_id": "e85c8696-3207-4477-b368-857bc227d371",
+      "job_sha256": "06bd5859e6dbbb2903a7a13eab27333d22ad180609fbe5cd30238c3936e3cc03"
+    },
+    "repo-only-r3": {
+      "condition": "repo-only",
+      "trial_id": "3b8e8e1e-0a4d-4353-bbb0-783985ef4773",
+      "job_sha256": "dbde1ebdbed6e5991b4a0a6c67986c26b729635c5209d4c3b388a48347198aec"
+    },
+    "generic-retrieval-r1": {
+      "condition": "generic-retrieval",
+      "trial_id": "a14be7d4-b7c1-4483-a24d-9b46bf319bfa",
+      "job_sha256": "03c593d839bc74a2e14c220c41402134d3e6d0bfb8c00297f6b2a8c044dd7168"
+    },
+    "generic-retrieval-r2": {
+      "condition": "generic-retrieval",
+      "trial_id": "97f86513-709c-458c-98fd-abcd4eb97a0e",
+      "job_sha256": "741328bf11b1d48591a1133cd78e21141fec83b37a227ec82884e9790bcb667b"
+    },
+    "generic-retrieval-r3": {
+      "condition": "generic-retrieval",
+      "trial_id": "3c2531cb-8b16-46bd-b138-27aace631d2f",
+      "job_sha256": "147e71e5a209d7578a13cd6946e3712094cbdcbc42d5eb3ac686af0191a9e03d"
+    },
+    "repo-memory-r1": {
+      "condition": "repo-memory",
+      "trial_id": "114347ec-d6d9-4694-bffe-6af615ffbde9",
+      "job_sha256": "a2de200a5597ccfbe8fef71e60e130d97f204f5f9e81f852420c7303913f75a9"
+    },
+    "repo-memory-r2": {
+      "condition": "repo-memory",
+      "trial_id": "fe7ae6b1-c375-41f1-930d-0f699ecb8702",
+      "job_sha256": "69c9602a8b96508d59994156285be2145bff90671b1e4b88aa6059b69f39bd98"
+    },
+    "repo-memory-r3": {
+      "condition": "repo-memory",
+      "trial_id": "f53661b9-d541-4e68-85be-e93f291a11d3",
+      "job_sha256": "2c2e14130d959edcf528eff179e520efa4bf380eca5e3ca0b0b3d3d87d7ec8da"
+    }
+  },
+  "order": [
+    "repo-memory-r2",
+    "generic-retrieval-r3",
+    "repo-only-r1",
+    "repo-only-r2",
+    "generic-retrieval-r1",
+    "repo-memory-r3",
+    "generic-retrieval-r2",
+    "repo-memory-r1",
+    "repo-only-r3"
+  ],
+  "command": [
+    "/workspace/scratch/fd70f4523d88/review-venv/bin/python",
+    "/workspace/scratch/fd70f4523d88/repo-memory/research/experiments/policy-routing/bridge.py"
+  ],
+  "command_file_hashes": {
+    "/workspace/scratch/fd70f4523d88/review-venv/bin/python": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7",
+    "/workspace/scratch/fd70f4523d88/repo-memory/research/experiments/policy-routing/bridge.py": "91d799eed8de0484723a766fde6d36c37ff48c928278c1ae7b84fd808f8ec316"
+  },
+  "model_operator_reported": "built-in requested gpt-6.1-sol",
+  "model_version": "unknown unless worker reports it",
+  "timeout_seconds": 180,
+  "max_tool_calls": 8,
+  "git_revision": "f2281fd98ca5c1f2941b9b67d67d1ecc0cacb38c",
+  "git_dirty": false,
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "mcp_version": "2.3.0",
+  "isolation": "fresh process/workspace; no inherited chat supplied by runner; worker session freshness is operator-owned; filesystem is not sandboxed",
+  "agent_config": {
+    "model": "gpt-6.1-sol",
+    "fork_turns": "none",
+    "reasoning_effort": "default; no override requested; effective internal setting unexposed",
+    "message_template": "You are one independent coding-study worker in a fresh session. Your assigned mailbox directory is {channel}.\n\nRead only in-000.json in that directory for the task, files, documents, tool definitions and output contract. Use only the supplied context to solve the task. Do not inspect the surrounding repository, evaluator, reference solutions, other trials, registration files, or prior conversations. Do not browse, consult outside sources, run tests, or spawn agents. Use exec tools only to read/write this mailbox and wait for replies; no other filesystem access.\n\nTo invoke a tool listed in the job, atomically create out-000.json containing one JSON tool_call object, then read in-001.json when it appears. The bridge performs the actual listed MCP call. Continue with out-001.json / in-002.json and so on, at most eight tool requests. Never create or modify in-*.json. Poll for a reply with a brief wait if necessary.\n\nWhen ready, atomically create the next out-NNN.json containing one final or abstain object exactly as the job specifies. For every output, write a temporary file in the mailbox, then rename to the unused out-NNN.json, with a single line of JSON and a trailing newline. Do not overwrite outputs. Do not modify files outside this mailbox. After publishing the terminal object, end your assistant response with DONE. Your answer must come from your own reasoning over the supplied input."
+  }
+}

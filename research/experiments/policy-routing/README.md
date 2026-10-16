@@ -1,8 +1,9 @@
 # Policy-routing study (issue #5)
 
-Status: fixture, evaluator and command-collection path. **No measured model
-batch has been collected.** The tests use an explicit synthetic worker that
-emits a known solution; its passes validate the harness, not memory benefit.
+Status: [nine fresh built-in Sol trials collected](runs/builtin-sol-20261016-01/REPORT.md)
+on 2026-10-16: repo-only 0/3 (three abstentions), generic retrieval 3/3,
+repo-memory 3/3; all nine completed. No incremental memory benefit was observed.
+The separately labeled unit-test workers are synthetic harness checks.
 
 ## Question and task
 
@@ -162,7 +163,8 @@ in an appropriate isolated execution environment for a blinded study and
 retain provider/session creation records. Do not claim machine-proven
 blinding from a job hash or a process ID alone.
 
-The historical Java/retry/supersession artifacts are preserved. A future
-measured batch must publish raw failures, the complete frozen bundle, all
-nine assigned outcomes and a bounded interpretation. No improvement over
-ordinary retrieval has been demonstrated by this new scaffold.
+The historical Java/retry/supersession artifacts are preserved. The measured
+[built-in Sol report](runs/builtin-sol-20261016-01/REPORT.md) publishes all nine
+outcomes and the complete raw bundle. A post-collection boundary diagnostic is
+explicitly separate from coding-model outcomes. No improvement over ordinary
+retrieval was demonstrated; retain the deterministic reference-layer scope.

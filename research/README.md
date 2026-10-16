@@ -55,6 +55,8 @@ The useful output of research is clarity, not competitive theater.
 [Policy-routing study](experiments/policy-routing/README.md) (2026-10-16,
 issue #5) adds a synthetic cross-repository default/exception task and a
 frozen-input, per-trial MCP collection path. The ordinary-document baseline
-receives all permitted policy facts. Harness validation is delivered;
-measured model trials remain pending a configured worker adapter. Existing
-Java, retry and supersession results retain their original qualifications.
+receives all permitted policy facts. The [nine fresh built-in Sol trials](experiments/policy-routing/runs/builtin-sol-20261016-01/REPORT.md)
+completed with repo-only 0/3 (all abstentions), generic retrieval 3/3 and
+repo-memory 3/3. No incremental memory benefit was observed; retain the
+policy/reference-layer scope. Existing Java, retry and supersession results
+retain their original qualifications.

@@ -1,0 +1,17 @@
+{
+  "trial_id": "a14be7d4-b7c1-4483-a24d-9b46bf319bfa",
+  "execution_id": "c52a9f90-f27a-4ac8-bc61-5ce9bff2d36a",
+  "started_at": "2026-10-16T13:35:20.258147+00:00",
+  "pid": 16,
+  "command": [
+    "/workspace/scratch/fd70f4523d88/review-venv/bin/python",
+    "/workspace/scratch/fd70f4523d88/repo-memory/research/experiments/policy-routing/bridge.py"
+  ],
+  "command_file_hashes": {
+    "/workspace/scratch/fd70f4523d88/review-venv/bin/python": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7",
+    "/workspace/scratch/fd70f4523d88/repo-memory/research/experiments/policy-routing/bridge.py": "91d799eed8de0484723a766fde6d36c37ff48c928278c1ae7b84fd808f8ec316"
+  },
+  "manifest_sha256": "83af842d63fa8ba06e1e879072150d9310aaf34fc44f26ea14d324a5fc651e7e",
+  "job_sha256": "03c593d839bc74a2e14c220c41402134d3e6d0bfb8c00297f6b2a8c044dd7168",
+  "workspace_at_launch": "/workspace/scratch/fd70f4523d88/policy-routing-sol-20261016-01/trials/generic-retrieval-r1/workspace"
+}
