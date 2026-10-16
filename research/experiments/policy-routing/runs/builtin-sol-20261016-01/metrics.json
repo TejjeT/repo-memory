@@ -1,0 +1,44 @@
+{
+  "repo-only": {
+    "assigned": 3,
+    "completed": 3,
+    "passed": 0,
+    "abstained": 3,
+    "mcp_calls": 0,
+    "elapsed_median_seconds": 32.972344997999926,
+    "delivered_bytes_per_trial": [
+      5381,
+      5381,
+      5381
+    ],
+    "restricted_marker_matches": 0
+  },
+  "generic-retrieval": {
+    "assigned": 3,
+    "completed": 3,
+    "passed": 3,
+    "abstained": 0,
+    "mcp_calls": 0,
+    "elapsed_median_seconds": 29.922516299999984,
+    "delivered_bytes_per_trial": [
+      7878,
+      7878,
+      7878
+    ],
+    "restricted_marker_matches": 0
+  },
+  "repo-memory": {
+    "assigned": 3,
+    "completed": 3,
+    "passed": 3,
+    "abstained": 0,
+    "mcp_calls": 3,
+    "elapsed_median_seconds": 52.56438459000003,
+    "delivered_bytes_per_trial": [
+      9268,
+      9268,
+      9268
+    ],
+    "restricted_marker_matches": 0
+  }
+}

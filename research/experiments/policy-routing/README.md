@@ -1,8 +1,9 @@
 # Policy-routing study (issue #5)
 
-Status: fixture, evaluator and command-collection path. **No measured model
-batch has been collected.** The tests use an explicit synthetic worker that
-emits a known solution; its passes validate the harness, not memory benefit.
+Status: [nine fresh built-in Sol trials collected](runs/builtin-sol-20261016-01/REPORT.md)
+on 2026-10-16: repo-only 0/3 (three abstentions), generic retrieval 3/3,
+repo-memory 3/3; all nine completed. No incremental memory benefit was observed.
+The separately labeled unit-test workers are synthetic harness checks.
 
 ## Question and task
 
@@ -90,6 +91,25 @@ study ID for recollection. Do not retrofit a receipt or replace a failure.
 `score` exits nonzero unless every assigned trial passes; a nonzero study
 result is legitimate evidence, not an instruction to repair the receipts.
 
+### Built-in fresh-agent bridge
+
+`bridge.py` forwards a worker's mailbox JSON to the same collector protocol.
+The parent starts collection, records an actual built-in `spawn_agent` request
+and response in `agent.json`, and supplies that registration before forwarding
+worker output. `builtin-agent.json` freezes the common prompt, requested
+`gpt-6.1-sol` model and `fork_turns: none`; only the mailbox path changes.
+Pass this configuration to `prepare(..., agent_config=config)` in Python.
+The parent must never supply a candidate answer or rewrite worker messages.
+
+The bridge records agent/trial IDs and exact forwarded message hashes;
+collection receipts bind registration and bridge records. Score checks the
+prompt against its frozen template, requested model/history settings, and
+message/transport linkage. These are operator-observed records, not independent
+provider attestations. Agents share tools and filesystem access and are
+instructed to use only their assigned mailbox; this is procedural isolation.
+Token usage, cost, resolved model version and internal reasoning settings are
+unexposed unless reported by the platform.
+
 ### Worker adapter contract
 
 The runner starts a new command process in a new workspace for each trial.
@@ -143,7 +163,8 @@ in an appropriate isolated execution environment for a blinded study and
 retain provider/session creation records. Do not claim machine-proven
 blinding from a job hash or a process ID alone.
 
-The historical Java/retry/supersession artifacts are preserved. A future
-measured batch must publish raw failures, the complete frozen bundle, all
-nine assigned outcomes and a bounded interpretation. No improvement over
-ordinary retrieval has been demonstrated by this new scaffold.
+The historical Java/retry/supersession artifacts are preserved. The measured
+[built-in Sol report](runs/builtin-sol-20261016-01/REPORT.md) publishes all nine
+outcomes and the complete raw bundle. A post-collection boundary diagnostic is
+explicitly separate from coding-model outcomes. No improvement over ordinary
+retrieval was demonstrated; retain the deterministic reference-layer scope.

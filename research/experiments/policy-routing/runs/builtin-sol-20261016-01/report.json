@@ -1,0 +1,209 @@
+{
+  "experiment": "policy-routing-v1",
+  "results": {
+    "repo-only-r1": {
+      "condition": "repo-only",
+      "completed": true,
+      "pass": false,
+      "status": "completed",
+      "elapsed_seconds": 43.32808679499999,
+      "tool_calls": 0,
+      "restricted_markers": [],
+      "agent_id": "/root/measured_trial_03",
+      "requested_model": "gpt-6.1-sol",
+      "requested_fork_turns": "none",
+      "delivered_bytes": 5381,
+      "worker_reported_metadata": {},
+      "abstained": true
+    },
+    "repo-only-r2": {
+      "condition": "repo-only",
+      "completed": true,
+      "pass": false,
+      "status": "completed",
+      "elapsed_seconds": 32.721656618,
+      "tool_calls": 0,
+      "restricted_markers": [],
+      "agent_id": "/root/measured_trial_04",
+      "requested_model": "gpt-6.1-sol",
+      "requested_fork_turns": "none",
+      "delivered_bytes": 5381,
+      "worker_reported_metadata": {},
+      "abstained": true
+    },
+    "repo-only-r3": {
+      "condition": "repo-only",
+      "completed": true,
+      "pass": false,
+      "status": "completed",
+      "elapsed_seconds": 32.972344997999926,
+      "tool_calls": 0,
+      "restricted_markers": [],
+      "agent_id": "/root/measured_trial_09",
+      "requested_model": "gpt-6.1-sol",
+      "requested_fork_turns": "none",
+      "delivered_bytes": 5381,
+      "worker_reported_metadata": {},
+      "abstained": true
+    },
+    "generic-retrieval-r1": {
+      "condition": "generic-retrieval",
+      "completed": true,
+      "pass": true,
+      "status": "completed",
+      "elapsed_seconds": 49.239443349,
+      "tool_calls": 0,
+      "restricted_markers": [],
+      "agent_id": "/root/measured_trial_05",
+      "requested_model": "gpt-6.1-sol",
+      "requested_fork_turns": "none",
+      "delivered_bytes": 7878,
+      "worker_reported_metadata": {},
+      "abstained": false,
+      "outcome": {
+        "pass": true,
+        "checks": {
+          "policy": true,
+          "unknown_rejected": true,
+          "behavior": true
+        }
+      }
+    },
+    "generic-retrieval-r2": {
+      "condition": "generic-retrieval",
+      "completed": true,
+      "pass": true,
+      "status": "completed",
+      "elapsed_seconds": 29.87607363999996,
+      "tool_calls": 0,
+      "restricted_markers": [],
+      "agent_id": "/root/measured_trial_07",
+      "requested_model": "gpt-6.1-sol",
+      "requested_fork_turns": "none",
+      "delivered_bytes": 7878,
+      "worker_reported_metadata": {},
+      "abstained": false,
+      "outcome": {
+        "pass": true,
+        "checks": {
+          "policy": true,
+          "unknown_rejected": true,
+          "behavior": true
+        }
+      }
+    },
+    "generic-retrieval-r3": {
+      "condition": "generic-retrieval",
+      "completed": true,
+      "pass": true,
+      "status": "completed",
+      "elapsed_seconds": 29.922516299999984,
+      "tool_calls": 0,
+      "restricted_markers": [],
+      "agent_id": "/root/measured_trial_02",
+      "requested_model": "gpt-6.1-sol",
+      "requested_fork_turns": "none",
+      "delivered_bytes": 7878,
+      "worker_reported_metadata": {},
+      "abstained": false,
+      "outcome": {
+        "pass": true,
+        "checks": {
+          "policy": true,
+          "unknown_rejected": true,
+          "behavior": true
+        }
+      }
+    },
+    "repo-memory-r1": {
+      "condition": "repo-memory",
+      "completed": true,
+      "pass": true,
+      "status": "completed",
+      "elapsed_seconds": 52.56438459000003,
+      "tool_calls": 1,
+      "restricted_markers": [],
+      "agent_id": "/root/measured_trial_08",
+      "requested_model": "gpt-6.1-sol",
+      "requested_fork_turns": "none",
+      "delivered_bytes": 9268,
+      "worker_reported_metadata": {},
+      "abstained": false,
+      "outcome": {
+        "pass": true,
+        "checks": {
+          "policy": true,
+          "unknown_rejected": true,
+          "behavior": true
+        }
+      }
+    },
+    "repo-memory-r2": {
+      "condition": "repo-memory",
+      "completed": true,
+      "pass": true,
+      "status": "completed",
+      "elapsed_seconds": 43.50542701699999,
+      "tool_calls": 1,
+      "restricted_markers": [],
+      "agent_id": "/root/measured_trial_01",
+      "requested_model": "gpt-6.1-sol",
+      "requested_fork_turns": "none",
+      "delivered_bytes": 9268,
+      "worker_reported_metadata": {},
+      "abstained": false,
+      "outcome": {
+        "pass": true,
+        "checks": {
+          "policy": true,
+          "unknown_rejected": true,
+          "behavior": true
+        }
+      }
+    },
+    "repo-memory-r3": {
+      "condition": "repo-memory",
+      "completed": true,
+      "pass": true,
+      "status": "completed",
+      "elapsed_seconds": 56.18402030699997,
+      "tool_calls": 1,
+      "restricted_markers": [],
+      "agent_id": "/root/measured_trial_06",
+      "requested_model": "gpt-6.1-sol",
+      "requested_fork_turns": "none",
+      "delivered_bytes": 9268,
+      "worker_reported_metadata": {},
+      "abstained": false,
+      "outcome": {
+        "pass": true,
+        "checks": {
+          "policy": true,
+          "unknown_rejected": true,
+          "behavior": true
+        }
+      }
+    }
+  },
+  "summary": {
+    "repo-only": {
+      "assigned": 3,
+      "completed": 3,
+      "passed": 0
+    },
+    "generic-retrieval": {
+      "assigned": 3,
+      "completed": 3,
+      "passed": 3
+    },
+    "repo-memory": {
+      "assigned": 3,
+      "completed": 3,
+      "passed": 3
+    }
+  },
+  "model_operator_reported": "built-in requested gpt-6.1-sol",
+  "interpretation": "Exploratory only; includes incomplete/failed assigned trials. Hashes verify artifacts, not independent execution or model identity.",
+  "evidence_type": "command-collection; model identity is operator/worker-reported",
+  "usage_and_cost": "unknown unless supplied in worker_reported_metadata"
+}

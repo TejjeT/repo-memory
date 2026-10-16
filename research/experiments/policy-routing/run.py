@@ -63,7 +63,8 @@ def job_content(snapshot, condition, trial_id):
         "trial_id": trial_id,
         "instructions": "Use only the supplied files/documents and listed tools. "
         "Do not inspect the study, evaluator, reference solutions or other trials. "
-        "Start a fresh model session; do not resume any prior conversation.",
+        "Start a fresh model session; do not resume any prior conversation. "
+        "If tools are supplied, consult at least one before your terminal response.",
         "task": (experiment / "task.md").read_text(),
         "files": {p.name: p.read_text() for p in sorted((experiment / "fixture").glob("*.py"))},
         "documents": [] if condition == "repo-only" else [(experiment / "corpus.md").read_text()],
@@ -75,7 +76,7 @@ def job_content(snapshot, condition, trial_id):
     }
 
 
-def prepare(destination, command, model="unknown", *, timeout=180, turns=8):
+def prepare(destination, command, model="unknown", *, timeout=180, turns=8, agent_config=None):
     """Create an exclusive bundle; never replace historical jobs or receipts."""
     if (
         not isinstance(command, list)
@@ -93,7 +94,15 @@ def prepare(destination, command, model="unknown", *, timeout=180, turns=8):
         snapshot / "experiment/fixture",
         ignore=shutil.ignore_patterns("__pycache__"),
     )
-    for name in ("run.py", "server.py", "rubric.py", "task.md", "corpus.md", "assertions.json"):
+    for name in (
+        "run.py",
+        "server.py",
+        "rubric.py",
+        "task.md",
+        "corpus.md",
+        "assertions.json",
+        "bridge.py",
+    ):
         shutil.copyfile(HERE / name, snapshot / "experiment" / name)
     shutil.copytree(
         REPO / "src/repo_memory",
@@ -145,6 +154,7 @@ def prepare(destination, command, model="unknown", *, timeout=180, turns=8):
         "mcp_version": importlib.metadata.version("mcp"),
         "isolation": "fresh process/workspace; no inherited chat supplied by runner; "
         "worker session freshness is operator-owned; filesystem is not sandboxed",
+        "agent_config": agent_config,
     }
     write_json(root / "manifest.json", manifest)
     return root
@@ -276,6 +286,7 @@ async def collect_trial(root, name):
                         "command_file_hashes": manifest["command_file_hashes"],
                         "manifest_sha256": digest(root / "manifest.json"),
                         "job_sha256": entry["job_sha256"],
+                        "workspace_at_launch": str(workspace),
                     },
                 )
                 await send(job)
@@ -351,6 +362,10 @@ async def collect_trial(root, name):
         required += ("invocation.json",)
     if final is not None:
         required += ("response.json",)
+    if manifest.get("agent_config"):
+        required += tuple(
+            name for name in ("agent.json", "bridge.jsonl") if (directory / name).exists()
+        )
     write_json(
         directory / "receipt.json",
         {
@@ -414,6 +429,8 @@ def score(root):
                 "transport.jsonl",
             }
             optional = {"response.json", "invocation.json"}
+            if manifest.get("agent_config"):
+                optional |= {"agent.json", "bridge.jsonl"}
             required |= {path for path in optional if (directory / path).exists()}
             if required != set(receipt["files"]):
                 raise ValueError("incomplete receipt")
@@ -473,11 +490,44 @@ def score(root):
             ):
                 raise ValueError("invocation identity mismatch")
             final = read_json(directory / "response.json")
-            messages = [
-                json.loads(line) for line in (directory / "worker.stdout").read_text().splitlines()
-            ]
+            raw_messages = (directory / "worker.stdout").read_bytes().splitlines(keepends=True)
+            messages = [json.loads(line) for line in raw_messages]
             if not messages or messages[-1] != final or receipt["returncode"] != 0:
                 raise ValueError("response does not match terminal worker output")
+            if manifest.get("agent_config"):
+                if not {"agent.json", "bridge.jsonl"} <= set(receipt["files"]):
+                    raise ValueError("missing built-in worker evidence")
+                agent = read_json(directory / "agent.json")
+                config = manifest["agent_config"]
+                expected_message = config["message_template"].replace(
+                    "{channel}", invocation["workspace_at_launch"] + "/agent-channel"
+                )
+                if (
+                    agent["trial_id"] != entry["trial_id"]
+                    or agent["execution_id"] != receipt["execution_id"]
+                    or agent["request"]["fork_turns"] != "none"
+                    or agent["request"]["model"] != config["model"]
+                    or agent["request"]["message"] != expected_message
+                    or not isinstance(agent["agent_id"], str)
+                    or not agent["agent_id"]
+                ):
+                    raise ValueError("built-in worker identity/configuration mismatch")
+                audit = [
+                    json.loads(line)
+                    for line in (directory / "bridge.jsonl").read_text().splitlines()
+                ]
+                if len(audit) != len(messages) or any(
+                    event["index"] != index
+                    or event["trial_id"] != entry["trial_id"]
+                    or event["agent_id"] != agent["agent_id"]
+                    or not start <= datetime.fromisoformat(event["at"]) <= end
+                    or event["response_sha256"] != hashlib.sha256(raw).hexdigest()
+                    for index, (event, raw) in enumerate(zip(audit, raw_messages, strict=True))
+                ):
+                    raise ValueError("bridge message binding mismatch")
+                row["agent_id"] = agent["agent_id"]
+                row["requested_model"] = agent["request"]["model"]
+                row["requested_fork_turns"] = agent["request"]["fork_turns"]
             exchanges = [event for event in trace if event["kind"] in ("request", "response")]
             count = receipt["tool_calls"]
             if (

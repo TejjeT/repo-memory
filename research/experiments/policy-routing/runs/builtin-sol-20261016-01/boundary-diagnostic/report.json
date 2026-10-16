@@ -1,0 +1,146 @@
+{
+  "evidence_type": "post-collection operator-driven deterministic MCP diagnostic",
+  "not_model_trials": true,
+  "started_at": "2026-10-16T13:40:39.576846+00:00",
+  "finished_at": "2026-10-16T13:40:40.371352+00:00",
+  "manifest_sha256": "83af842d63fa8ba06e1e879072150d9310aaf34fc44f26ea14d324a5fc651e7e",
+  "probe_source_sha256": "fc70761b188700b406c4c0181180839a1b44d2ca4204ccfd56393c5e4bbe94f3",
+  "mcp_stderr_sha256": "ed44fa040abaa176a541117beeb360df5c87b57789bd3f2ebac4b1ed51a39864",
+  "records": [
+    {
+      "at": "2026-10-16T13:40:40.197310+00:00",
+      "name": "memory_search",
+      "arguments": {
+        "repository": "payment-worker"
+      },
+      "response": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"assertions\": [\n    {\n      \"id\": \"EA-ROUTE-CURRENT\",\n      \"type\": \"constraint\",\n      \"content\": \"Exactly one layer owns retries. The Settlement Platform default is three total worker attempts and one total gateway attempt. Preserve batch identity and idempotency keys; retry transient failures only, stop permanent failures immediately, and return the actual successful gateway response. Applies to payment-worker, clearing-adapter and reconciliation-worker subject to explicit approved exceptions.\",\n      \"scope\": {\n        \"organization\": \"Acme\",\n        \"domain\": \"Payments\",\n        \"system\": \"Settlement Platform\",\n        \"repository\": null,\n        \"component\": null,\n        \"branch\": null,\n        \"pull_request\": null\n      },\n      \"status\": \"approved\",\n      \"importance\": \"high\",\n      \"provenance\": [\n        {\n          \"type\": \"document\",\n          \"uri\": \"doc://payments/retry-2026\",\n          \"revision\": null,\n          \"access_policy_ref\": null,\n          \"last_validated_at\": null,\n          \"redacted\": false\n        },\n        {\n          \"type\": \"incident\",\n          \"uri\": \"redacted\",\n          \"revision\": null,\n          \"access_policy_ref\": null,\n          \"last_validated_at\": null,\n          \"redacted\": true\n        }\n      ],\n      \"created_at\": \"2026-06-12T00:00:00Z\",\n      \"rationale\": null,\n      \"applies_to\": [],\n      \"confidence\": null,\n      \"owner\": null,\n      \"effective_from\": \"2026-06-12T00:00:00Z\",\n      \"review_after\": null,\n      \"expires_at\": null,\n      \"overrides\": [],\n      \"supersedes\": [\n        \"EA-ROUTE-OLD\"\n      ],\n      \"superseded_by\": [],\n      \"conflicts_with\": []\n    }\n  ],\n  \"evidence\": [],\n  \"conflicts\": []\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": null,
+        "is_error": false,
+        "result_type": "complete"
+      }
+    },
+    {
+      "at": "2026-10-16T13:40:40.199152+00:00",
+      "name": "memory_search",
+      "arguments": {
+        "repository": "clearing-adapter"
+      },
+      "response": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"assertions\": [\n    {\n      \"id\": \"EA-ROUTE-EXCEPTION\",\n      \"type\": \"approved-exception\",\n      \"content\": \"For clearing-adapter only, its certified connector owns retry orchestration: three total gateway attempts and one total worker attempt. Preserve batch identity and idempotency keys; retry transient failures only, stop permanent failures immediately, and return the actual successful gateway response. Approved 2026-07-01; expires 2027-01-01 exclusive.\",\n      \"scope\": {\n        \"organization\": \"Acme\",\n        \"domain\": \"Payments\",\n        \"system\": \"Settlement Platform\",\n        \"repository\": \"clearing-adapter\",\n        \"component\": null,\n        \"branch\": null,\n        \"pull_request\": null\n      },\n      \"status\": \"approved\",\n      \"importance\": \"high\",\n      \"provenance\": [\n        {\n          \"type\": \"document\",\n          \"uri\": \"doc://payments/clearing-exception\",\n          \"revision\": null,\n          \"access_policy_ref\": null,\n          \"last_validated_at\": null,\n          \"redacted\": false\n        }\n      ],\n      \"created_at\": \"2026-06-12T00:00:00Z\",\n      \"rationale\": null,\n      \"applies_to\": [],\n      \"confidence\": null,\n      \"owner\": null,\n      \"effective_from\": \"2026-07-01T00:00:00Z\",\n      \"review_after\": null,\n      \"expires_at\": \"2027-01-01T00:00:00Z\",\n      \"overrides\": [\n        \"EA-ROUTE-CURRENT\"\n      ],\n      \"supersedes\": [],\n      \"superseded_by\": [],\n      \"conflicts_with\": []\n    }\n  ],\n  \"evidence\": [],\n  \"conflicts\": []\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": null,
+        "is_error": false,
+        "result_type": "complete"
+      }
+    },
+    {
+      "at": "2026-10-16T13:40:40.200421+00:00",
+      "name": "memory_get",
+      "arguments": {
+        "assertion_id": "EA-ROUTE-OLD"
+      },
+      "response": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"assertion\": {\n    \"id\": \"EA-ROUTE-OLD\",\n    \"type\": \"constraint\",\n    \"content\": \"Gateway and worker could each attempt settlement three times. Historical guidance, superseded on 2026-06-12.\",\n    \"scope\": {\n      \"organization\": \"Acme\",\n      \"domain\": \"Payments\",\n      \"system\": \"Settlement Platform\",\n      \"repository\": null,\n      \"component\": null,\n      \"branch\": null,\n      \"pull_request\": null\n    },\n    \"status\": \"superseded\",\n    \"importance\": \"high\",\n    \"provenance\": [\n      {\n        \"type\": \"document\",\n        \"uri\": \"doc://payments/retry-2025\",\n        \"revision\": null,\n        \"access_policy_ref\": null,\n        \"last_validated_at\": null,\n        \"redacted\": false\n      }\n    ],\n    \"created_at\": \"2026-06-12T00:00:00Z\",\n    \"rationale\": null,\n    \"applies_to\": [],\n    \"confidence\": null,\n    \"owner\": null,\n    \"effective_from\": null,\n    \"review_after\": null,\n    \"expires_at\": null,\n    \"overrides\": [],\n    \"supersedes\": [],\n    \"superseded_by\": [\n      \"EA-ROUTE-CURRENT\"\n    ],\n    \"conflicts_with\": []\n  }\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": null,
+        "is_error": false,
+        "result_type": "complete"
+      }
+    },
+    {
+      "at": "2026-10-16T13:40:40.201609+00:00",
+      "name": "memory_get",
+      "arguments": {
+        "assertion_id": "EA-ROUTE-CURRENT"
+      },
+      "response": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"assertion\": {\n    \"id\": \"EA-ROUTE-CURRENT\",\n    \"type\": \"constraint\",\n    \"content\": \"Exactly one layer owns retries. The Settlement Platform default is three total worker attempts and one total gateway attempt. Preserve batch identity and idempotency keys; retry transient failures only, stop permanent failures immediately, and return the actual successful gateway response. Applies to payment-worker, clearing-adapter and reconciliation-worker subject to explicit approved exceptions.\",\n    \"scope\": {\n      \"organization\": \"Acme\",\n      \"domain\": \"Payments\",\n      \"system\": \"Settlement Platform\",\n      \"repository\": null,\n      \"component\": null,\n      \"branch\": null,\n      \"pull_request\": null\n    },\n    \"status\": \"approved\",\n    \"importance\": \"high\",\n    \"provenance\": [\n      {\n        \"type\": \"document\",\n        \"uri\": \"doc://payments/retry-2026\",\n        \"revision\": null,\n        \"access_policy_ref\": null,\n        \"last_validated_at\": null,\n        \"redacted\": false\n      },\n      {\n        \"type\": \"incident\",\n        \"uri\": \"redacted\",\n        \"revision\": null,\n        \"access_policy_ref\": null,\n        \"last_validated_at\": null,\n        \"redacted\": true\n      }\n    ],\n    \"created_at\": \"2026-06-12T00:00:00Z\",\n    \"rationale\": null,\n    \"applies_to\": [],\n    \"confidence\": null,\n    \"owner\": null,\n    \"effective_from\": \"2026-06-12T00:00:00Z\",\n    \"review_after\": null,\n    \"expires_at\": null,\n    \"overrides\": [],\n    \"supersedes\": [\n      \"EA-ROUTE-OLD\"\n    ],\n    \"superseded_by\": [],\n    \"conflicts_with\": []\n  }\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": null,
+        "is_error": false,
+        "result_type": "complete"
+      }
+    },
+    {
+      "at": "2026-10-16T13:40:40.204562+00:00",
+      "name": "memory_get",
+      "arguments": {
+        "assertion_id": "EA-ROUTE-PRIVATE"
+      },
+      "response": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "Error executing tool memory_get",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": null,
+        "is_error": true,
+        "result_type": "complete"
+      }
+    },
+    {
+      "at": "2026-10-16T13:40:40.206231+00:00",
+      "name": "memory_get",
+      "arguments": {
+        "assertion_id": "EA-NONEXISTENT"
+      },
+      "response": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "Error executing tool memory_get",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": null,
+        "is_error": true,
+        "result_type": "complete"
+      }
+    }
+  ],
+  "checks": {
+    "current_only_not_historical_or_private": true,
+    "exception_only": true,
+    "historical_get_retains_status": true,
+    "mixed_provenance_redacted_in_search_and_get": true,
+    "denied_and_missing_errors_indistinguishable": true,
+    "no_restricted_response_markers": true
+  },
+  "pass": true
+}

@@ -1,0 +1,1 @@
+{"type": "abstain", "reason": "The supplied code establishes how attempt counts are consumed but contains no organizational retry rules effective on 2026-10-16 for payment-worker, clearing-adapter, or reconciliation-worker. No policy documents or lookup tools were supplied, so the required retry plans cannot be established.", "citations": []}

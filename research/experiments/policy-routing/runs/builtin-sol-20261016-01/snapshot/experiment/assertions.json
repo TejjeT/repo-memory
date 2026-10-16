@@ -1,0 +1,115 @@
+[
+  {
+    "id": "EA-ROUTE-OLD",
+    "type": "constraint",
+    "content": "Gateway and worker could each attempt settlement three times. Historical guidance, superseded on 2026-06-12.",
+    "scope": {
+      "organization": "Acme",
+      "domain": "Payments",
+      "system": "Settlement Platform"
+    },
+    "status": "superseded",
+    "importance": "high",
+    "provenance": [
+      {
+        "type": "document",
+        "uri": "doc://payments/retry-2025"
+      }
+    ],
+    "created_at": "2026-06-12T00:00:00Z",
+    "superseded_by": [
+      "EA-ROUTE-CURRENT"
+    ]
+  },
+  {
+    "id": "EA-ROUTE-CURRENT",
+    "type": "constraint",
+    "content": "Exactly one layer owns retries. The Settlement Platform default is three total worker attempts and one total gateway attempt. Preserve batch identity and idempotency keys; retry transient failures only, stop permanent failures immediately, and return the actual successful gateway response. Applies to payment-worker, clearing-adapter and reconciliation-worker subject to explicit approved exceptions.",
+    "scope": {
+      "organization": "Acme",
+      "domain": "Payments",
+      "system": "Settlement Platform"
+    },
+    "status": "approved",
+    "importance": "high",
+    "provenance": [
+      {
+        "type": "document",
+        "uri": "doc://payments/retry-2026"
+      },
+      {
+        "type": "incident",
+        "uri": "incident://ROUTE-INC-17"
+      }
+    ],
+    "created_at": "2026-06-12T00:00:00Z",
+    "effective_from": "2026-06-12T00:00:00Z",
+    "supersedes": [
+      "EA-ROUTE-OLD"
+    ],
+    "rationale": "Restricted incident ROUTE-INC-17: sensitive-clearing-root-cause"
+  },
+  {
+    "id": "EA-ROUTE-EXCEPTION",
+    "type": "approved-exception",
+    "content": "For clearing-adapter only, its certified connector owns retry orchestration: three total gateway attempts and one total worker attempt. Preserve batch identity and idempotency keys; retry transient failures only, stop permanent failures immediately, and return the actual successful gateway response. Approved 2026-07-01; expires 2027-01-01 exclusive.",
+    "scope": {
+      "organization": "Acme",
+      "domain": "Payments",
+      "system": "Settlement Platform",
+      "repository": "clearing-adapter"
+    },
+    "status": "approved",
+    "importance": "high",
+    "provenance": [
+      {
+        "type": "document",
+        "uri": "doc://payments/clearing-exception"
+      }
+    ],
+    "created_at": "2026-06-12T00:00:00Z",
+    "effective_from": "2026-07-01T00:00:00Z",
+    "expires_at": "2027-01-01T00:00:00Z",
+    "overrides": [
+      "EA-ROUTE-CURRENT"
+    ]
+  },
+  {
+    "id": "EA-ROUTE-ANALYTICS",
+    "type": "constraint",
+    "content": "One total attempt at each layer for Analytics Report Platform; not applicable to Settlement Platform.",
+    "scope": {
+      "organization": "Acme",
+      "domain": "Analytics",
+      "system": "Report Platform"
+    },
+    "status": "approved",
+    "importance": "high",
+    "provenance": [
+      {
+        "type": "document",
+        "uri": "doc://analytics/retry"
+      }
+    ],
+    "created_at": "2026-06-12T00:00:00Z"
+  },
+  {
+    "id": "EA-ROUTE-PRIVATE",
+    "type": "constraint",
+    "content": "Restricted incident background: sensitive-clearing-root-cause.",
+    "scope": {
+      "organization": "Acme",
+      "domain": "Payments",
+      "system": "Settlement Platform"
+    },
+    "status": "approved",
+    "importance": "high",
+    "provenance": [
+      {
+        "type": "incident",
+        "uri": "incident://ROUTE-INC-17"
+      }
+    ],
+    "created_at": "2026-06-12T00:00:00Z"
+  }
+]
