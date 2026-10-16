@@ -49,3 +49,12 @@ The benchmark is not intended to prove repo-memory is superior.
 If an existing system solves the problem well, we should adopt the idea, integrate with it, or narrow repo-memory's scope.
 
 The useful output of research is clarity, not competitive theater.
+
+## Current evaluation slice
+
+[Policy-routing study](experiments/policy-routing/README.md) (2026-10-16,
+issue #5) adds a synthetic cross-repository default/exception task and a
+frozen-input, per-trial MCP collection path. The ordinary-document baseline
+receives all permitted policy facts. Harness validation is delivered;
+measured model trials remain pending a configured worker adapter. Existing
+Java, retry and supersession results retain their original qualifications.
