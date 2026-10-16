@@ -87,8 +87,34 @@ def test_forced_replacement_retains_predecessor(runner):
 
 
 def test_replay_labels_posthoc_receipts(runner):
+    # Build synthetic regression inputs against the current checkout. Reusing
+    # historical source manifests would reject every legitimate core change.
+    # Only tmp_path copies are rebound; this is not historical delivery evidence.
+    for name in runner.prepare_worker_jobs():
+        response = runner.ROOT / "runs/worker-responses" / name
+        raw = next(response.glob("*.md")).read_text()
+        runner.write_receipt(
+            response, name, raw, force=True,
+            reason="synthetic unit-test replay against current sources",
+        )
     report = runner.score_worker_responses()
     assert report["evidence_type"] == "replay"
     assert all(trial["receipt"]["binding_type"] == "posthoc"
                for trial in report["results"].values())
     assert all(result["passed"] == 3 for result in report["summary"].values())
+
+
+def test_source_hash_drift_still_blocks_scoring(runner):
+    runner.prepare_worker_jobs()
+    path = runner.ROOT / "runs/worker-jobs/repo-only-r1.json"
+    job = json.loads(path.read_text())
+    job["manifest"]["input_hashes"]["src/repo_memory/context.py"] = "0" * 64
+    path.write_text(json.dumps(job))
+    ok, message, details = runner.verify_job_inputs()
+    assert not ok
+    assert "frozen sources changed" in message
+    assert details["source_mismatches"] == [
+        "src/repo_memory/context.py: changed since job generation"
+    ]
+    with pytest.raises(FileNotFoundError, match="frozen sources changed"):
+        runner.score_worker_responses()
