@@ -255,3 +255,74 @@ def test_worker_command_source_drift_rejected_before_launch(bundle, runner):
         stream.write("\n# changed adapter\n")
     with pytest.raises(ValueError, match="command files changed"):
         asyncio.run(runner.collect_trial(bundle, "repo-only-r1"))
+
+
+def test_builtin_bridge_binds_registration_and_exact_mcp_messages(tmp_path, runner):
+    """Synthetic mailbox peer validates plumbing, never a measured model trial."""
+    config = {"model": "synthetic-test", "message_template": "Use {channel}"}
+    root = runner.prepare(
+        tmp_path / "built-in",
+        [sys.executable, str(EXP / "bridge.py")],
+        "synthetic-test",
+        agent_config=config,
+    )
+    directory = root / "trials/repo-memory-r1"
+    channel = directory / "workspace/agent-channel"
+    bridge = load("bridge")
+
+    async def wait_for(path):
+        async with asyncio.timeout(10):
+            while not path.exists():
+                await asyncio.sleep(0.01)
+        return runner.read_json(path)
+
+    async def peer():
+        job = await wait_for(channel / "in-000.json")
+        invocation = await wait_for(directory / "invocation.json")
+        bridge.atomic_json(
+            directory / "agent.json",
+            {
+                "trial_id": job["trial_id"],
+                "execution_id": invocation["execution_id"],
+                "agent_id": "synthetic-agent",
+                "request": {
+                    "fork_turns": "none",
+                    "model": config["model"],
+                    "message": config["message_template"].replace("{channel}", str(channel)),
+                },
+            },
+        )
+        bridge.atomic_json(
+            channel / "out-000.json",
+            {
+                "type": "tool_call",
+                "name": "memory_search",
+                "arguments": {"repository": "clearing-adapter"},
+            },
+        )
+        reply = await wait_for(channel / "in-001.json")
+        assert not reply["is_error"]
+        # Compact JSON without a newline must bind to the exact forwarded bytes.
+        (channel / "out-001.json").write_text(
+            json.dumps({"type": "final", "code": REFERENCE, "citations": []}, separators=(",", ":"))
+        )
+
+    async def collect():
+        status, _ = await asyncio.gather(runner.collect_trial(root, "repo-memory-r1"), peer())
+        assert status == "completed"
+
+    asyncio.run(collect())
+    assert runner.score(root)["results"]["repo-memory-r1"]["pass"]
+    agent_path = directory / "agent.json"
+    receipt_path = directory / "receipt.json"
+    original = runner.read_json(agent_path)
+    for field, value in [("model", "wrong"), ("fork_turns", "all"), ("message", "other")]:
+        altered = json.loads(json.dumps(original))
+        altered["request"][field] = value
+        agent_path.write_text(json.dumps(altered))
+        receipt = runner.read_json(receipt_path)
+        receipt["files"]["agent.json"] = runner.digest(agent_path)
+        receipt_path.write_text(json.dumps(receipt))
+        row = runner.score(root)["results"]["repo-memory-r1"]
+        assert row["status"] == "invalid_evidence"
+        assert "identity/configuration" in row["error"]
