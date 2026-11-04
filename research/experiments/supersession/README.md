@@ -25,19 +25,47 @@ policy (EA-006) requires exactly one retry layer, worker-owned, so the
 correct change is `GATEWAY_MAX_RETRIES = 0`. Keeping 3 follows the
 superseded guidance; removing the worker loop leaves zero layers.
 
+## Status
+
+Complete (2026-10-10). Two batches were collected; both are retained with
+their original reports. Neither demonstrated an advantage for repo-memory.
+Project-level results and next work: [docs/status.md](../../../docs/status.md).
+
+| Batch | Evidence | Repo only | Generic retrieval | repo-memory |
+|---|---|---|---|---|
+| #26 replay ([runs/report.json](runs/report.json)) | Posthoc/exploratory | 3/3 | 3/3 | 3/3 |
+| #27 live transport ([trial_mcp/REPORT.md](trial_mcp/REPORT.md)) | Capture-time receipts, operator-reported isolation | 3/3 | 3/3 | 2/3 assigned (r2 incomplete) |
+
+The #26 replay scored saved responses with the current evaluator; receipts
+were bound posthoc to saved artifacts, workers shared experiment history, and
+MCP context was checked through an in-process dispatcher replay. The
+fixture's stale-guidance comment lets repo-only workers infer the fix, which
+may explain the tie in both batches.
+
 ## Conditions
 
-Same three-condition protocol as the Java and retry batches:
+The two batches used **different delivery protocols**. All arms in both
+batches carry the same underlying source facts, but not the same
+representation. Restricted incident background (INC-463) is withheld in all
+arms, including MCP-delivered context. See `corpus/SOURCES.md`.
+
+### #26 replay (`run.py`)
 
 | Arm | Receives |
 |---|---|
 | repo-only | `fixture/worker.py`, `fixture/gateway.py`, task text only |
-| generic-retrieval | + `corpus/retry-policy-current.md`, `corpus/retry-policy-history.md` |
-| repo-memory | + the above, + EA-005/EA-006 via the authenticated MCP read path |
+| generic-retrieval | Fixture + `corpus/retry-policy-current.md`, `corpus/retry-policy-history.md` |
+| repo-memory | Fixture + EA-005/EA-006 as rendered by the authenticated MCP dispatcher (`handle_tool_call`), in-process; **no** ordinary documents |
 
-Both retrieval arms get ordinary documents carrying the same underlying
-facts. Restricted incident background (INC-463) is withheld in all arms,
-including the MCP-delivered context. See `corpus/SOURCES.md`.
+### #27 live transport (`trial_mcp/`)
+
+| Arm | Receives |
+|---|---|
+| repo-only | Brief with fixture files and task text |
+| generic-retrieval | Brief with fixture + both corpus documents inlined |
+| repo-memory | Brief with fixture + `mcp_client.py`; the worker fetches EA-005/EA-006 itself over stdio MCP from `trial_mcp.trial_server`; **no** ordinary documents |
+
+Exact briefs and manifests are in `trial_mcp/briefs/`.
 
 ## Fixture
 
@@ -91,9 +119,10 @@ Reference variants under `variants/`: `valid` passes S1/S2/S3;
 - `scan_restricted` finds zero markers in search and get responses for
   the permitted caller (doc:// grants; incident:// withheld).
 
-## Next step
+## Follow-on work
 
-After review: collect fresh worker trials in isolated contexts with
-identical model/tool/turn limits and capture-time receipts, per the
-three-condition protocol. Governed writes (#3) are the following
-implementation step, not part of this slice.
+Trials for this experiment are complete. The bounded #5 study concluded with
+the policy-routing batch ([report](../policy-routing/runs/builtin-sol-20261016-01/REPORT.md)).
+Next project work is candidate selection (#8) and the time-to-correct-context
+protocol (#33); governed writes (#3) remain deferred. See
+[docs/status.md](../../../docs/status.md).

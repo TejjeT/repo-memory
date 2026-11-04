@@ -1,143 +1,63 @@
 # Roadmap
 
-repo-memory will be built in small slices that test the core thesis before adding infrastructure.
+repo-memory is built in small slices that test the core thesis before adding
+infrastructure. Current state, trial results and the detailed next-work order
+live in [docs/status.md](docs/status.md). The architectural decision is
+[docs/v0-scope.md](docs/v0-scope.md): a deterministic contract and policy layer
+over a replaceable backend, **not** a mandatory SQLite/REST/vector service.
 
-## M0 — Contract
+## Delivered
 
-**Goal:** make the model precise.
+| Area | Status | Issues |
+|---|---|---|
+| Contract: schema, scope hierarchy, provenance, lifecycle states | Done | #1 |
+| Permission-aware retrieval contract | Done | #2 |
+| Applicability, overrides, supersession, conflict reporting | Done | #11 |
+| OpenViking-backed storage path (storage, hierarchy, ACLs, indexing) | Done | #9, #10 |
+| Context assembly with budgets and caller-safe evidence | Done | #15 |
+| Authenticated callers and external-provider boundary | Done | #20, #28 |
+| Read-only MCP tools: `memory_search`, `memory_get` | Done | #4 |
+| Bounded coding-agent evaluation (repo only / generic retrieval / repo-memory) | Done; no incremental memory benefit shown | #5 |
 
-Deliverables:
+Read-time lifecycle behavior (state filtering, effective/expiry dates,
+supersession, overrides) is delivered. Governed **mutations** are not.
 
-- memory schema
-- hierarchy and inheritance rules
-- lifecycle semantics
-- provenance model
-- permission semantics
-- retrieval contract
-- initial evaluation scenarios
+## Next, in order
 
-Exit criterion:
+1. **Docs reconciliation** (#29) — align roadmap, README and experiment
+   protocols with delivered work and results.
+2. **Candidate cases and memory-worthiness labels** (#8) — 3–5 permitted,
+   source-backed candidate decisions first, then a human-labeled sample with
+   inter-reviewer agreement. Include cases that favor ordinary retrieval.
+3. **Time-to-correct-context protocol** (#33) — preregister a comparison of
+   discovery/verification time, update propagation and reuse against a
+   well-configured ordinary retrieval path, counting capture, approval and
+   refresh costs. Publish the protocol before running another model batch. A
+   tie is a valid outcome.
+4. **Real-repository pilot** — only once #8 supplies concrete cases.
 
-A second implementation should be possible from the specification without guessing the intended behavior.
+## Deferred
 
-## M1 — Local reference implementation
+- **Governed lifecycle** (#3): propose → approve/reject → retrieve, supersede,
+  expire/archive with attribution and authorization. Selected only after a
+  measured need; first slice is a transition/authorization design.
+- **Write tools over MCP** (`memory_propose`, `memory_supersede`,
+  `memory_feedback`): follow #3, not before.
 
-**Goal:** prove the basic lifecycle.
+## Not planned unless evidence demands it
 
-Capabilities:
+- Ingestion/extraction from merged PRs, ADRs or incidents; a GitHub review
+  workflow for proposed memories.
+- A repo-memory-owned REST API, relational metadata store or vector index.
+- Graph databases, event buses or distributed deployment.
+- Integrations (Backstage, Jira, incident systems, CI/CD, enterprise identity)
+  before the core semantics have demonstrated value.
 
-- save/propose memory
-- approve memory
-- get by ID
-- search by scope
-- semantic recall
-- supersede memory
-- expire memory
-- inspect provenance
+## History
 
-Likely stack:
-
-- Python or TypeScript
-- SQLite initially
-- pluggable embedding provider
-- simple REST API
-
-Non-goal:
-
-Do not introduce a graph database, event bus, or distributed architecture unless the prototype demonstrates a need.
-
-## M2 — MCP server
-
-**Goal:** make memory usable by coding agents.
-
-Candidate tools:
-
-- `memory_search`
-- `memory_get`
-- `memory_propose`
-- `memory_supersede`
-- `memory_feedback`
-
-Demo:
-
-An agent working on a repository retrieves a migration lesson that cannot be inferred directly from the current source tree.
-
-## M3 — GitHub workflow
-
-**Goal:** turn engineering activity into governed memory.
-
-Experiments:
-
-- suggest memories from merged PRs
-- suggest memories from ADR changes
-- link memory to commits/issues/PRs
-- review proposed memories in GitHub
-- invalidate/review memory when evidence changes
-
-Demo:
-
-A merged PR produces a memory proposal; a human approves it; another agent later retrieves it.
-
-## M4 — Permission-aware hierarchy
-
-**Goal:** support organization-scale context safely.
-
-Capabilities:
-
-- org/domain/system/repository scopes
-- inheritance
-- user/team authorization
-- authorization before semantic retrieval
-- cross-repository memory relationships
-
-Demo:
-
-Two users asking the same semantic question receive different authorized candidate sets.
-
-## M5 — Evaluation framework
-
-**Goal:** prove that memory improves engineering outcomes.
-
-Candidate metrics:
-
-- task success rate
-- retries / failed approaches avoided
-- policy violations
-- time to correct implementation
-- number of repeated discoveries
-- context tokens consumed
-- precision of retrieved memories
-- stale-memory incidents
-
-Evaluation should compare at least:
-
-1. repository alone
-2. repository + generic RAG
-3. repository + repo-memory
-
-## M6 — Integrations
-
-Potential integrations:
-
-- Backstage/service catalogs
-- Jira
-- incident systems
-- security tooling
-- CI/CD
-- IDE agents
-- enterprise identity
-
-Integrations should be added only after the core memory semantics are stable.
-
-## Near-term issues
-
-The first implementation backlog should focus on:
-
-1. define JSON schema
-2. define search/retrieval semantics
-3. implement memory lifecycle
-4. implement deterministic scope filtering
-5. add semantic ranking
-6. expose MCP tools
-7. create an end-to-end example repository
-8. build an evaluation harness
+The original milestone plan (M0 contract → M1 local SQLite/REST reference
+implementation → M2 MCP → M3 GitHub workflow → M4 permission hierarchy → M5
+evaluation → M6 integrations) was exploratory. M0, the permission hierarchy of
+M4, the read-only half of M2 and a bounded M5 evaluation were delivered; the
+M1 SQLite/REST stack was superseded by the v0 scope decision. See git history
+for the original text.
