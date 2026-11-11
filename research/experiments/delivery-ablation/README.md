@@ -140,6 +140,15 @@ system delivered none.
    a real trade-off between non-interference and freshness that the current
    documents do not discuss.
 
+## Calibration with real data (2026-11-11)
+
+[calibration/](calibration/README.md) measures revision history in Python
+PEPs, the IETF RFC index and a public ADR dataset. About 10% of current
+documents have a prior revision, against the 60% assumed above. With measured
+rates, supersession links change the outcome for about 1–4% of queries, not
+about 10%. Exception, complement and restriction rates could not be measured
+and remain assumptions. See [results/CALIBRATED.md](results/CALIBRATED.md).
+
 ## Limits
 
 - **Synthetic by construction.** Case frequencies (30% unflipped revisions,
