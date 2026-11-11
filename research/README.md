@@ -60,3 +60,9 @@ completed with repo-only 0/3 (all abstentions), generic retrieval 3/3 and
 repo-memory 3/3. No incremental memory benefit was observed; retain the
 policy/reference-layer scope. Existing Java, retry and supersession results
 retain their original qualifications.
+
+That closes the bounded #5 study. All batches supplied context at task start,
+so they measured *application* of context, not the time to discover, refresh
+or reuse it. That broader organizational hypothesis is open in #33 and needs
+the real candidate cases from #8 first. Consolidated results, per-batch
+delivery protocols and the next-work order: [docs/status.md](../docs/status.md).

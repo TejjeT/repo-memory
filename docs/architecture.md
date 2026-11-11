@@ -6,7 +6,52 @@ repo-memory provides durable engineering memory that can be retrieved by humans 
 
 The architecture deliberately separates **sources of truth** from **durable learned context**.
 
-## High-level architecture
+> **Reading this document.** Most of this page describes the *conceptual
+> target*: ingestion, a memory service with mutations, multiple transports.
+> Only part of it is implemented. The section
+> [Implemented reference paths](#implemented-reference-paths) lists what exists
+> today; [v0-scope.md](v0-scope.md) is the binding architectural decision and
+> [status.md](status.md) tracks delivered work and results.
+
+## Implemented reference paths
+
+```text
+hand-authored JSON assertions (examples/, spec/ schema)
+        │  loader.py
+        ▼
+EngineeringAssertion models ──► optional OpenViking adapter (storage, ACLs, indexing)
+        │
+        ▼
+auth.py: VerifiedSession → Caller (server-side grants)
+        │
+        ▼
+policy.py: authorization → lifecycle/effective dates → scope/applicability
+           → supersession → explicit overrides → conflict reporting
+        │
+        ▼
+context.py: budgeted assembly, provider boundary, provenance redaction
+        │  serialization.py
+        ▼
+tools.py: memory_search / memory_get (read-only)
+        │
+        ▼
+mcp_server/: stdio MCP server with demo identities and corpus
+```
+
+| Conceptual component | Implemented today | Not implemented |
+|---|---|---|
+| Memory sources / ingestion | JSON files validated against the schema | Extraction, normalization, dedupe, GitHub/ADR/incident ingestion |
+| Memory service — lifecycle | Read-time filtering by state, effective/expiry dates, supersession, overrides | Propose, approve/reject, supersede, expire, archive as governed writes (#3) |
+| Policy engine | Read authorization (discover/content) for authenticated callers | Authorization of propose/approve/supersede transitions |
+| Metadata store | In-memory models; OpenViking adapter as optional backend | A repo-memory-owned relational store |
+| Semantic index | Pluggable `EvidenceProvider` (retrieval assist) that ranks evidence only after the safe candidate set is fixed; OpenViking supplies indexing | A repo-memory-owned vector index |
+| Retrieval / context API | `ContextAssembler`, `memory_search`, `memory_get` | Feedback, audit history API |
+| Transports | Read-only stdio MCP server | REST API, CLI, MCP write tools |
+
+Ingestion, mutations and additional transports are added only when a measured
+consumer need selects them.
+
+## Conceptual target architecture
 
 ```text
                     ┌──────────────────────────────┐
@@ -78,6 +123,9 @@ This gives semantic retrieval a useful role without asking embeddings to solve i
 
 ### 1. Memory API
 
+*Status: read operations implemented as `memory_search` / `memory_get`;
+write operations deferred (#3).*
+
 Responsibilities:
 
 - create/propose memory
@@ -116,7 +164,9 @@ The metadata store is authoritative for:
 - owners
 - review state
 
-A relational store is the simplest starting point.
+*Status:* the v0 decision keeps storage behind the adapter contract; the
+OpenViking adapter is the proven path. A separate relational store is not
+planned unless a measured need appears.
 
 ### 4. Semantic index
 
@@ -126,13 +176,9 @@ It should be treated as a **derived index**, not the canonical memory store.
 
 ### 5. MCP server
 
-An MCP interface can expose a small set of tools such as:
-
-- `memory.search`
-- `memory.get`
-- `memory.propose`
-- `memory.supersede`
-- `memory.feedback`
+*Status:* `memory_search` and `memory_get` are implemented read-only
+([mcp-tools.md](mcp-tools.md)). `memory_propose`, `memory_supersede` and
+`memory_feedback` are conceptual and depend on #3.
 
 A coding agent should be able to retrieve memory without knowing which database or embedding model sits behind the service.
 
@@ -190,14 +236,10 @@ Provenance enables both trust and revalidation.
 
 ## Deployment model
 
-The earliest reference implementation should be easy to run locally:
-
-```text
-API/MCP server
-    │
-    ├── SQLite/Postgres
-    └── local embedding/index option
-```
+The reference implementation runs locally as a Python package plus a stdio MCP
+server, with an optional OpenViking backend (see the Quickstart in the
+README). An earlier sketch proposed SQLite/Postgres plus a local embedding
+index; that was superseded by [v0-scope.md](v0-scope.md).
 
 The project should avoid requiring a graph database or distributed infrastructure until a use case proves the need.
 

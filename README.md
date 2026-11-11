@@ -17,17 +17,28 @@ AI coding agents can read code, search history, and retrieve documentation. What
 
 ## Project status
 
-Early research + reference implementation.
+Early research + reference implementation. Full status, trial results and
+next-work order: **[docs/status.md](docs/status.md)**.
 
-The project currently focuses on three things:
+Implemented today:
 
 1. **Engineering Assertion specification** — a typed contract for durable engineering knowledge.
 2. **Deterministic policy resolution** — scope, lifecycle, overrides, supersession, and conflicts without asking an LLM to invent precedence.
-3. **Industry benchmarking** — comparing GitHub Copilot Memory, OpenViking, Cursor, AgentCore, Graphiti, and related systems to identify real gaps before building infrastructure.
+3. **Authenticated, caller-safe context assembly** with provenance redaction and an external-provider boundary.
+4. **An OpenViking-backed storage adapter** and **read-only MCP tools** (`memory_search`, `memory_get`).
 
-The current architectural hypothesis is:
+Not implemented: governed write operations (propose, approve, supersede,
+expire) — deferred in #3 — and any ingestion pipeline.
+
+The architectural decision ([docs/v0-scope.md](docs/v0-scope.md)) is:
 
 > repo-memory should be a reusable engineering-memory protocol and policy layer, not another generic vector database.
+
+What the evidence says so far: in five small synthetic coding-agent batches,
+repo-memory never beat ordinary documents that carried the same permitted
+facts (ties throughout, plus one incomplete memory trial). Whether durable
+memory reduces the time to *discover*, *update* and *reuse* organizational
+context is untested and tracked in #33.
 
 ## Why this exists
 
@@ -129,9 +140,16 @@ repo-memory/
 ├── spec/
 │   └── engineering-assertion.schema.json
 ├── src/repo_memory/
-│   ├── models.py
-│   ├── loader.py
-│   └── policy.py
+│   ├── models.py          # Engineering Assertion types
+│   ├── loader.py          # JSON loading/validation
+│   ├── policy.py          # deterministic resolution
+│   ├── serialization.py   # caller-safe output, redaction
+│   ├── context.py         # budgeted context assembly
+│   ├── auth.py            # authenticated caller boundary
+│   ├── tools.py           # MCP tool logic (no MCP imports)
+│   └── adapters/
+│       └── openviking.py
+├── mcp_server/            # reference stdio MCP server (demo identities)
 ├── tests/
 ├── examples/
 │   └── payments/
@@ -187,6 +205,26 @@ pytest
 ruff check .
 ```
 
+### Read-only MCP demo
+
+The `dev` extra includes the MCP SDK. From the repository root, with the
+virtual environment active:
+
+```bash
+python examples/mcp_consumer_demo.py
+```
+
+The demo spawns the reference server (`python -m mcp_server`) over stdio and
+acts as a coding agent: two callers search the same scope and receive
+different authorized sets, a denied assertion ID is indistinguishable from a
+missing one, and an unknown token fails closed. It ends with
+`OK: consumer demo passed.`
+
+Limits: identities are hard-coded demo tokens (`alice-token`, `bob-token`)
+with in-code grants, and the corpus is a small in-memory set defined in
+`mcp_server/server.py`. There is no persistence, no write tool and no real
+credential verification. See [docs/mcp-tools.md](docs/mcp-tools.md).
+
 ## Example usage
 
 ```python
@@ -226,30 +264,32 @@ print([item.id for item in result.active])
 
 The research folder is first-class project material, not background notes.
 
-Current work includes:
+It includes:
 
-- industry landscape
-- common benchmark framework
-- GitHub Copilot Memory deep dive
-- OpenViking deep dive
-- Copilot vs OpenViking vs repo-memory benchmark
+- industry landscape and a common benchmark framework
+- GitHub Copilot Memory and OpenViking deep dives
 - a multi-repository payments experiment
-- coding-agent evaluation
-- memory-worthiness research
+- completed coding-agent trial batches (Java decision, retry, supersession,
+  policy routing) — results and qualifiers in [docs/status.md](docs/status.md#trial-results)
+- open: memory-worthiness candidates and labels (#8) and the
+  time-to-correct-context hypothesis (#33)
 
 Start here:
 
+- [docs/status.md](docs/status.md)
 - [research/README.md](research/README.md)
 - [research/industry-landscape.md](research/industry-landscape.md)
 - [research/benchmarks/copilot-openviking-repomemory.md](research/benchmarks/copilot-openviking-repomemory.md)
 - [research/experiments/payments-system/README.md](research/experiments/payments-system/README.md)
 - [research/experiments/coding-agent/README.md](research/experiments/coding-agent/README.md)
 
-## Current architectural hypothesis
+## Architecture
 
-The first implementation should avoid rebuilding generic memory infrastructure.
-
-A likely architecture is:
+repo-memory avoids rebuilding generic memory infrastructure. The intended
+shape is below; today the "Engineering Assertions" step is hand-authored JSON
+and the agent-facing edge is the read-only MCP server. See
+[docs/architecture.md](docs/architecture.md) for what is implemented versus
+conceptual.
 
 ```text
 GitHub / ADRs / Incidents / Policies / Catalog
@@ -302,16 +342,18 @@ It is not intended to be:
 
 ## Roadmap
 
-Near-term focus:
+Contract, policy, OpenViking adapter, context assembly, authenticated
+boundary, read-only MCP tools and the bounded #5 evaluation are done. Next, in
+order:
 
-- finish v0 contract semantics
-- validate example assertions
-- build the OpenViking-backed experiment
-- test permission-aware retrieval
-- evaluate cross-repository tasks
-- compare repo-only vs live retrieval vs durable engineering assertions
+1. reconcile documentation with delivered work (#29)
+2. select 3–5 permitted real candidate cases and build a human-labeled
+   memory-worthiness sample (#8)
+3. preregister the time-to-correct-context, freshness and reuse protocol (#33)
+   before another model batch
 
-See [ROADMAP.md](ROADMAP.md).
+Governed lifecycle mutations (#3) stay deferred until selected. See
+[ROADMAP.md](ROADMAP.md) and [docs/status.md](docs/status.md).
 
 ## Contributing
 
