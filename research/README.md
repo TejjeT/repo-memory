@@ -60,3 +60,14 @@ completed with repo-only 0/3 (all abstentions), generic retrieval 3/3 and
 repo-memory 3/3. No incremental memory benefit was observed; retain the
 policy/reference-layer scope. Existing Java, retry and supersession results
 retain their original qualifications.
+
+## Model-free delivery ablation
+
+[Delivery ablation](experiments/delivery-ablation/README.md) (2026-11-10,
+synthetic, no model) compares a ladder of ordinary metadata filters with the
+policy engine. A flat filter stack with structural scope equals the engine
+without relations; supersession/override links remove distractors (79.0% →
+97.2% clean delivery) but never recover missing guidance; "topic tag + latest
+wins" ties overall. It also found two engine gaps (broken supersession chain,
+hidden successor). [publication-readiness.md](publication-readiness.md)
+assesses what this and the earlier ties mean for papers and patents.
