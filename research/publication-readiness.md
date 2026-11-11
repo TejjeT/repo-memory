@@ -59,6 +59,23 @@ relying on it.
 - **Repository-scoped agent memory with citations and revalidation.** See
   [vendors/github-copilot-memory.md](vendors/github-copilot-memory.md).
 
+- **A directly overlapping open-source project.** Mneme HQ (MIT, public)
+  already ships deterministic decision resolution, supersession, governed
+  writes and enforcement for coding agents, and publicly plans the
+  organization → domain → repository hierarchy. See
+  [open-source/mneme.md](open-source/mneme.md) (observed 2026-11-11). This
+  overlaps item 3 below and most of any product direction.
+- **Related threads located by search on 2026-11-11, summaries only:**
+  organization-scoped rule enforcement on pull requests
+  ([Qodo](https://www.helpnetsecurity.com/2026/02/18/qodo-rules-system-ai-governance/));
+  signed "governance receipts" for agent actions
+  ([AgentBound, arXiv 2606.30970](https://arxiv.org/pdf/2606.30970));
+  exception expiry in infrastructure policy
+  ([Kyverno](https://kyverno.io/policies/other/expiration-for-policyexceptions/expiration-for-policyexceptions));
+  and cover stories for lower-clearance readers in multilevel secure
+  databases ([Sandhu and Jajodia, 1992](https://www.profsandhu.com/confrnc/esorics/e92_pcs.pdf)),
+  which is the classical form of the hidden-governing problem in item 2.
+
 What was *not* found in this light pass (absence of evidence only): a typed,
 open contract combining engineering scope hierarchy, typed provenance,
 declared overrides and supersession, consumed by multiple agent runtimes; and
