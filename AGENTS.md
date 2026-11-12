@@ -57,6 +57,7 @@ Relevant documentation:
 
 - `docs/applicability-and-precedence.md`
 - `docs/retrieval-contract.md`
+- `docs/lifecycle.md` (governed writes: transitions, roles, history)
 
 Current retrieval order is:
 
@@ -82,6 +83,7 @@ src/repo_memory/
   models.py
   loader.py
   policy.py
+  lifecycle.py
   serialization.py
   adapters/
     openviking.py
