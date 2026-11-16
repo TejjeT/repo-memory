@@ -63,11 +63,12 @@ MCP client -> mcp_server/ (SDK, stdio) -> handle_tool_call
 Prerequisites: Python 3.11+, the repo's venv.
 
 ```bash
-# from the repo root
-.venv/bin/pip install mcp
-PYTHONPATH=src .venv/bin/python -m mcp_server        # stdio server
-PYTHONPATH=src .venv/bin/python examples/mcp_consumer_demo.py
+# from the repo root, venv active
+pip install -e ".[dev]"                 # dev extra includes the mcp SDK
+python examples/mcp_consumer_demo.py    # spawns `python -m mcp_server` itself
 ```
+
+Run `python -m mcp_server` directly only to attach your own MCP client.
 
 The consumer demo spawns the server over stdio and acts as a coding agent:
 alice (broad grants) and bob (narrow grants) search from `billing-api`;

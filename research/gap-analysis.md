@@ -62,6 +62,20 @@ Hypothesis: a repository-memory benchmark should measure downstream implementati
 
 Test: create tasks where success requires context deliberately absent from the current source tree. Compare repository only, repository plus generic RAG, and repository plus repo-memory.
 
+Observed (2026-10-16, #5): five small synthetic batches tested implementation
+correctness with the context supplied at task start. Repository-only agents
+abstained on the two tasks whose policy facts were missing; ordinary documents carrying
+the same permitted facts tied repo-memory every time. No incremental
+correctness benefit was shown. See [docs/status.md](../docs/status.md#trial-results).
+
+Revised hypothesis (open, #33): any organizational value is more likely in
+the *time and effort to obtain* current, authorized, applicable context —
+discovery and verification, propagation of approvals/revocations/expirations,
+and reuse across teams and repositories — than in correctness once the
+context is in hand. This is untested. The tie with complete documents does not
+disprove it, and a test must count capture, approval and refresh costs and
+compare against a well-configured ordinary retrieval path.
+
 ## Gap 8 — Memory as an organizational feedback loop
 
 A stronger model than memory-as-consumption is engineering work leading to a durable lesson, which becomes a proposed memory, gets reviewed, then improves future engineering work.

@@ -51,6 +51,11 @@ Can we answer who created it, when, based on what, who approved it, who used it,
 ### 15. Evaluation
 Does the system show that memory improves task success, reduces repeated mistakes, improves compliance, or lowers context cost rather than only improving retrieval similarity?
 
+Also ask whether it reduces the time to a verified correct, authorized decision
+when context must be *discovered*, *kept fresh* after an approved change, or
+*reused* across teams — net of capture, approval and maintenance cost. Results
+with context supplied up front measure application, not discovery.
+
 ## Planned profile format
 
 Each researched system should eventually get a machine-readable profile with: system, category, primary_unit, scope, cross_repo, provenance, freshness, contradictions, authorization, governance, creation, retrieval, interoperability, portability, auditability, evaluation, notes, observed_at, and sources.

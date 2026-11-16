@@ -1,6 +1,6 @@
 # Coding-Agent Evaluation Experiment
 
-Status: initial design  
+Status: executed under #5 (see outcome below)  
 Created: 2026-10-03
 
 ## Objective
@@ -16,6 +16,15 @@ The experiment is intentionally vendor-neutral. Any coding agent that can work i
 A coding agent with access to repository source alone may produce a locally reasonable but organizationally incorrect change.
 
 The same agent with access to repo-memory should retrieve durable engineering constraints and produce a more policy-compliant implementation.
+
+> **Outcome (2026-10-16).** This design was executed as the Java, retry,
+> supersession and policy-routing batches under issue #5. Repository-only
+> agents abstained on the two tasks whose policy facts were absent from the
+> code (Java, policy routing) and passed the retry and supersession tasks.
+> Ordinary documents carrying the same permitted facts tied repo-memory in
+> every batch. The advantage over live retrieval stated above was **not**
+> observed. Time to discover, refresh and reuse
+> context remains untested (#33). See [docs/status.md](../../../docs/status.md#trial-results).
 
 ## Experiment structure
 
