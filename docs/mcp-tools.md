@@ -3,8 +3,9 @@
 Issue #4, first slice. Two read-only tools expose the deterministic
 engineering context to coding agents over MCP, reusing the core
 policy/serialization and #20's authenticated caller boundary. Governed write
-tools (`memory_propose` / `memory_supersede`) are a later slice depending on
-#3 and are not authorized by adding read tools.
+tools (`memory_propose` / `memory_supersede`) are not exposed: the governed
+lifecycle from #3 ([lifecycle.md](lifecycle.md)) is in-process only, and adding
+read tools does not authorize writes.
 
 ## Tool reference
 

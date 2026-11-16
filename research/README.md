@@ -66,3 +66,14 @@ so they measured *application* of context, not the time to discover, refresh
 or reuse it. That broader organizational hypothesis is open in #33 and needs
 the real candidate cases from #8 first. Consolidated results, per-batch
 delivery protocols and the next-work order: [docs/status.md](../docs/status.md).
+
+## Model-free delivery ablation
+
+[Delivery ablation](experiments/delivery-ablation/README.md) (2026-11-10,
+synthetic, no model) compares a ladder of ordinary metadata filters with the
+policy engine. A flat filter stack with structural scope equals the engine
+without relations; supersession/override links remove distractors (79.0% →
+97.2% clean delivery) but never recover missing guidance; "topic tag + latest
+wins" ties overall. It also found two engine gaps (broken supersession chain,
+hidden successor). [publication-readiness.md](publication-readiness.md)
+assesses what this and the earlier ties mean for papers and patents.

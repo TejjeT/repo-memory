@@ -11,10 +11,17 @@ semantics.
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Iterable
+from dataclasses import asdict, dataclass
+from datetime import datetime
 from typing import Any, Protocol
 
+from repo_memory.lifecycle import (
+    ConcurrentModification,
+    GovernanceEvent,
+    SourceRevision,
+    Stored,
+)
 from repo_memory.models import EngineeringAssertion
 from repo_memory.policy import ResolutionContext, ResolutionResult, resolve_assertions
 from repo_memory.serialization import assertion_from_json_dict, assertion_to_dict
@@ -160,6 +167,129 @@ class OpenVikingAssertionStore:
 
         assertions = self.list_for_organization(organization)
         return resolve_assertions(assertions, context, authorize=authorize)
+
+
+class OpenVikingLifecycleStore:
+    """``LifecycleStore`` over OpenViking resources (issue #3).
+
+    Each assertion keeps its canonical JSON where :class:`OpenVikingAssertionStore`
+    writes it, so existing reads are unchanged. Version and governance events
+    live in a sidecar under ``governance_root_uri``, written with the same ACL.
+
+    **Not safe for concurrent writers.** The client protocol has no
+    compare-and-swap and no multi-resource transaction: versions are checked
+    and then written, and a commit touching two assertions is two writes. A
+    single governing writer is required until the backend offers a
+    conditional write. Sidecars are written last, so an interrupted commit
+    leaves a version that still matches and can be retried.
+    """
+
+    def __init__(
+        self,
+        client: OpenVikingClient,
+        *,
+        config: OpenVikingAdapterConfig | None = None,
+        acl_resolver: AclResolver | None = None,
+        governance_root_uri: str = "viking://resources/repo-memory/governance",
+    ) -> None:
+        self._client = client
+        self._assertions = OpenVikingAssertionStore(
+            client, config=config, acl_resolver=acl_resolver
+        )
+        self._acl_resolver = acl_resolver
+        self._root = governance_root_uri.rstrip("/")
+
+    def load(self, assertion_id: str) -> Stored | None:
+        sidecar = self._sidecar(assertion_id)
+        if sidecar is None:
+            return None
+        payload = json.loads(self._client.read(sidecar["uri"]))
+        return Stored(assertion_from_json_dict(payload), sidecar["version"])
+
+    def commit(
+        self,
+        writes: Iterable[tuple[EngineeringAssertion, int]],
+        events: Iterable[GovernanceEvent],
+    ) -> None:
+        writes, events = list(writes), list(events)
+        sidecars = {a.id: self._sidecar(a.id) for a, _ in writes}
+        for assertion, expected in writes:
+            current = sidecars[assertion.id]
+            if (current["version"] if current else 0) != expected:
+                raise ConcurrentModification(assertion.id)
+        uris = {a.id: self._assertions.put(a) for a, _ in writes}
+        for assertion, expected in writes:
+            previous = sidecars[assertion.id] or {"events": []}
+            added = [_event_to_dict(e) for e in events if e.assertion_id == assertion.id]
+            options: dict[str, Any] = {}
+            acl = self._acl_resolver(assertion) if self._acl_resolver else None
+            if acl is not None:
+                options["acl"] = acl
+            self._client.write(
+                uri=self._sidecar_uri(assertion.id),
+                content=json.dumps(
+                    {
+                        "version": expected + 1,
+                        "uri": uris[assertion.id],
+                        "events": [*previous["events"], *added],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                ),
+                mode="replace",
+                options=options,
+            )
+
+    def history(self, assertion_id: str) -> tuple[GovernanceEvent, ...]:
+        sidecar = self._sidecar(assertion_id)
+        return tuple(_event_from_dict(e) for e in sidecar["events"]) if sidecar else ()
+
+    def assertions(self) -> tuple[EngineeringAssertion, ...]:
+        found: list[EngineeringAssertion] = []
+        for entry in _walk_files(self._client, self._root + "/"):
+            uri = _entry_uri(entry)
+            if uri is None or not uri.endswith(".json") or _entry_access_denied(entry):
+                continue
+            try:
+                sidecar = json.loads(self._client.read(uri))
+                payload = json.loads(self._client.read(sidecar["uri"]))
+            except Exception as exc:
+                if _is_access_denied(exc):
+                    continue
+                raise
+            found.append(assertion_from_json_dict(payload))
+        return tuple(found)
+
+    def _sidecar_uri(self, assertion_id: str) -> str:
+        return f"{self._root}/{_slug(assertion_id)}.json"
+
+    def _sidecar(self, assertion_id: str) -> dict[str, Any] | None:
+        try:
+            return json.loads(self._client.read(self._sidecar_uri(assertion_id)))
+        except Exception as exc:
+            # Absent and unreadable are both "nothing to govern here".
+            if isinstance(exc, KeyError | FileNotFoundError) or _is_access_denied(exc):
+                return None
+            if "NotFound" in type(exc).__name__:
+                return None
+            raise
+
+
+def _event_to_dict(event: GovernanceEvent) -> dict[str, Any]:
+    raw = asdict(event)
+    raw["at"] = event.at.isoformat()
+    return raw
+
+
+def _event_from_dict(raw: dict[str, Any]) -> GovernanceEvent:
+    return GovernanceEvent(
+        **{
+            **raw,
+            "at": datetime.fromisoformat(raw["at"]),
+            "source_revisions": tuple(SourceRevision(**s) for s in raw["source_revisions"]),
+            "related_ids": tuple(raw["related_ids"]),
+        }
+    )
 
 
 def assertion_uri(root_uri: str, assertion: EngineeringAssertion) -> str:

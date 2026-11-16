@@ -1,7 +1,12 @@
 # Annotation Guide: Is This Worth Keeping as Durable Engineering Memory?
 
-Draft v0.1, 2026-11-04 (issue #8). Reviewers should propose edits before
+Draft v0.2, 2026-11-16 (issue #8). Reviewers should propose edits before
 labeling begins; freeze the version used and record it with each label.
+
+Changes from v0.1: the selector's proposed dispositions now live in a separate
+file, and labels are recorded in a CSV per reviewer (see
+[`labels/README.md`](labels/README.md)). Labels, criteria and alternatives are
+unchanged.
 
 ## The question
 
@@ -68,8 +73,8 @@ answer is "add the test/lint instead", say so; that is a useful outcome.
 ## Rules
 
 - Label independently. Do not view other reviewers' labels or the
-  selector's proposed disposition until after labeling. Hide the "Proposed
-  disposition" sections in `candidates.md` from reviewers.
+  selector's proposed disposition until after labeling. Those are kept in
+  `selector-dispositions.md`; do not open it first.
 - Model-generated labels are not human judgments and are not counted toward
   agreement.
 - Do not add facts that are not in the cited sources. Missing timing or

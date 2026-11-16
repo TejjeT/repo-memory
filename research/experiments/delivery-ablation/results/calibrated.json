@@ -1,0 +1,4579 @@
+{
+ "measured chains, 22% unmarked (PEP rate)": [
+  {
+   "assertions": 684,
+   "digest": "4c586830743dbb35563e9f58a6080304cc25526d4a0aa8bf1ece934de63d227c",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "complement": {
+       "clean": 6,
+       "misleading": 1,
+       "missed": 2,
+       "needs-resolution": 6
+      },
+      "exception-active": {
+       "clean": 9,
+       "needs-resolution": 31
+      },
+      "exception-inactive": {
+       "misleading": 11,
+       "needs-resolution": 4
+      },
+      "explicit-target": {
+       "missed": 5
+      },
+      "history-flipped": {
+       "misleading": 9,
+       "missed": 3,
+       "needs-resolution": 5
+      },
+      "history-unflipped": {
+       "misleading": 2,
+       "needs-resolution": 1
+      },
+      "plain": {
+       "clean": 17,
+       "misleading": 47,
+       "missed": 43,
+       "needs-resolution": 30
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "clean": 1,
+      "misleading": 11,
+      "missed": 6,
+      "needs-resolution": 7
+     },
+     "headline": {
+      "clean": 186,
+      "misleading": 67,
+      "missed": 53,
+      "needs-resolution": 69
+     },
+     "queries_with_leak": 133
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "complement": {
+       "clean": 7,
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 6
+      },
+      "exception-active": {
+       "clean": 10,
+       "needs-resolution": 30
+      },
+      "exception-inactive": {
+       "clean": 1,
+       "misleading": 11,
+       "needs-resolution": 3
+      },
+      "explicit-target": {
+       "missed": 5
+      },
+      "history-flipped": {
+       "misleading": 8,
+       "missed": 4,
+       "needs-resolution": 5
+      },
+      "history-unflipped": {
+       "misleading": 2,
+       "needs-resolution": 1
+      },
+      "plain": {
+       "clean": 20,
+       "misleading": 42,
+       "missed": 45,
+       "needs-resolution": 30
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 16,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 192,
+      "misleading": 61,
+      "missed": 55,
+      "needs-resolution": 67
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "complement": {
+       "clean": 7,
+       "missed": 1,
+       "needs-resolution": 7
+      },
+      "exception-active": {
+       "clean": 11,
+       "needs-resolution": 29
+      },
+      "exception-inactive": {
+       "clean": 1,
+       "misleading": 10,
+       "missed": 1,
+       "needs-resolution": 3
+      },
+      "explicit-target": {
+       "missed": 5
+      },
+      "history-flipped": {
+       "clean": 2,
+       "misleading": 2,
+       "missed": 5,
+       "needs-resolution": 8
+      },
+      "history-unflipped": {
+       "misleading": 1,
+       "needs-resolution": 2
+      },
+      "plain": {
+       "clean": 20,
+       "misleading": 38,
+       "missed": 48,
+       "needs-resolution": 31
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 13,
+      "missed": 12
+     },
+     "headline": {
+      "clean": 195,
+      "misleading": 50,
+      "missed": 59,
+      "needs-resolution": 71
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "complement": {
+       "clean": 9,
+       "missed": 1,
+       "needs-resolution": 5
+      },
+      "exception-active": {
+       "clean": 16,
+       "needs-resolution": 24
+      },
+      "exception-inactive": {
+       "clean": 2,
+       "misleading": 6,
+       "missed": 5,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "missed": 5
+      },
+      "history-flipped": {
+       "clean": 3,
+       "misleading": 2,
+       "missed": 5,
+       "needs-resolution": 7
+      },
+      "history-unflipped": {
+       "needs-resolution": 3
+      },
+      "plain": {
+       "clean": 29,
+       "misleading": 25,
+       "missed": 60,
+       "needs-resolution": 23
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 12,
+      "missed": 13
+     },
+     "headline": {
+      "clean": 212,
+      "misleading": 32,
+      "missed": 75,
+      "needs-resolution": 56
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "complement": {
+       "clean": 11,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 36
+      },
+      "exception-inactive": {
+       "clean": 15
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-flipped": {
+       "clean": 13,
+       "needs-resolution": 4
+      },
+      "history-unflipped": {
+       "needs-resolution": 3
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "missed": 25
+     },
+     "headline": {
+      "clean": 336,
+      "needs-resolution": 39
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "complement": {
+       "missed": 15
+      },
+      "exception-active": {
+       "clean": 36,
+       "missed": 4
+      },
+      "exception-inactive": {
+       "clean": 15
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-flipped": {
+       "clean": 17
+      },
+      "history-unflipped": {
+       "clean": 2,
+       "missed": 1
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "missed": 25
+     },
+     "headline": {
+      "clean": 360,
+      "missed": 15
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "complement": {
+       "clean": 15
+      },
+      "exception-active": {
+       "clean": 40
+      },
+      "exception-inactive": {
+       "clean": 15
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-flipped": {
+       "clean": 17
+      },
+      "history-unflipped": {
+       "clean": 3
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "missed": 25
+     },
+     "headline": {
+      "clean": 375
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "complement": {
+       "clean": 14,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 40
+      },
+      "exception-inactive": {
+       "clean": 15
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-flipped": {
+       "clean": 17
+      },
+      "history-unflipped": {
+       "needs-resolution": 3
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "missed": 25
+     },
+     "headline": {
+      "clean": 372,
+      "needs-resolution": 3
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "complement": {
+       "clean": 12,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 36
+      },
+      "exception-inactive": {
+       "clean": 15
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-flipped": {
+       "clean": 13,
+       "needs-resolution": 4
+      },
+      "history-unflipped": {
+       "clean": 3
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "missed": 25
+     },
+     "headline": {
+      "clean": 339,
+      "needs-resolution": 36
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "complement": {
+       "clean": 11,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 36
+      },
+      "exception-inactive": {
+       "clean": 15
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-flipped": {
+       "clean": 13,
+       "needs-resolution": 4
+      },
+      "history-unflipped": {
+       "needs-resolution": 3
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "missed": 25
+     },
+     "headline": {
+      "clean": 336,
+      "needs-resolution": 39
+     },
+     "queries_with_leak": 0
+    }
+   }
+  },
+  {
+   "assertions": 634,
+   "digest": "0a7a77f2ff22b3e1373e61ab024b9e9fc081470b1cd19d0bf8455ba350e976a4",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 1,
+       "misleading": 2,
+       "missed": 3,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 10,
+       "needs-resolution": 23
+      },
+      "exception-inactive": {
+       "misleading": 12,
+       "needs-resolution": 4
+      },
+      "explicit-target": {
+       "missed": 6
+      },
+      "history-flipped": {
+       "clean": 2,
+       "misleading": 9,
+       "missed": 1,
+       "needs-resolution": 6
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 2,
+       "needs-resolution": 1
+      },
+      "plain": {
+       "clean": 12,
+       "misleading": 58,
+       "missed": 42,
+       "needs-resolution": 22
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "clean": 3,
+      "misleading": 4,
+      "missed": 6,
+      "needs-resolution": 5
+     },
+     "headline": {
+      "clean": 193,
+      "misleading": 82,
+      "missed": 52,
+      "needs-resolution": 55
+     },
+     "queries_with_leak": 133
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 1,
+       "misleading": 2,
+       "missed": 3,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 12,
+       "needs-resolution": 21
+      },
+      "exception-inactive": {
+       "misleading": 12,
+       "needs-resolution": 4
+      },
+      "explicit-target": {
+       "missed": 6
+      },
+      "history-flipped": {
+       "clean": 2,
+       "misleading": 9,
+       "missed": 1,
+       "needs-resolution": 6
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 2,
+       "needs-resolution": 1
+      },
+      "plain": {
+       "clean": 12,
+       "misleading": 53,
+       "missed": 45,
+       "needs-resolution": 24
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 7,
+      "missed": 11
+     },
+     "headline": {
+      "clean": 195,
+      "misleading": 77,
+      "missed": 55,
+      "needs-resolution": 55
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 1,
+       "misleading": 2,
+       "missed": 3,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 12,
+       "needs-resolution": 21
+      },
+      "exception-inactive": {
+       "misleading": 11,
+       "missed": 1,
+       "needs-resolution": 4
+      },
+      "explicit-target": {
+       "missed": 6
+      },
+      "history-flipped": {
+       "clean": 3,
+       "misleading": 9,
+       "missed": 1,
+       "needs-resolution": 5
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 2,
+       "needs-resolution": 1
+      },
+      "plain": {
+       "clean": 13,
+       "misleading": 46,
+       "missed": 52,
+       "needs-resolution": 23
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 5,
+      "missed": 13
+     },
+     "headline": {
+      "clean": 197,
+      "misleading": 69,
+      "missed": 63,
+      "needs-resolution": 53
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 1,
+       "misleading": 1,
+       "missed": 4,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 14,
+       "needs-resolution": 19
+      },
+      "exception-inactive": {
+       "clean": 2,
+       "misleading": 7,
+       "missed": 5,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "missed": 6
+      },
+      "history-flipped": {
+       "clean": 4,
+       "misleading": 7,
+       "missed": 3,
+       "needs-resolution": 4
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 2,
+       "needs-resolution": 1
+      },
+      "plain": {
+       "clean": 18,
+       "misleading": 32,
+       "missed": 65,
+       "needs-resolution": 19
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 5,
+      "missed": 13
+     },
+     "headline": {
+      "clean": 207,
+      "misleading": 48,
+      "missed": 83,
+      "needs-resolution": 44
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 7,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 29
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 15,
+       "needs-resolution": 3
+      },
+      "history-unflipped": {
+       "needs-resolution": 4
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 351,
+      "needs-resolution": 31
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "broken-chain": {
+       "clean": 1
+      },
+      "complement": {
+       "missed": 9
+      },
+      "exception-active": {
+       "clean": 31,
+       "missed": 2
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 18
+      },
+      "history-unflipped": {
+       "clean": 4
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 373,
+      "missed": 9
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 9
+      },
+      "exception-active": {
+       "clean": 32,
+       "needs-resolution": 1
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 18
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "needs-resolution": 1
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 381,
+      "needs-resolution": 1
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 9
+      },
+      "exception-active": {
+       "clean": 31,
+       "needs-resolution": 2
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 18
+      },
+      "history-unflipped": {
+       "needs-resolution": 4
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 378,
+      "needs-resolution": 4
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 7,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 29
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 15,
+       "needs-resolution": 3
+      },
+      "history-unflipped": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 353,
+      "needs-resolution": 29
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 7,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 29
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 15,
+       "needs-resolution": 3
+      },
+      "history-unflipped": {
+       "needs-resolution": 4
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 351,
+      "needs-resolution": 31
+     },
+     "queries_with_leak": 0
+    }
+   }
+  },
+  {
+   "assertions": 689,
+   "digest": "e58f64326cc624fa1e47c19bfdf495763dfbea399e9f611c2d7f6b3f838bd6ed",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "complement": {
+       "clean": 1,
+       "missed": 1,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 12,
+       "missed": 1,
+       "needs-resolution": 25
+      },
+      "exception-inactive": {
+       "misleading": 20,
+       "needs-resolution": 5
+      },
+      "explicit-target": {
+       "missed": 3
+      },
+      "history-flipped": {
+       "clean": 1,
+       "misleading": 15,
+       "missed": 8,
+       "needs-resolution": 9
+      },
+      "plain": {
+       "clean": 19,
+       "misleading": 64,
+       "missed": 45,
+       "needs-resolution": 23
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "clean": 5,
+      "misleading": 3,
+      "missed": 2,
+      "needs-resolution": 8
+     },
+     "headline": {
+      "clean": 170,
+      "misleading": 96,
+      "missed": 57,
+      "needs-resolution": 59
+     },
+     "queries_with_leak": 127
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 15,
+       "needs-resolution": 23
+      },
+      "exception-inactive": {
+       "misleading": 19,
+       "needs-resolution": 6
+      },
+      "explicit-target": {
+       "missed": 3
+      },
+      "history-flipped": {
+       "clean": 1,
+       "misleading": 14,
+       "missed": 8,
+       "needs-resolution": 10
+      },
+      "plain": {
+       "clean": 22,
+       "misleading": 57,
+       "missed": 52,
+       "needs-resolution": 20
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 10,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 176,
+      "misleading": 88,
+      "missed": 63,
+      "needs-resolution": 55
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 17,
+       "needs-resolution": 21
+      },
+      "exception-inactive": {
+       "misleading": 15,
+       "missed": 4,
+       "needs-resolution": 6
+      },
+      "explicit-target": {
+       "missed": 3
+      },
+      "history-flipped": {
+       "clean": 6,
+       "misleading": 12,
+       "missed": 8,
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 24,
+       "misleading": 48,
+       "missed": 57,
+       "needs-resolution": 22
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 10,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 184,
+      "misleading": 73,
+      "missed": 72,
+      "needs-resolution": 53
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "complement": {
+       "clean": 3,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 20,
+       "needs-resolution": 18
+      },
+      "exception-inactive": {
+       "clean": 2,
+       "misleading": 3,
+       "missed": 15,
+       "needs-resolution": 5
+      },
+      "explicit-target": {
+       "missed": 3
+      },
+      "history-flipped": {
+       "clean": 7,
+       "misleading": 7,
+       "missed": 12,
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 30,
+       "misleading": 37,
+       "missed": 65,
+       "needs-resolution": 19
+      },
+      "uncovered": {
+       "clean": 137,
+       "needs-resolution": 1
+      }
+     },
+     "governing_hidden": {
+      "misleading": 9,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 196,
+      "misleading": 47,
+      "missed": 93,
+      "needs-resolution": 46
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "needs-resolution": 38
+      },
+      "exception-inactive": {
+       "clean": 25
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 28,
+       "needs-resolution": 5
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 344,
+      "needs-resolution": 38
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "complement": {
+       "missed": 4
+      },
+      "exception-active": {
+       "clean": 36,
+       "missed": 2
+      },
+      "exception-inactive": {
+       "clean": 25
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 33
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 378,
+      "missed": 4
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "complement": {
+       "clean": 4
+      },
+      "exception-active": {
+       "clean": 38
+      },
+      "exception-inactive": {
+       "clean": 25
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 33
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 382
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "complement": {
+       "clean": 4
+      },
+      "exception-active": {
+       "clean": 38
+      },
+      "exception-inactive": {
+       "clean": 25
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 33
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 382
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "needs-resolution": 38
+      },
+      "exception-inactive": {
+       "clean": 25
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 28,
+       "needs-resolution": 5
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 344,
+      "needs-resolution": 38
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "needs-resolution": 38
+      },
+      "exception-inactive": {
+       "clean": 25
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 28,
+       "needs-resolution": 5
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 344,
+      "needs-resolution": 38
+     },
+     "queries_with_leak": 0
+    }
+   }
+  },
+  {
+   "assertions": 701,
+   "digest": "3c4a0ea6ab1f687cd5026aee9adceede280552d11b386884b97700fc0d8e181e",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 2,
+       "misleading": 6,
+       "missed": 2,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 10,
+       "needs-resolution": 20
+      },
+      "exception-inactive": {
+       "misleading": 16,
+       "needs-resolution": 5
+      },
+      "explicit-target": {
+       "missed": 11
+      },
+      "history-flipped": {
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 4
+      },
+      "history-unflipped": {
+       "misleading": 1,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 27,
+       "misleading": 51,
+       "missed": 23,
+       "needs-resolution": 33
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "clean": 4,
+      "missed": 3,
+      "needs-resolution": 3
+     },
+     "headline": {
+      "clean": 214,
+      "misleading": 73,
+      "missed": 36,
+      "needs-resolution": 67
+     },
+     "queries_with_leak": 114
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 2,
+       "misleading": 5,
+       "missed": 3,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 11,
+       "needs-resolution": 19
+      },
+      "exception-inactive": {
+       "misleading": 13,
+       "missed": 1,
+       "needs-resolution": 7
+      },
+      "explicit-target": {
+       "missed": 11
+      },
+      "history-flipped": {
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 4
+      },
+      "history-unflipped": {
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 28,
+       "misleading": 49,
+       "missed": 24,
+       "needs-resolution": 33
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 7
+     },
+     "headline": {
+      "clean": 216,
+      "misleading": 67,
+      "missed": 38,
+      "needs-resolution": 69
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 3,
+       "misleading": 5,
+       "missed": 3,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 11,
+       "needs-resolution": 19
+      },
+      "exception-inactive": {
+       "misleading": 11,
+       "missed": 2,
+       "needs-resolution": 8
+      },
+      "explicit-target": {
+       "missed": 11
+      },
+      "history-flipped": {
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 4
+      },
+      "history-unflipped": {
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 30,
+       "misleading": 43,
+       "missed": 28,
+       "needs-resolution": 33
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 7
+     },
+     "headline": {
+      "clean": 219,
+      "misleading": 59,
+      "missed": 43,
+      "needs-resolution": 69
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 3,
+       "misleading": 4,
+       "missed": 3,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 13,
+       "needs-resolution": 17
+      },
+      "exception-inactive": {
+       "clean": 2,
+       "misleading": 2,
+       "missed": 11,
+       "needs-resolution": 6
+      },
+      "explicit-target": {
+       "missed": 11
+      },
+      "history-flipped": {
+       "clean": 2,
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 2
+      },
+      "history-unflipped": {
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 36,
+       "misleading": 27,
+       "missed": 39,
+       "needs-resolution": 32
+      },
+      "uncovered": {
+       "clean": 174,
+       "needs-resolution": 1
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 228,
+      "misleading": 33,
+      "missed": 63,
+      "needs-resolution": 66
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 14
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 26
+      },
+      "exception-inactive": {
+       "clean": 21
+      },
+      "explicit-target": {
+       "clean": 11
+      },
+      "history-flipped": {
+       "clean": 3,
+       "needs-resolution": 3
+      },
+      "history-unflipped": {
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 357,
+      "needs-resolution": 33
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "broken-chain": {
+       "clean": 3
+      },
+      "complement": {
+       "missed": 14
+      },
+      "exception-active": {
+       "clean": 30
+      },
+      "exception-inactive": {
+       "clean": 19,
+       "missed": 2
+      },
+      "explicit-target": {
+       "clean": 11
+      },
+      "history-flipped": {
+       "clean": 5,
+       "missed": 1
+      },
+      "history-unflipped": {
+       "clean": 7
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 376,
+      "missed": 14
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 14
+      },
+      "exception-active": {
+       "clean": 30
+      },
+      "exception-inactive": {
+       "clean": 21
+      },
+      "explicit-target": {
+       "clean": 11
+      },
+      "history-flipped": {
+       "clean": 6
+      },
+      "history-unflipped": {
+       "clean": 4,
+       "needs-resolution": 3
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 387,
+      "needs-resolution": 3
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 14
+      },
+      "exception-active": {
+       "clean": 30
+      },
+      "exception-inactive": {
+       "clean": 21
+      },
+      "explicit-target": {
+       "clean": 11
+      },
+      "history-flipped": {
+       "clean": 6
+      },
+      "history-unflipped": {
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 383,
+      "needs-resolution": 7
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 14
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 26
+      },
+      "exception-inactive": {
+       "clean": 21
+      },
+      "explicit-target": {
+       "clean": 11
+      },
+      "history-flipped": {
+       "clean": 3,
+       "needs-resolution": 3
+      },
+      "history-unflipped": {
+       "clean": 4,
+       "needs-resolution": 3
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 361,
+      "needs-resolution": 29
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 14
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 26
+      },
+      "exception-inactive": {
+       "clean": 21
+      },
+      "explicit-target": {
+       "clean": 11
+      },
+      "history-flipped": {
+       "clean": 3,
+       "needs-resolution": 3
+      },
+      "history-unflipped": {
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 357,
+      "needs-resolution": 33
+     },
+     "queries_with_leak": 0
+    }
+   }
+  },
+  {
+   "assertions": 646,
+   "digest": "8eec075a798c460288c5b37837bca7d3698945703996d3e7cd18d18f7b6d242b",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "broken-chain": {
+       "clean": 1,
+       "misleading": 3,
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 4,
+       "misleading": 2,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 14,
+       "misleading": 1,
+       "needs-resolution": 13
+      },
+      "exception-inactive": {
+       "misleading": 17,
+       "needs-resolution": 10
+      },
+      "explicit-target": {
+       "missed": 7
+      },
+      "history-flipped": {
+       "clean": 2,
+       "misleading": 4,
+       "missed": 7,
+       "needs-resolution": 4
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 4,
+       "needs-resolution": 5
+      },
+      "plain": {
+       "clean": 23,
+       "misleading": 49,
+       "missed": 30,
+       "needs-resolution": 36
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "clean": 1,
+      "misleading": 5,
+      "missed": 1,
+      "needs-resolution": 12
+     },
+     "headline": {
+      "clean": 193,
+      "misleading": 75,
+      "missed": 42,
+      "needs-resolution": 71
+     },
+     "queries_with_leak": 113
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "broken-chain": {
+       "clean": 1,
+       "misleading": 3,
+       "needs-resolution": 3
+      },
+      "complement": {
+       "clean": 4,
+       "misleading": 2,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 14,
+       "misleading": 1,
+       "needs-resolution": 13
+      },
+      "exception-inactive": {
+       "misleading": 16,
+       "needs-resolution": 11
+      },
+      "explicit-target": {
+       "missed": 7
+      },
+      "history-flipped": {
+       "clean": 2,
+       "misleading": 4,
+       "missed": 7,
+       "needs-resolution": 4
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 4,
+       "needs-resolution": 5
+      },
+      "plain": {
+       "clean": 26,
+       "misleading": 46,
+       "missed": 33,
+       "needs-resolution": 33
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 14,
+      "missed": 5
+     },
+     "headline": {
+      "clean": 196,
+      "misleading": 71,
+      "missed": 45,
+      "needs-resolution": 69
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "broken-chain": {
+       "clean": 1,
+       "misleading": 2,
+       "needs-resolution": 4
+      },
+      "complement": {
+       "clean": 6,
+       "misleading": 1,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 14,
+       "needs-resolution": 14
+      },
+      "exception-inactive": {
+       "clean": 1,
+       "misleading": 16,
+       "needs-resolution": 10
+      },
+      "explicit-target": {
+       "missed": 7
+      },
+      "history-flipped": {
+       "clean": 3,
+       "misleading": 3,
+       "missed": 8,
+       "needs-resolution": 3
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 3,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 28,
+       "misleading": 45,
+       "missed": 34,
+       "needs-resolution": 31
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 14,
+      "missed": 5
+     },
+     "headline": {
+      "clean": 202,
+      "misleading": 67,
+      "missed": 47,
+      "needs-resolution": 65
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "broken-chain": {
+       "misleading": 1,
+       "needs-resolution": 6
+      },
+      "complement": {
+       "clean": 7,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 14,
+       "needs-resolution": 14
+      },
+      "exception-inactive": {
+       "clean": 5,
+       "misleading": 3,
+       "missed": 12,
+       "needs-resolution": 7
+      },
+      "explicit-target": {
+       "missed": 7
+      },
+      "history-flipped": {
+       "clean": 5,
+       "misleading": 2,
+       "missed": 9,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "misleading": 2,
+       "needs-resolution": 8
+      },
+      "plain": {
+       "clean": 33,
+       "misleading": 27,
+       "missed": 51,
+       "needs-resolution": 27
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 10,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 214,
+      "misleading": 34,
+      "missed": 77,
+      "needs-resolution": 56
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 7
+      },
+      "complement": {
+       "clean": 8,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 1,
+       "needs-resolution": 27
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 7
+      },
+      "history-flipped": {
+       "clean": 15,
+       "needs-resolution": 2
+      },
+      "history-unflipped": {
+       "needs-resolution": 10
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 345,
+      "needs-resolution": 36
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "broken-chain": {
+       "clean": 6,
+       "missed": 1
+      },
+      "complement": {
+       "missed": 10
+      },
+      "exception-active": {
+       "clean": 27,
+       "missed": 1
+      },
+      "exception-inactive": {
+       "clean": 26,
+       "missed": 1
+      },
+      "explicit-target": {
+       "clean": 7
+      },
+      "history-flipped": {
+       "clean": 17
+      },
+      "history-unflipped": {
+       "clean": 9,
+       "missed": 1
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 371,
+      "missed": 10
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 7
+      },
+      "complement": {
+       "clean": 9,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 27,
+       "needs-resolution": 1
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 7
+      },
+      "history-flipped": {
+       "clean": 17
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 374,
+      "needs-resolution": 7
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 7
+      },
+      "complement": {
+       "clean": 9,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 27,
+       "needs-resolution": 1
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 7
+      },
+      "history-flipped": {
+       "clean": 17
+      },
+      "history-unflipped": {
+       "needs-resolution": 10
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 371,
+      "needs-resolution": 10
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 7
+      },
+      "complement": {
+       "clean": 8,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 1,
+       "needs-resolution": 27
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 7
+      },
+      "history-flipped": {
+       "clean": 15,
+       "needs-resolution": 2
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "needs-resolution": 7
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 348,
+      "needs-resolution": 33
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 7
+      },
+      "complement": {
+       "clean": 8,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 1,
+       "needs-resolution": 27
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 7
+      },
+      "history-flipped": {
+       "clean": 15,
+       "needs-resolution": 2
+      },
+      "history-unflipped": {
+       "needs-resolution": 10
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 345,
+      "needs-resolution": 36
+     },
+     "queries_with_leak": 0
+    }
+   }
+  }
+ ],
+ "measured chains, 89% unmarked (RFC rate)": [
+  {
+   "assertions": 684,
+   "digest": "b03f7aacc089f08cb87f3a918ebac754541c111e9810c3b553d7c1473f3b448f",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "broken-chain": {
+       "misleading": 2
+      },
+      "complement": {
+       "clean": 6,
+       "misleading": 1,
+       "missed": 2,
+       "needs-resolution": 6
+      },
+      "exception-active": {
+       "clean": 9,
+       "needs-resolution": 31
+      },
+      "exception-inactive": {
+       "misleading": 11,
+       "needs-resolution": 4
+      },
+      "explicit-target": {
+       "missed": 5
+      },
+      "history-unflipped": {
+       "misleading": 11,
+       "missed": 3,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 17,
+       "misleading": 47,
+       "missed": 43,
+       "needs-resolution": 30
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "clean": 1,
+      "misleading": 11,
+      "missed": 6,
+      "needs-resolution": 7
+     },
+     "headline": {
+      "clean": 186,
+      "misleading": 67,
+      "missed": 53,
+      "needs-resolution": 69
+     },
+     "queries_with_leak": 133
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "broken-chain": {
+       "misleading": 2
+      },
+      "complement": {
+       "clean": 7,
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 6
+      },
+      "exception-active": {
+       "clean": 10,
+       "needs-resolution": 30
+      },
+      "exception-inactive": {
+       "clean": 1,
+       "misleading": 11,
+       "needs-resolution": 3
+      },
+      "explicit-target": {
+       "missed": 5
+      },
+      "history-unflipped": {
+       "misleading": 10,
+       "missed": 4,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 20,
+       "misleading": 42,
+       "missed": 45,
+       "needs-resolution": 30
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 16,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 192,
+      "misleading": 61,
+      "missed": 55,
+      "needs-resolution": 67
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 7,
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 6
+      },
+      "exception-active": {
+       "clean": 11,
+       "needs-resolution": 29
+      },
+      "exception-inactive": {
+       "clean": 1,
+       "misleading": 10,
+       "missed": 1,
+       "needs-resolution": 3
+      },
+      "explicit-target": {
+       "missed": 5
+      },
+      "history-unflipped": {
+       "misleading": 6,
+       "missed": 5,
+       "needs-resolution": 9
+      },
+      "plain": {
+       "clean": 20,
+       "misleading": 38,
+       "missed": 48,
+       "needs-resolution": 31
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 13,
+      "missed": 12
+     },
+     "headline": {
+      "clean": 193,
+      "misleading": 53,
+      "missed": 59,
+      "needs-resolution": 70
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 9,
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 16,
+       "needs-resolution": 24
+      },
+      "exception-inactive": {
+       "clean": 2,
+       "misleading": 6,
+       "missed": 5,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "missed": 5
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 3,
+       "missed": 5,
+       "needs-resolution": 11
+      },
+      "plain": {
+       "clean": 29,
+       "misleading": 25,
+       "missed": 60,
+       "needs-resolution": 23
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 12,
+      "missed": 13
+     },
+     "headline": {
+      "clean": 210,
+      "misleading": 33,
+      "missed": 75,
+      "needs-resolution": 57
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 11,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 36
+      },
+      "exception-inactive": {
+       "clean": 13,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "needs-resolution": 19
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 24
+     },
+     "headline": {
+      "clean": 324,
+      "needs-resolution": 51
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "broken-chain": {
+       "clean": 2
+      },
+      "complement": {
+       "missed": 15
+      },
+      "exception-active": {
+       "clean": 36,
+       "missed": 4
+      },
+      "exception-inactive": {
+       "clean": 15
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 19,
+       "missed": 1
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 24
+     },
+     "headline": {
+      "clean": 360,
+      "missed": 15
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 15
+      },
+      "exception-active": {
+       "clean": 40
+      },
+      "exception-inactive": {
+       "clean": 15
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 18,
+       "needs-resolution": 2
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 24
+     },
+     "headline": {
+      "clean": 373,
+      "needs-resolution": 2
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 14,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 36,
+       "needs-resolution": 4
+      },
+      "exception-inactive": {
+       "clean": 13,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "needs-resolution": 19
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 24
+     },
+     "headline": {
+      "clean": 356,
+      "needs-resolution": 19
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 12,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 36
+      },
+      "exception-inactive": {
+       "clean": 15
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 14,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 24
+     },
+     "headline": {
+      "clean": 337,
+      "needs-resolution": 38
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 11,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 36
+      },
+      "exception-inactive": {
+       "clean": 13,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "needs-resolution": 19
+      },
+      "plain": {
+       "clean": 137
+      },
+      "uncovered": {
+       "clean": 154
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 24
+     },
+     "headline": {
+      "clean": 324,
+      "needs-resolution": 51
+     },
+     "queries_with_leak": 0
+    }
+   }
+  },
+  {
+   "assertions": 634,
+   "digest": "7b2bf45c46bc3a6d67a732a63bc89a3ae0b4c180075937fae66fe17c9f073194",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 1,
+       "misleading": 2,
+       "missed": 3,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 10,
+       "needs-resolution": 23
+      },
+      "exception-inactive": {
+       "misleading": 12,
+       "needs-resolution": 4
+      },
+      "explicit-target": {
+       "missed": 6
+      },
+      "history-flipped": {
+       "misleading": 4,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "misleading": 7,
+       "missed": 1,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 12,
+       "misleading": 58,
+       "missed": 42,
+       "needs-resolution": 22
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "clean": 3,
+      "misleading": 4,
+      "missed": 6,
+      "needs-resolution": 5
+     },
+     "headline": {
+      "clean": 193,
+      "misleading": 82,
+      "missed": 52,
+      "needs-resolution": 55
+     },
+     "queries_with_leak": 133
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 1,
+       "misleading": 2,
+       "missed": 3,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 12,
+       "needs-resolution": 21
+      },
+      "exception-inactive": {
+       "misleading": 12,
+       "needs-resolution": 4
+      },
+      "explicit-target": {
+       "missed": 6
+      },
+      "history-flipped": {
+       "misleading": 4,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "misleading": 7,
+       "missed": 1,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 12,
+       "misleading": 53,
+       "missed": 45,
+       "needs-resolution": 24
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 7,
+      "missed": 11
+     },
+     "headline": {
+      "clean": 195,
+      "misleading": 77,
+      "missed": 55,
+      "needs-resolution": 55
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 1,
+       "misleading": 2,
+       "missed": 3,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 12,
+       "needs-resolution": 21
+      },
+      "exception-inactive": {
+       "misleading": 11,
+       "missed": 1,
+       "needs-resolution": 4
+      },
+      "explicit-target": {
+       "missed": 6
+      },
+      "history-flipped": {
+       "misleading": 4,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "misleading": 7,
+       "missed": 1,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 13,
+       "misleading": 46,
+       "missed": 52,
+       "needs-resolution": 23
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 5,
+      "missed": 13
+     },
+     "headline": {
+      "clean": 196,
+      "misleading": 69,
+      "missed": 63,
+      "needs-resolution": 54
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 1,
+       "misleading": 1,
+       "missed": 4,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 14,
+       "needs-resolution": 19
+      },
+      "exception-inactive": {
+       "clean": 2,
+       "misleading": 7,
+       "missed": 5,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "missed": 6
+      },
+      "history-flipped": {
+       "misleading": 2,
+       "missed": 2,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "misleading": 7,
+       "missed": 1,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 18,
+       "misleading": 32,
+       "missed": 65,
+       "needs-resolution": 19
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 5,
+      "missed": 13
+     },
+     "headline": {
+      "clean": 205,
+      "misleading": 48,
+      "missed": 83,
+      "needs-resolution": 46
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 7,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 29
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "needs-resolution": 16
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 342,
+      "needs-resolution": 40
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "broken-chain": {
+       "clean": 2
+      },
+      "complement": {
+       "missed": 9
+      },
+      "exception-active": {
+       "clean": 31,
+       "missed": 2
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 17
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 373,
+      "missed": 9
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 9
+      },
+      "exception-active": {
+       "clean": 32,
+       "needs-resolution": 1
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 15,
+       "needs-resolution": 2
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 380,
+      "needs-resolution": 2
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 9
+      },
+      "exception-active": {
+       "clean": 28,
+       "needs-resolution": 5
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "needs-resolution": 16
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 366,
+      "needs-resolution": 16
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 7,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 29
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 11,
+       "needs-resolution": 6
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 352,
+      "needs-resolution": 30
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 2
+      },
+      "complement": {
+       "clean": 7,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 29
+      },
+      "exception-inactive": {
+       "clean": 16
+      },
+      "explicit-target": {
+       "clean": 6
+      },
+      "history-flipped": {
+       "clean": 5
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "needs-resolution": 16
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 170
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 16
+     },
+     "headline": {
+      "clean": 342,
+      "needs-resolution": 40
+     },
+     "queries_with_leak": 0
+    }
+   }
+  },
+  {
+   "assertions": 689,
+   "digest": "5201a40e57ad413ff41a32ede927c0228c2ab3f1750185e1be08b406cc06c2f8",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "complement": {
+       "clean": 1,
+       "missed": 1,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 12,
+       "missed": 1,
+       "needs-resolution": 25
+      },
+      "exception-inactive": {
+       "misleading": 20,
+       "needs-resolution": 5
+      },
+      "explicit-target": {
+       "missed": 3
+      },
+      "history-flipped": {
+       "clean": 1,
+       "misleading": 4,
+       "missed": 4
+      },
+      "history-unflipped": {
+       "misleading": 11,
+       "missed": 4,
+       "needs-resolution": 9
+      },
+      "plain": {
+       "clean": 19,
+       "misleading": 64,
+       "missed": 45,
+       "needs-resolution": 23
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "clean": 5,
+      "misleading": 3,
+      "missed": 2,
+      "needs-resolution": 8
+     },
+     "headline": {
+      "clean": 170,
+      "misleading": 96,
+      "missed": 57,
+      "needs-resolution": 59
+     },
+     "queries_with_leak": 127
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 15,
+       "needs-resolution": 23
+      },
+      "exception-inactive": {
+       "misleading": 19,
+       "needs-resolution": 6
+      },
+      "explicit-target": {
+       "missed": 3
+      },
+      "history-flipped": {
+       "clean": 1,
+       "misleading": 4,
+       "missed": 4
+      },
+      "history-unflipped": {
+       "misleading": 10,
+       "missed": 4,
+       "needs-resolution": 10
+      },
+      "plain": {
+       "clean": 22,
+       "misleading": 57,
+       "missed": 52,
+       "needs-resolution": 20
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 10,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 176,
+      "misleading": 88,
+      "missed": 63,
+      "needs-resolution": 55
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 17,
+       "needs-resolution": 21
+      },
+      "exception-inactive": {
+       "misleading": 15,
+       "missed": 4,
+       "needs-resolution": 6
+      },
+      "explicit-target": {
+       "missed": 3
+      },
+      "history-flipped": {
+       "clean": 1,
+       "misleading": 4,
+       "missed": 4
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 8,
+       "missed": 4,
+       "needs-resolution": 11
+      },
+      "plain": {
+       "clean": 24,
+       "misleading": 48,
+       "missed": 57,
+       "needs-resolution": 22
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 10,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 180,
+      "misleading": 73,
+      "missed": 72,
+      "needs-resolution": 57
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "complement": {
+       "clean": 3,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 20,
+       "needs-resolution": 18
+      },
+      "exception-inactive": {
+       "clean": 2,
+       "misleading": 3,
+       "missed": 15,
+       "needs-resolution": 5
+      },
+      "explicit-target": {
+       "missed": 3
+      },
+      "history-flipped": {
+       "clean": 1,
+       "misleading": 2,
+       "missed": 6
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "misleading": 5,
+       "missed": 6,
+       "needs-resolution": 12
+      },
+      "plain": {
+       "clean": 30,
+       "misleading": 37,
+       "missed": 65,
+       "needs-resolution": 19
+      },
+      "uncovered": {
+       "clean": 137,
+       "needs-resolution": 1
+      }
+     },
+     "governing_hidden": {
+      "misleading": 9,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 191,
+      "misleading": 47,
+      "missed": 93,
+      "needs-resolution": 51
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "needs-resolution": 38
+      },
+      "exception-inactive": {
+       "clean": 23,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 8,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "needs-resolution": 23
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 325,
+      "needs-resolution": 57
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "complement": {
+       "missed": 4
+      },
+      "exception-active": {
+       "clean": 36,
+       "missed": 2
+      },
+      "exception-inactive": {
+       "clean": 25
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 9
+      },
+      "history-unflipped": {
+       "clean": 24
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 378,
+      "missed": 4
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "complement": {
+       "clean": 4
+      },
+      "exception-active": {
+       "clean": 38
+      },
+      "exception-inactive": {
+       "clean": 25
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 9
+      },
+      "history-unflipped": {
+       "clean": 24
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 382
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "complement": {
+       "clean": 4
+      },
+      "exception-active": {
+       "clean": 34,
+       "needs-resolution": 4
+      },
+      "exception-inactive": {
+       "clean": 23,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 9
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "needs-resolution": 23
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 359,
+      "needs-resolution": 23
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "needs-resolution": 38
+      },
+      "exception-inactive": {
+       "clean": 25
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 8,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 20,
+       "needs-resolution": 4
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 344,
+      "needs-resolution": 38
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "complement": {
+       "clean": 2,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "needs-resolution": 38
+      },
+      "exception-inactive": {
+       "clean": 23,
+       "needs-resolution": 2
+      },
+      "explicit-target": {
+       "clean": 3
+      },
+      "history-flipped": {
+       "clean": 8,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 1,
+       "needs-resolution": 23
+      },
+      "plain": {
+       "clean": 151
+      },
+      "uncovered": {
+       "clean": 138
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 15
+     },
+     "headline": {
+      "clean": 325,
+      "needs-resolution": 57
+     },
+     "queries_with_leak": 0
+    }
+   }
+  },
+  {
+   "assertions": 701,
+   "digest": "50c5558bf8d23d692b24ca80a51ab77922c15fa733eb1c611fd6ddec7530d10e",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 2,
+       "misleading": 6,
+       "missed": 2,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 10,
+       "needs-resolution": 20
+      },
+      "exception-inactive": {
+       "misleading": 16,
+       "needs-resolution": 5
+      },
+      "explicit-target": {
+       "missed": 11
+      },
+      "history-unflipped": {
+       "misleading": 2,
+       "missed": 1,
+       "needs-resolution": 10
+      },
+      "plain": {
+       "clean": 27,
+       "misleading": 51,
+       "missed": 23,
+       "needs-resolution": 33
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "clean": 4,
+      "missed": 3,
+      "needs-resolution": 3
+     },
+     "headline": {
+      "clean": 214,
+      "misleading": 73,
+      "missed": 36,
+      "needs-resolution": 67
+     },
+     "queries_with_leak": 114
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 2,
+       "misleading": 5,
+       "missed": 3,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 11,
+       "needs-resolution": 19
+      },
+      "exception-inactive": {
+       "misleading": 13,
+       "missed": 1,
+       "needs-resolution": 7
+      },
+      "explicit-target": {
+       "missed": 11
+      },
+      "history-unflipped": {
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 11
+      },
+      "plain": {
+       "clean": 28,
+       "misleading": 49,
+       "missed": 24,
+       "needs-resolution": 33
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 7
+     },
+     "headline": {
+      "clean": 216,
+      "misleading": 67,
+      "missed": 38,
+      "needs-resolution": 69
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 3,
+       "misleading": 5,
+       "missed": 3,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 11,
+       "needs-resolution": 19
+      },
+      "exception-inactive": {
+       "misleading": 11,
+       "missed": 2,
+       "needs-resolution": 8
+      },
+      "explicit-target": {
+       "missed": 11
+      },
+      "history-unflipped": {
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 11
+      },
+      "plain": {
+       "clean": 30,
+       "misleading": 43,
+       "missed": 28,
+       "needs-resolution": 33
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 3,
+      "missed": 7
+     },
+     "headline": {
+      "clean": 219,
+      "misleading": 59,
+      "missed": 43,
+      "needs-resolution": 69
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 3,
+       "misleading": 4,
+       "missed": 3,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 13,
+       "needs-resolution": 17
+      },
+      "exception-inactive": {
+       "clean": 2,
+       "misleading": 2,
+       "missed": 11,
+       "needs-resolution": 6
+      },
+      "explicit-target": {
+       "missed": 11
+      },
+      "history-unflipped": {
+       "clean": 2,
+       "misleading": 1,
+       "missed": 1,
+       "needs-resolution": 9
+      },
+      "plain": {
+       "clean": 36,
+       "misleading": 27,
+       "missed": 39,
+       "needs-resolution": 32
+      },
+      "uncovered": {
+       "clean": 174,
+       "needs-resolution": 1
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 228,
+      "misleading": 33,
+      "missed": 63,
+      "needs-resolution": 66
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 13,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 26
+      },
+      "exception-inactive": {
+       "clean": 20,
+       "needs-resolution": 1
+      },
+      "explicit-target": {
+       "clean": 10,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "needs-resolution": 13
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 354,
+      "needs-resolution": 36
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "broken-chain": {
+       "clean": 1
+      },
+      "complement": {
+       "missed": 14
+      },
+      "exception-active": {
+       "clean": 30
+      },
+      "exception-inactive": {
+       "clean": 19,
+       "missed": 2
+      },
+      "explicit-target": {
+       "clean": 11
+      },
+      "history-unflipped": {
+       "clean": 12,
+       "missed": 1
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 376,
+      "missed": 14
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 14
+      },
+      "exception-active": {
+       "clean": 29,
+       "needs-resolution": 1
+      },
+      "exception-inactive": {
+       "clean": 21
+      },
+      "explicit-target": {
+       "clean": 11
+      },
+      "history-unflipped": {
+       "clean": 12,
+       "needs-resolution": 1
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 389,
+      "needs-resolution": 1
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 13,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 27,
+       "needs-resolution": 3
+      },
+      "exception-inactive": {
+       "clean": 20,
+       "needs-resolution": 1
+      },
+      "explicit-target": {
+       "clean": 10,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "needs-resolution": 13
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 377,
+      "needs-resolution": 13
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 14
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 26
+      },
+      "exception-inactive": {
+       "clean": 21
+      },
+      "explicit-target": {
+       "clean": 11
+      },
+      "history-unflipped": {
+       "clean": 10,
+       "needs-resolution": 3
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 364,
+      "needs-resolution": 26
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "broken-chain": {
+       "needs-resolution": 1
+      },
+      "complement": {
+       "clean": 13,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 4,
+       "needs-resolution": 26
+      },
+      "exception-inactive": {
+       "clean": 20,
+       "needs-resolution": 1
+      },
+      "explicit-target": {
+       "clean": 10,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "needs-resolution": 13
+      },
+      "plain": {
+       "clean": 134
+      },
+      "uncovered": {
+       "clean": 175
+      }
+     },
+     "governing_hidden": {
+      "misleading": 2,
+      "missed": 8
+     },
+     "headline": {
+      "clean": 354,
+      "needs-resolution": 36
+     },
+     "queries_with_leak": 0
+    }
+   }
+  },
+  {
+   "assertions": 646,
+   "digest": "b3fe3b4785b4fc88c62f1ba0a541523e3b8b090b93a82c7025c1300b636d4bde",
+   "systems": {
+    "L0 lexical top-k": {
+     "by_tag": {
+      "complement": {
+       "clean": 4,
+       "misleading": 2,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 14,
+       "misleading": 1,
+       "needs-resolution": 13
+      },
+      "exception-inactive": {
+       "misleading": 17,
+       "needs-resolution": 10
+      },
+      "explicit-target": {
+       "missed": 7
+      },
+      "hidden-successor": {
+       "missed": 1,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "misleading": 8,
+       "missed": 7,
+       "needs-resolution": 9
+      },
+      "plain": {
+       "clean": 23,
+       "misleading": 49,
+       "missed": 30,
+       "needs-resolution": 36
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "clean": 1,
+      "misleading": 5,
+      "missed": 1,
+      "needs-resolution": 12
+     },
+     "headline": {
+      "clean": 193,
+      "misleading": 75,
+      "missed": 42,
+      "needs-resolution": 71
+     },
+     "queries_with_leak": 113
+    },
+    "L1 +ACL prefilter": {
+     "by_tag": {
+      "complement": {
+       "clean": 4,
+       "misleading": 2,
+       "needs-resolution": 4
+      },
+      "exception-active": {
+       "clean": 14,
+       "misleading": 1,
+       "needs-resolution": 13
+      },
+      "exception-inactive": {
+       "misleading": 16,
+       "needs-resolution": 11
+      },
+      "explicit-target": {
+       "missed": 7
+      },
+      "hidden-successor": {
+       "missed": 1,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "misleading": 8,
+       "missed": 7,
+       "needs-resolution": 9
+      },
+      "plain": {
+       "clean": 26,
+       "misleading": 46,
+       "missed": 33,
+       "needs-resolution": 33
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 14,
+      "missed": 5
+     },
+     "headline": {
+      "clean": 196,
+      "misleading": 71,
+      "missed": 45,
+      "needs-resolution": 69
+     },
+     "queries_with_leak": 0
+    },
+    "L2 +status=approved": {
+     "by_tag": {
+      "complement": {
+       "clean": 6,
+       "misleading": 1,
+       "needs-resolution": 3
+      },
+      "exception-active": {
+       "clean": 14,
+       "needs-resolution": 14
+      },
+      "exception-inactive": {
+       "clean": 1,
+       "misleading": 16,
+       "needs-resolution": 10
+      },
+      "explicit-target": {
+       "missed": 7
+      },
+      "hidden-successor": {
+       "missed": 1,
+       "needs-resolution": 1
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "misleading": 7,
+       "missed": 8,
+       "needs-resolution": 9
+      },
+      "plain": {
+       "clean": 28,
+       "misleading": 45,
+       "missed": 34,
+       "needs-resolution": 31
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 14,
+      "missed": 5
+     },
+     "headline": {
+      "clean": 201,
+      "misleading": 68,
+      "missed": 47,
+      "needs-resolution": 65
+     },
+     "queries_with_leak": 0
+    },
+    "L3 +effective/expiry dates": {
+     "by_tag": {
+      "complement": {
+       "clean": 7,
+       "misleading": 1,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 14,
+       "needs-resolution": 14
+      },
+      "exception-inactive": {
+       "clean": 5,
+       "misleading": 3,
+       "missed": 12,
+       "needs-resolution": 7
+      },
+      "explicit-target": {
+       "missed": 7
+      },
+      "hidden-successor": {
+       "clean": 1,
+       "missed": 1
+      },
+      "history-unflipped": {
+       "clean": 3,
+       "misleading": 6,
+       "missed": 9,
+       "needs-resolution": 9
+      },
+      "plain": {
+       "clean": 33,
+       "misleading": 27,
+       "missed": 51,
+       "needs-resolution": 27
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 10,
+      "missed": 9
+     },
+     "headline": {
+      "clean": 212,
+      "misleading": 36,
+      "missed": 77,
+      "needs-resolution": 56
+     },
+     "queries_with_leak": 0
+    },
+    "L4 +scope ancestry/targets": {
+     "by_tag": {
+      "complement": {
+       "clean": 8,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 1,
+       "needs-resolution": 27
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 6,
+       "needs-resolution": 1
+      },
+      "hidden-successor": {
+       "clean": 2
+      },
+      "history-unflipped": {
+       "clean": 2,
+       "needs-resolution": 25
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 332,
+      "needs-resolution": 49
+     },
+     "queries_with_leak": 0
+    },
+    "L5 L4 +latest-wins per topic tag": {
+     "by_tag": {
+      "complement": {
+       "missed": 10
+      },
+      "exception-active": {
+       "clean": 27,
+       "missed": 1
+      },
+      "exception-inactive": {
+       "clean": 26,
+       "missed": 1
+      },
+      "explicit-target": {
+       "clean": 7
+      },
+      "hidden-successor": {
+       "clean": 2
+      },
+      "history-unflipped": {
+       "clean": 26,
+       "missed": 1
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 371,
+      "missed": 10
+     },
+     "queries_with_leak": 0
+    },
+    "RM full (policy.py)": {
+     "by_tag": {
+      "complement": {
+       "clean": 10
+      },
+      "exception-active": {
+       "clean": 28
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 7
+      },
+      "hidden-successor": {
+       "clean": 2
+      },
+      "history-unflipped": {
+       "clean": 27
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 381
+     },
+     "queries_with_leak": 0
+    },
+    "RM overrides only": {
+     "by_tag": {
+      "complement": {
+       "clean": 9,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 25,
+       "needs-resolution": 3
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 6,
+       "needs-resolution": 1
+      },
+      "hidden-successor": {
+       "clean": 2
+      },
+      "history-unflipped": {
+       "clean": 2,
+       "needs-resolution": 25
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 356,
+      "needs-resolution": 25
+     },
+     "queries_with_leak": 0
+    },
+    "RM supersession only": {
+     "by_tag": {
+      "complement": {
+       "clean": 9,
+       "needs-resolution": 1
+      },
+      "exception-active": {
+       "clean": 1,
+       "needs-resolution": 27
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 7
+      },
+      "hidden-successor": {
+       "clean": 2
+      },
+      "history-unflipped": {
+       "clean": 24,
+       "needs-resolution": 3
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 354,
+      "needs-resolution": 27
+     },
+     "queries_with_leak": 0
+    },
+    "RM without relations": {
+     "by_tag": {
+      "complement": {
+       "clean": 8,
+       "needs-resolution": 2
+      },
+      "exception-active": {
+       "clean": 1,
+       "needs-resolution": 27
+      },
+      "exception-inactive": {
+       "clean": 27
+      },
+      "explicit-target": {
+       "clean": 6,
+       "needs-resolution": 1
+      },
+      "hidden-successor": {
+       "clean": 2
+      },
+      "history-unflipped": {
+       "clean": 2,
+       "needs-resolution": 25
+      },
+      "plain": {
+       "clean": 138
+      },
+      "uncovered": {
+       "clean": 152
+      }
+     },
+     "governing_hidden": {
+      "misleading": 1,
+      "missed": 18
+     },
+     "headline": {
+      "clean": 332,
+      "needs-resolution": 49
+     },
+     "queries_with_leak": 0
+    }
+   }
+  }
+ ]
+}

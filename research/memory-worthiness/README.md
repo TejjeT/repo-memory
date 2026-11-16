@@ -1,15 +1,20 @@
 # Memory-Worthiness Research (issue #8)
 
-Status (2026-11-04): **first candidate-selection pass. No human labels yet.**
+Status (2026-11-16): **20 candidates selected and a blinded labelling packet
+prepared. No human labels yet.**
 
 This folder holds:
 
-- [`annotation-guide.md`](annotation-guide.md): the draft guide reviewers use
-  to label candidates *keep*, *do-not-keep* or *uncertain*.
-- [`candidates.md`](candidates.md): six candidate engineering decisions drawn
-  from this repository's own public history, each with source revisions,
-  scope, current vs historical guidance, retrieval access and the timing
-  evidence available for #33.
+- [`annotation-guide.md`](annotation-guide.md): the guide reviewers use to
+  label candidates *keep*, *do-not-keep* or *uncertain* (draft v0.2).
+- [`candidates.md`](candidates.md): six candidates (RM-C1 to RM-C6) from this
+  repository's own history.
+- [`candidates-external.md`](candidates-external.md): fourteen candidates
+  (RM-E1 to RM-E14) from Python PEPs and two public-sector ADR repositories.
+- [`labels/`](labels/README.md): instructions, a shuffled label template and a
+  script that reports agreement once two reviewers have labelled.
+- [`selector-dispositions.md`](selector-dispositions.md): the selecting AI's
+  own guesses. **Reviewers open this last.**
 
 ## What this pass is and is not
 
@@ -23,12 +28,17 @@ It is **not** completion of #8:
   assistant that selected the candidates. These are a hypothesis for reviewers
   to challenge, **not** human judgments. No agreement statistics exist.
 - The exit criteria still require at least two independent human reviewers
-  labeling the same sample, a reported agreement/adjudication, and a larger
-  (~20 candidate) balanced sample.
+  labeling the same sample and a reported agreement/adjudication. The
+  ~20-candidate sample now exists (2026-11-16). One reviewer (the maintainer)
+  is confirmed; agreement cannot be reported until a second reviewer labels
+  the same sample.
 
 ## Source and its limits
 
-All candidates come from the `TejjeT/repo-memory` repository (commits, PRs,
+The RM-E candidates' sources and limits are listed at the top of
+[`candidates-external.md`](candidates-external.md).
+
+The RM-C candidates come from the `TejjeT/repo-memory` repository (commits, PRs,
 issues and experiment reports up to `8dbe325`, 2026-10-16, plus open PR #34).
 This source was chosen because it is public, its provenance is complete and
 no restricted material is involved.

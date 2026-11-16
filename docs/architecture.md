@@ -41,8 +41,8 @@ mcp_server/: stdio MCP server with demo identities and corpus
 | Conceptual component | Implemented today | Not implemented |
 |---|---|---|
 | Memory sources / ingestion | JSON files validated against the schema | Extraction, normalization, dedupe, GitHub/ADR/incident ingestion |
-| Memory service — lifecycle | Read-time filtering by state, effective/expiry dates, supersession, overrides | Propose, approve/reject, supersede, expire, archive as governed writes (#3) |
-| Policy engine | Read authorization (discover/content) for authenticated callers | Authorization of propose/approve/supersede transitions |
+| Memory service — lifecycle | Read-time filtering by state, effective/expiry dates, supersession, overrides; governed propose, approve/reject, supersede, expire, archive in-process ([lifecycle.md](lifecycle.md), #3) | Write operations over a transport; concurrent-writer safety on OpenViking |
+| Policy engine | Read authorization (discover/content) for authenticated callers; scope-based proposer/approver roles for transitions | Delegation, quorum, approval expiry |
 | Metadata store | In-memory models; OpenViking adapter as optional backend | A repo-memory-owned relational store |
 | Semantic index | Pluggable `EvidenceProvider` (retrieval assist) that ranks evidence only after the safe candidate set is fixed; OpenViking supplies indexing | A repo-memory-owned vector index |
 | Retrieval / context API | `ContextAssembler`, `memory_search`, `memory_get` | Feedback, audit history API |
@@ -124,7 +124,7 @@ This gives semantic retrieval a useful role without asking embeddings to solve i
 ### 1. Memory API
 
 *Status: read operations implemented as `memory_search` / `memory_get`;
-write operations deferred (#3).*
+write operations exist in-process only ([lifecycle.md](lifecycle.md)).*
 
 Responsibilities:
 
@@ -178,7 +178,7 @@ It should be treated as a **derived index**, not the canonical memory store.
 
 *Status:* `memory_search` and `memory_get` are implemented read-only
 ([mcp-tools.md](mcp-tools.md)). `memory_propose`, `memory_supersede` and
-`memory_feedback` are conceptual and depend on #3.
+`memory_feedback` are conceptual; exposing writes over MCP is a separate decision.
 
 A coding agent should be able to retrieve memory without knowing which database or embedding model sits behind the service.
 
@@ -215,7 +215,9 @@ approved
    └── archived
 ```
 
-A future implementation may support automatic approval for low-risk memory classes.
+Transition rules, roles and history are specified in [lifecycle.md](lifecycle.md).
+`superseded` and `expired` assertions can also be archived. A future
+implementation may support automatic approval for low-risk memory classes.
 
 ## Provenance
 

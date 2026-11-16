@@ -1,6 +1,7 @@
 # Project Status
 
-Reconciled 2026-11-04 against `main` at `8dbe325` (issue #29). This page is
+Reconciled 2026-11-04 against `main` at `8dbe325` (issue #29); updated
+2026-11-16 for work through PR #37. This page is
 the single place that says what is implemented, what the trials did and did
 not show, and what comes next. Where this page and an older planning document
 disagree, this page and [`v0-scope.md`](v0-scope.md) win.
@@ -30,19 +31,23 @@ platform.
 | Authenticated callers and external-provider boundary | `src/repo_memory/auth.py`, `context.py` | [authenticated-callers.md](authenticated-callers.md) | #20, #28 |
 | Read-only MCP tools (`memory_search`, `memory_get`) | `src/repo_memory/tools.py`, `mcp_server/` | [mcp-tools.md](mcp-tools.md) | #4 |
 | Coding-agent evaluation harnesses and trial records | `research/experiments/` | [results below](#trial-results) | #5 |
+| Governed lifecycle writes | `src/repo_memory/lifecycle.py`, `OpenVikingLifecycleStore` in `adapters/openviking.py` | [lifecycle.md](lifecycle.md) | #3 |
 
-**Read-time lifecycle is delivered; governed lifecycle mutations are not.**
-Retrieval already filters by lifecycle state and `effective_from`/`expires_at`,
-honors `superseded_by` and explicit overrides, and keeps superseded assertions
-inspectable by ID. What does **not** exist is any write path: propose,
-approve/reject, supersede, expire or archive as authorized, attributed
-operations. Those remain in deferred issue #3. Assertions today are authored as
-JSON files (for example `examples/payments/`).
+**Read-time lifecycle and governed writes are both delivered; they are
+separate.** Retrieval filters by lifecycle state and
+`effective_from`/`expires_at`, honors `superseded_by` and explicit overrides,
+and keeps superseded assertions inspectable by ID. Since 2026-11-12 there is
+also an in-process write path: propose, approve/reject, supersede, expire and
+archive as authorized, attributed operations with caller-safe history. Its
+limits: it is not exposed over any transport, the OpenViking-backed store is
+safe for a single writer only and was tested against a fake client, and
+assertions authored directly as JSON files (for example `examples/payments/`)
+bypass it.
 
 ## Not implemented (and not planned for v0)
 
-- Governed mutations and write tools (`memory_propose`, `memory_supersede`,
-  feedback) — deferred, #3.
+- Write tools over a transport (`memory_propose`, `memory_supersede`,
+  feedback). The MCP server is read-only.
 - Ingestion/extraction from PRs, ADRs or incidents; a GitHub workflow.
 - A standalone memory service, REST API, relational metadata store or vector
   index owned by repo-memory.
@@ -52,7 +57,9 @@ JSON files (for example `examples/payments/`).
 ## Trial results
 
 All batches below are small (three trials per arm), synthetic, single-task
-studies. They do not establish general superiority in either direction. Each
+studies. They do not establish general superiority in either direction. At
+three runs, a 3/3 result has a 95% interval of roughly 29–100%, so a tie
+cannot rule out a real difference and the tasks may simply be at ceiling. Each
 original report, receipt and raw response is retained unchanged; follow the
 links for full qualifications. "Assigned" denominators count every scheduled
 trial, including incomplete ones.
@@ -119,19 +126,49 @@ Any future timing claim must count the cost of capture, approval, refresh,
 indexing and permission maintenance, and must compare against a
 well-configured ordinary retrieval path rather than a weakened one.
 
+## Model-free evidence since the trials
+
+- **[Delivery ablation](../research/experiments/delivery-ablation/README.md)**
+  (synthetic, no model). An ordinary index with access, status, date and
+  structural scope filters delivers exactly what the engine delivers without
+  its supersession and override links. The links remove distractors; they
+  never recover guidance that would otherwise be missing. A "topic tag, newest
+  wins" heuristic ties the engine overall and fails differently.
+- **[Calibration](../research/experiments/delivery-ablation/calibration/README.md)**
+  against Python PEPs, the IETF RFC index and a public ADR dataset. About 10%
+  of current documents have a prior revision, not the 60% first assumed, so
+  supersession links change the outcome for about 1–4% of queries. Exception,
+  complement and restriction rates could not be measured and remain assumed.
+- **Two engine gaps** found by the ablation are open decisions in #41: a
+  broken supersession chain, and a successor hidden by authorization.
+- **Prior work.** [Mneme HQ](../research/open-source/mneme.md) ships
+  deterministic decision resolution and enforcement for coding agents within a
+  single repository and plans a cross-repository hierarchy. Related published
+  results and what remains distinct are in
+  [publication-readiness.md](../research/publication-readiness.md) and
+  [external-benchmark-selection.md](../research/benchmarks/external-benchmark-selection.md).
+
+## Direction
+
+Decided by the maintainer on 2026-11-11: **research and independent
+measurement that is useful to industry**, not a competing product, and no
+patent filing. The plan is #38.
+
 ## Next work, in order
 
 1. **#28 boundary fix** — done (PR #30).
 2. **#5 revised evaluation** — done (PR #32); bounded study closed with a
    tied incremental result.
-3. **#29 documentation reconciliation** — this page.
-4. **#8 candidate selection** — identify 3–5 permitted, source-backed cases
-   (including ones that favor ordinary retrieval or do not warrant retention),
-   then the human-labeled memory-worthiness dataset. Model-generated labels do
-   not count as human judgments.
-5. **#33 timing protocol** — preregister baselines, resources, scoring,
-   deadlines and a practical benefit threshold using #8's cases *before*
-   another model batch.
-6. **Real-repository pilot** — only once #8 supplies concrete cases.
-7. **#3 governed lifecycle** — stays deferred until a measured need selects
-   it; first slice is a transition/authorization design, not code.
+3. **#29 documentation reconciliation** — done (PR #34; this update).
+4. **#3 governed lifecycle** — implemented in-process (PR #37); selected by
+   the maintainer on 2026-11-12.
+5. **#39 benchmark selection and #40 calibration** — done, pending review.
+6. **#8 memory-worthiness labels** — candidate sample and blinded labelling
+   packet are ready; human labels are pending. Model-generated labels do not
+   count. Reporting agreement needs a second reviewer.
+7. **#41 supersession edge cases** — maintainer decision.
+8. **#42 powered agent study** on an external benchmark with Mneme as an arm,
+   and **#43** distractor experiment. Model and budget not yet chosen.
+9. **#44 access-aware resolution** — survey.
+10. **#33 timing protocol** — drafted (PR #36), not frozen; revise sample size
+    and decide what #42 replaces before any collection.

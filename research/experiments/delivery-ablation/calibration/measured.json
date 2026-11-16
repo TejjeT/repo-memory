@@ -1,0 +1,153 @@
+{
+ "peps": {
+  "documents": 747,
+  "adopted_or_superseded": 449,
+  "status_superseded": 25,
+  "replaced_by_any_link": 41,
+  "replacement_pairs": 46,
+  "pairs_linked_from_both_sides": 27,
+  "pairs_only_successor_says_replaces": 14,
+  "pairs_only_predecessor_says_superseded_by": 5,
+  "replaced_but_status_not_superseded": [
+   [
+    "216",
+    "Withdrawn"
+   ],
+   [
+    "245",
+    "Rejected"
+   ],
+   [
+    "246",
+    "Rejected"
+   ],
+   [
+    "247",
+    "Final"
+   ],
+   [
+    "248",
+    "Final"
+   ],
+   [
+    "3124",
+    "Deferred"
+   ],
+   [
+    "333",
+    "Final"
+   ],
+   [
+    "381",
+    "Withdrawn"
+   ],
+   [
+    "382",
+    "Rejected"
+   ],
+   [
+    "397",
+    "Final"
+   ],
+   [
+    "409",
+    "Final"
+   ],
+   [
+    "422",
+    "Withdrawn"
+   ],
+   [
+    "426",
+    "Withdrawn"
+   ],
+   [
+    "486",
+    "Final"
+   ],
+   [
+    "501",
+    "Withdrawn"
+   ],
+   [
+    "543",
+    "Withdrawn"
+   ],
+   [
+    "601",
+    "Rejected"
+   ],
+   [
+    "665",
+    "Rejected"
+   ],
+   [
+    "722",
+    "Rejected"
+   ],
+   [
+    "724",
+    "Withdrawn"
+   ]
+  ],
+  "status_superseded_without_link": [
+   "344",
+   "367",
+   "411",
+   "6"
+  ],
+  "chain_lengths": {
+   "2": 32,
+   "3": 1,
+   "5": 1
+  }
+ },
+ "rfcs": {
+  "documents": 9858,
+  "obsoleted": 1384,
+  "replacement_pairs": 1543,
+  "pairs_linked_from_both_sides": 1543,
+  "obsoleted_current_status": {
+   "PROPOSED STANDARD": 615,
+   "INFORMATIONAL": 219,
+   "UNKNOWN": 165,
+   "HISTORIC": 156,
+   "EXPERIMENTAL": 101,
+   "DRAFT STANDARD": 62,
+   "BEST CURRENT PRACTICE": 59,
+   "INTERNET STANDARD": 7
+  },
+  "chain_lengths": {
+   "2": 649,
+   "3": 155,
+   "4": 40,
+   "5": 15,
+   "6": 5,
+   "7": 1,
+   "8": 3,
+   "9": 1,
+   "13": 1,
+   "23": 1,
+   "33": 1
+  }
+ },
+ "adr_dataset": {
+  "repositories": 921,
+  "adr_files": 6362,
+  "status_first_word": {
+   "accepted": 3366,
+   "(none)": 2131,
+   "proposed": 366,
+   "approved": 74,
+   "implemented": 59,
+   "pending": 50,
+   "superceded": 48,
+   "superseded": 44,
+   "in": 31,
+   "draft": 26,
+   "rejected": 21,
+   "status": 20
+  },
+  "status_superseded_any_spelling": 97
+ }
+}
