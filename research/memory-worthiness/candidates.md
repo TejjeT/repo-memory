@@ -61,10 +61,9 @@ or a test that scans fixtures for assertion IDs or words like "stale" and
 learned 10-04, missed 3 days later, surfaced 10-10, applied 10-16. Effort to
 rediscover: unknown.
 
-**Proposed disposition (selector, not a human label):** *keep*, plus add a
-checklist item. It is datable, consequential, missed once and not enforced.
-Caveat: a single maintainer, so this is a within-person lapse, not cross-team
-rediscovery.
+**Proposed disposition (selector):** moved to
+[`selector-dispositions.md`](selector-dispositions.md) so reviewers can read
+this file before labelling.
 
 ---
 
@@ -111,9 +110,9 @@ timestamp, stale-document window and correction timestamp are all datable.
 Good candidate for a freshness/propagation measurement. Harm during the window
 is unobserved.
 
-**Proposed disposition (selector):** *uncertain*. Strong evidence of a stale
-window, but the cheaper fix (document hygiene) is now in flight. It becomes
-*do-not-keep* if docs stay consistent after PR #34.
+**Proposed disposition (selector):** moved to
+[`selector-dispositions.md`](selector-dispositions.md) so reviewers can read
+this file before labelling.
 
 ---
 
@@ -163,10 +162,9 @@ fresh-history half is procedural and cannot be enforced by code.
 corrected sequence. Partial overlap with new requirements makes the "repeated
 discovery" share unclear.
 
-**Proposed disposition (selector):** *keep* for the procedural
-(fresh-history) part, *do-not-keep* for the receipt part, which should
-become shared code instead. Reviewers may reasonably label the whole thing
-*uncertain*.
+**Proposed disposition (selector):** moved to
+[`selector-dispositions.md`](selector-dispositions.md) so reviewers can read
+this file before labelling.
 
 ---
 
@@ -201,8 +199,9 @@ from the commit.
 **Timing data for #33.** Not useful. There is nothing to propagate beyond
 the merge.
 
-**Proposed disposition (selector):** *do-not-keep*. Enforcement already
-covers it, and memory would duplicate the tests.
+**Proposed disposition (selector):** moved to
+[`selector-dispositions.md`](selector-dispositions.md) so reviewers can read
+this file before labelling.
 
 ---
 
@@ -237,8 +236,9 @@ import-boundary test.
 
 **Timing data for #33.** None. Stable since inception.
 
-**Proposed disposition (selector):** *do-not-keep*. Repository instructions
-already deliver it. Adding an import test would be the better hardening.
+**Proposed disposition (selector):** moved to
+[`selector-dispositions.md`](selector-dispositions.md) so reviewers can read
+this file before labelling.
 
 ---
 
@@ -267,45 +267,15 @@ source of truth and is one file read away.
 
 **Timing data for #33.** Not useful.
 
-**Proposed disposition (selector):** *do-not-keep*. A textbook live-retrieval
-fact, included as a negative control.
+**Proposed disposition (selector):** moved to
+[`selector-dispositions.md`](selector-dispositions.md) so reviewers can read
+this file before labelling.
 
 ---
 
 ## Summary
 
-| ID | Kind | Real learned → missed/stale → corrected timeline? | Cheaper alternative | Selector's proposed disposition | Feed to #33? |
-|---|---|---|---|---|---|
-| RM-C1 | Process lesson | Yes: 10-04 → 10-07 → 10-16 | Checklist / partial lint | keep | **Yes**: reuse/rediscovery |
-| RM-C2 | Architecture decision | Yes: 10-03 → stale ≥32 days → PR #34 | Document hygiene | uncertain | **Yes**: freshness/propagation |
-| RM-C3 | Evaluation protocol | Yes: 10-04 → 10-08 → 10-09 | Shared code (partly) | keep (procedural part) | **Yes**: reuse, with overlap caveat |
-| RM-C4 | Fixed defect | No | Regression tests | do-not-keep | Negative control |
-| RM-C5 | Architecture boundary | No | `AGENTS.md` (+ import test) | do-not-keep | Negative control |
-| RM-C6 | Config fact | No | `pyproject.toml` | do-not-keep | Negative control |
-
-Balance: three plausible keeps or uncertains, three expected do-not-keeps.
-
-### Implications for the #33 protocol
-
-- **RM-C1 and RM-C3** support a *reuse* test: give an agent the task "set up
-  a new experiment fixture/runner" at a revision after the lesson and before
-  its re-application, with and without the lesson available. Then compare
-  against a well-configured search over the same repository. The tie-breaker
-  is whether ordinary search surfaces the lesson *unprompted*.
-- **RM-C2** supports a *freshness* test: at a revision inside the stale
-  window, ask an architecture question and score whether the answer follows
-  `v0-scope.md` or the stale ROADMAP. Repeat after PR #34 merges. If both
-  paths pass after the fix, document hygiene was the adequate answer.
-- **RM-C4 to RM-C6** should show no benefit. If memory "wins" on them, the
-  protocol is biased.
-- Every case comes from one repository and one maintainer. None measures
-  cross-team waiting. #33 must say so, or add cases from other sources.
-
-### Not yet done (remaining #8 exit criteria)
-
-- [ ] Reviewers agree on and freeze the annotation guide.
-- [ ] Expand to about 20 candidates, including permitted sources beyond this
-      repository.
-- [ ] Two or more independent human reviewers label the same sample.
-- [ ] Report agreement, disagreements and adjudication.
-- [ ] Mark which retained facts feed #33 (preliminary marking above).
+The summary table, the selector's proposed dispositions and the implications
+for #33 were moved to [`selector-dispositions.md`](selector-dispositions.md)
+on 2026-11-16, because they reveal the selector's guesses. Reviewers should
+label first and open that file afterwards.

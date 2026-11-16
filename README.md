@@ -26,9 +26,9 @@ Implemented today:
 2. **Deterministic policy resolution** — scope, lifecycle, overrides, supersession, and conflicts without asking an LLM to invent precedence.
 3. **Authenticated, caller-safe context assembly** with provenance redaction and an external-provider boundary.
 4. **An OpenViking-backed storage adapter** and **read-only MCP tools** (`memory_search`, `memory_get`).
+5. **Governed lifecycle writes** (propose, approve/reject, supersede, expire, archive) with verified identity, scope-based roles and per-caller redacted history ([docs/lifecycle.md](docs/lifecycle.md), #3). In-process only; not exposed over MCP.
 
-Not implemented: governed write operations (propose, approve, supersede,
-expire) — deferred in #3 — and any ingestion pipeline.
+Not implemented: write tools over a transport, and any ingestion pipeline.
 
 The architectural decision ([docs/v0-scope.md](docs/v0-scope.md)) is:
 
@@ -38,7 +38,14 @@ What the evidence says so far: in five small synthetic coding-agent batches,
 repo-memory never beat ordinary documents that carried the same permitted
 facts (ties throughout, plus one incomplete memory trial). Whether durable
 memory reduces the time to *discover*, *update* and *reuse* organizational
-context is untested and tracked in #33.
+context is untested and tracked in #33. Every batch used three runs per arm,
+which is too few for a statistical claim in either direction. A model-free
+[delivery ablation](research/experiments/delivery-ablation/README.md) shows
+that most of the engine's resolution is reproduced by ordinary metadata
+filters, and [Mneme HQ](research/open-source/mneme.md) already covers
+deterministic decision enforcement for coding agents. The project direction is
+therefore **research: independent measurement**, not a competing product
+([plan, #38](https://github.com/TejjeT/repo-memory/issues/38)).
 
 ## Why this exists
 
@@ -343,17 +350,17 @@ It is not intended to be:
 ## Roadmap
 
 Contract, policy, OpenViking adapter, context assembly, authenticated
-boundary, read-only MCP tools and the bounded #5 evaluation are done. Next, in
-order:
+boundary, read-only MCP tools, governed lifecycle writes and the bounded #5
+evaluation are done. Next, in order (plan: #38):
 
-1. reconcile documentation with delivered work (#29)
-2. select 3–5 permitted real candidate cases and build a human-labeled
-   memory-worthiness sample (#8)
-3. preregister the time-to-correct-context, freshness and reuse protocol (#33)
-   before another model batch
+1. human labels for the memory-worthiness sample (#8)
+2. decide two supersession edge cases in the engine (#41)
+3. a preregistered agent study on an external benchmark at an adequate sample
+   size (#42), and a test of whether leftover distractors cause agent errors
+   (#43)
+4. access-aware resolution: problem statement and survey (#44)
 
-Governed lifecycle mutations (#3) stay deferred until selected. See
-[ROADMAP.md](ROADMAP.md) and [docs/status.md](docs/status.md).
+See [ROADMAP.md](ROADMAP.md) and [docs/status.md](docs/status.md).
 
 ## Contributing
 

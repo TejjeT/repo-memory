@@ -17,32 +17,38 @@ over a replaceable backend, **not** a mandatory SQLite/REST/vector service.
 | Context assembly with budgets and caller-safe evidence | Done | #15 |
 | Authenticated callers and external-provider boundary | Done | #20, #28 |
 | Read-only MCP tools: `memory_search`, `memory_get` | Done | #4 |
-| Bounded coding-agent evaluation (repo only / generic retrieval / repo-memory) | Done; no incremental memory benefit shown | #5 |
-
-Read-time lifecycle behavior (state filtering, effective/expiry dates,
-supersession, overrides) is delivered. Governed **mutations** are not.
+| Bounded coding-agent evaluation (repo only / generic retrieval / repo-memory) | Done; no incremental memory benefit shown; three runs per arm | #5 |
+| Governed lifecycle writes with roles and redacted history | Done in-process; OpenViking store is single-writer only | #3 |
+| Docs reconciliation | Done | #29 |
+| Time-to-correct-context protocol | Drafted, not frozen; sample size under revision | #33 |
+| Model-free delivery ablation, calibrated with real supersession rates | Done | #40 |
+| External benchmark selection | Recommendation made; release location to confirm | #39 |
 
 ## Next, in order
 
-1. **Docs reconciliation** (#29) — align roadmap, README and experiment
-   protocols with delivered work and results.
-2. **Candidate cases and memory-worthiness labels** (#8) — 3–5 permitted,
-   source-backed candidate decisions first, then a human-labeled sample with
-   inter-reviewer agreement. Include cases that favor ordinary retrieval.
-3. **Time-to-correct-context protocol** (#33) — preregister a comparison of
-   discovery/verification time, update propagation and reuse against a
-   well-configured ordinary retrieval path, counting capture, approval and
-   refresh costs. Publish the protocol before running another model batch. A
-   tie is a valid outcome.
-4. **Real-repository pilot** — only once #8 supplies concrete cases.
+Direction decided 2026-11-11: **research and independent measurement**, not a
+competing product, and no patent filing. The plan and its reasons are in #38.
+
+1. **Memory-worthiness labels** (#8) — the candidate sample and a blinded
+   labelling packet exist; human labels are pending. Agreement needs a second
+   reviewer.
+2. **Supersession edge cases** (#41) — decide the broken-chain and
+   hidden-successor behavior found by the delivery ablation.
+3. **Powered agent study on an external benchmark** (#42) — preregistered,
+   with Mneme as an arm. Prior studies indicate 120–200 tasks are needed to
+   detect small effects. Model and budget are not yet chosen.
+4. **Distractor experiment** (#43) — do agents err when a filtered index
+   delivers the governing rule alongside stale or overridden ones?
+5. **Access-aware resolution** (#44) — problem statement and prior-art survey.
+6. **Time-to-correct-context protocol** (#33) — revise sample size before
+   freezing; decide what #42 replaces.
 
 ## Deferred
 
-- **Governed lifecycle** (#3): propose → approve/reject → retrieve, supersede,
-  expire/archive with attribution and authorization. Selected only after a
-  measured need; first slice is a transition/authorization design.
 - **Write tools over MCP** (`memory_propose`, `memory_supersede`,
-  `memory_feedback`): follow #3, not before.
+  `memory_feedback`): a separate decision; the server stays read-only.
+- **Conditional writes for the OpenViking lifecycle store**: needs backend
+  support; single governing writer until then.
 
 ## Not planned unless evidence demands it
 
